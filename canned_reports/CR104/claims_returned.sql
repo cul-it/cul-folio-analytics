@@ -20,7 +20,7 @@ WITH parameters AS (
         ''::varchar AS current_item_effective_location_filter, --Olin, ILR, Africana, etc.
         ''::varchar AS current_item_permanent_location_institution_filter, -- Cornell University
         ''::varchar AS current_item_permanent_location_campus_filter, -- Ithaca, etc.
-        ''::varchar AS current_item_permanent_location_library_filter -- Nestle Library,Library Annex, etc.
+        ''::varchar AS current_item_permanent_location_library_filter -- Nestle Library, Library Annex, etc.
 ),
 -- CTEs
 items_with_notes AS (
