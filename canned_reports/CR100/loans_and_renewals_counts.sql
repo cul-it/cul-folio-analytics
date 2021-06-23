@@ -56,13 +56,13 @@ WITH parameters AS (
         '2000-01-01'::date AS start_date,
         '2022-01-01'::date AS end_date,
         /* Fill one out, leave others blank to filter by location */
-        'Main Library'::varchar AS items_permanent_location_filter, --Online, Annex, Main Library
-        ''::varchar AS items_temporary_location_filter, --Online, Annex, Main Library
-        ''::varchar AS items_effective_location_filter, --Online, Annex, Main Library
+        'Olin'::varchar AS items_permanent_location_filter, -- Olin, ILR, Africana, etc.
+        ''::varchar AS items_temporary_location_filter, -- Olin, ILR, Africana, etc.
+        ''::varchar AS items_effective_location_filter, --Olin, ILR, Africana, etc.
         /* The following connect to the item's permanent location */
-        ''::varchar AS institution_filter, -- 'KÃ¸benhavns Universitet','Montoya College'
-        ''::varchar AS campus_filter, -- 'Main Campus','City Campus','Online'
-        ''::varchar AS library_filter -- 'Datalogisk Institut','Adelaide Library'
+        ''::varchar AS institution_filter, -- Cornell University
+        ''::varchar AS campus_filter, -- Ithaca,'etc.
+        ''::varchar AS library_filter -- 'Nestle Library','Library Annex, etc.'
 )
     --MAIN QUERY
     SELECT
