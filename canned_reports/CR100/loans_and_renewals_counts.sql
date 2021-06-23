@@ -61,8 +61,8 @@ WITH parameters AS (
         ''::varchar AS items_effective_location_filter, --Olin, ILR, Africana, etc.
         /* The following connect to the item's permanent location */
         ''::varchar AS institution_filter, -- Cornell University
-        ''::varchar AS campus_filter, -- Ithaca,'etc.
-        ''::varchar AS library_filter -- 'Nestle Library','Library Annex, etc.'
+        ''::varchar AS campus_filter, -- Ithaca, etc.
+        ''::varchar AS library_filter -- Nestle Library', Library Annex, etc.
 )
     --MAIN QUERY
     SELECT
