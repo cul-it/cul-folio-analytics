@@ -1,5 +1,6 @@
 /*List of patron requests query*/
-/*List of delivery requests by rrocess status query*/
+/*List of delivery requests by process status query*/
+/*Contactless pickup report query*/
 
 
 /* FIELDS INCLUDED
