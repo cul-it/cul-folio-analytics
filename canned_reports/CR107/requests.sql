@@ -1,3 +1,6 @@
+/*List of patron requests query*/
+
+
 /* FIELDS INCLUDED
  * public.circulation_requests table:
  * - request_id
@@ -35,7 +38,7 @@ WITH parameters AS (
         '2000-01-01'::date AS start_date,
         '2022-01-01'::date AS end_date,
         /* Fill in a location name, or leave blank for all locations */
-        ''::varchar AS items_permanent_location_filter, --Online, Annex, Main Library
+        ''::varchar AS items_permanent_location_filter, --Olin, ILR, Africana, etc.
         /* Fill in 1-4 request statuses, or leave all blank for all statuses */
         'Open - Not yet filled'::VARCHAR AS request_status_filter1, --  'Open - Not yet filled', 'Open - Awaiting pickup','Open - In transit', ''Open, Awaiting delivery', 'Closed - Filled', 'Closed - Cancelled', 'Closed - Unfilled', 'Closed - Pickup expired'
         'Open - In transit'::VARCHAR AS request_status_filter2, -- other request status to also include
