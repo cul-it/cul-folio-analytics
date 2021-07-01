@@ -1,31 +1,31 @@
 WITH parameters AS (
-SELECT
-    '2021-05-01'::DATE AS start_date,
-    '2021-06-14'::DATE AS end_date
-)
+    SELECT
+           current_date - integer '2' AS start_date -- get all orders created XX days from today
+    )
 SELECT 
     poi.po_number AS po_number,
     poi.po_line_number,
     poi.vendor_code AS vendor_code,
+    poi.po_wf_status,
     poi.created_date AS po_created_date,
-    marc.bib_id,
-    marc.tag,
-    string_agg('$'::varchar || marc.sf || marc.content, '') AS series
+    m.instance_hrid,
+    m.field,
+    string_agg('$'::varchar || m.sf || m.content, '') AS series
 FROM
     folio_reporting.po_instance AS poi
 LEFT JOIN 
     inventory_instances AS ii ON poi.pol_instance_hrid = ii.hrid 
 LEFT JOIN
-    folio_source_record."__marc" AS marc ON ii.hrid = marc.bib_id 
+    srs_marctab AS m ON ii.hrid = m.instance_hrid
 WHERE
-    marc.tag IN ('490','830') 
-    AND poi.created_date::DATE >= (SELECT start_date FROM parameters)
-    AND poi.created_date::DATE < (SELECT end_date FROM parameters)
+    m.field IN ('490','830') 
+    AND poi.created_date::DATE >=(SELECT start_date FROM parameters)
 GROUP BY
-    marc.bib_id,
-    marc.tag,
+    m.instance_hrid,
+    m.field,
     poi.po_number,
     poi.po_line_number,
     poi.vendor_code,
-    poi.created_date
+    poi.created_date,
+    poi.po_wf_status
 ;
