@@ -1,5 +1,5 @@
 WITH parameters AS (
-    select
+    SELECT
   /*This is the date range when the items were checked in (discharged) at a circ desk*/  
         '2021-01-01'::DATE AS start_date,
         '2022-01-01'::DATE AS end_date,
