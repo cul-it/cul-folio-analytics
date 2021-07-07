@@ -1,11 +1,11 @@
---This query provides a fund details summary for active funds
+--This query provide fund details summary for active funds
 
 WITH parameters AS (
     SELECT
         ''::VARCHAR AS fiscal_year_code,
         ''::VARCHAR AS fund_code,
- 		''::VARCHAR AS fund_name,
- 		''::VARCHAR AS group_name
+ 	''::VARCHAR AS fund_name,
+ 	''::VARCHAR AS group_name
 )
 SELECT 
 	CURRENT_DATE,
@@ -30,8 +30,8 @@ FROM
 	LEFT JOIN finance_group_fund_fiscal_years AS fgffy ON fgffy.fund_id = ff.id 
 	LEFT JOIN finance_groups AS fg ON fg.id = fgffy.group_id
 	LEFT JOIN finance_fund_types AS fft ON fft.id = ff.fund_type_id
-	LEFT JOIN finance_budgets AS fb ON fb.id = fgffy.budget_id
 	LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fgffy.fiscal_year_id
+	LEFT JOIN finance_budgets AS fb ON fb.id = fgffy.budget_id AND ffy.id = fb.fiscal_year_id
 	LEFT JOIN finance_ledgers AS fl ON fl.id = ff.ledger_id 
 WHERE 
 	ff.fund_status LIKE 'Active'
