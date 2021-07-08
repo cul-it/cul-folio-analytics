@@ -3,8 +3,8 @@
 /* Change the lines below to filter or leave blank to return all results. Add details in '' for a specific filter.*/
 WITH parameters AS (
 	SELECT
-        '2021-06-24'::DATE AS voucher_date_start_date, --ex:2000-01-01 
-        '2021-06-25'::DATE AS voucher_date_end_date -- ex:2020-06-30 
+        '2021-07-01'::DATE AS voucher_date_start_date, --ex:2000-01-01 
+        '2022-06-30'::DATE AS voucher_date_end_date -- ex:2020-06-30 
 ),
 ledger_fund AS (
 	SELECT 
