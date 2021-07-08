@@ -72,10 +72,11 @@ SELECT
     li.chronology,
     li.copy_number,
     li.enumeration,
-    li.item_level_call_number,
     li.number_of_pieces,
     ie.volume,
-    ie.call_number,
+  --ie.call_number,
+    json_extract_path_text(iit.data, 'effectiveCallNumberComponents', 'callNumber') AS call_number,
+    li.item_level_call_number,
     --he.holdings_id,
     --he.instance_id,
     he.permanent_location_name,
@@ -100,6 +101,7 @@ FROM
     LEFT JOIN items_with_notes AS nn ON li.item_id = nn.item_id
     LEFT JOIN folio_reporting.holdings_ext AS he ON ie.holdings_record_id = he.holdings_id
     LEFT JOIN public.inventory_instances AS ii ON he.instance_id = ii.id
+    LEFT JOIN public.inventory_items AS iit ON li.item_id=iit.id
     LEFT JOIN instances_with_publication_dates AS pd ON he.instance_id = pd.instance_id
     LEFT JOIN folio_reporting.instance_publication AS ip ON he.instance_id = ip.instance_id
     LEFT JOIN folio_reporting.loans_renewal_count AS lrc ON li.item_id = lrc.item_id
