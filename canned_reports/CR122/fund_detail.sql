@@ -2,10 +2,10 @@
 
 WITH parameters AS (
     SELECT
-        ''::VARCHAR AS fiscal_year_code,
-        ''::VARCHAR AS fund_code,
- 	''::VARCHAR AS fund_name,
- 	''::VARCHAR AS group_name
+        ''::VARCHAR AS fiscal_year_code,--Ex:FY22    NOTE: This is case sensitive.
+        ''::VARCHAR AS fund_code,--Ex: 300, p1165    NOTE: This is case sensitive.
+ 	''::VARCHAR AS fund_name,--Ex: 300 Sciences CC, p1198 Mann Lib    NOTE: This is case sensitive. 
+ 	''::VARCHAR AS group_name -- Ex: Sciences, Central, Law....  NOTE: This is case sensitive. 
 )
 SELECT 
 	CURRENT_DATE,
