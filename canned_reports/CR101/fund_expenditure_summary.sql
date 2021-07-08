@@ -22,8 +22,8 @@ invoice_payment_start and invoice_payment_end, fiscal_year, fund_code, fund_type
 WITH parameters AS (
     SELECT
         /* enter invoice payment start date and end date in YYYY-MM-DD format */
-    	--'2000-01-01' :: DATE AS start_date,
-        --'2021-01-01' :: DATE AS end_date,
+    	'2021-07-01' :: DATE AS start_date,
+        '2022-06-30' :: DATE AS end_date,
         /* enter FY## where #### is the 4 digits of the fiscal year code */
         ''::VARCHAR AS fiscal_year_filter,
         /* enter one or more fund codes separated by commas, as in 'math, music' */
