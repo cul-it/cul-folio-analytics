@@ -1,8 +1,28 @@
+/*
+PURPOSE
+This report shows a list of exceptions, which are actions taken by an operator (staff member) and are recorded in the circulation log. 
+An example is when an item has been manually discharged or discharged by an operator.
+
+
+List of actions currently listed are: "Age to lost", "Anonymize", "Billed", "Cancelled", "Cancelled as error", "Changed due date", "Check in", 
+"Check out", "Checked in", "Checked out", "Checked out through override", "Claimed returned", "Closed loan", "Created", "Created through override", "
+Credited fully", "Declared lost", "Deleted", "Edited", "Expired", "Marked as missing", "Modified", "Moved", "Paid fully", "Paid partially", 
+"Patron blocked from requesting", "Pickup expired", "Queue position reordered", "Recall requested", "Refunded fully", "Refunded partially", "
+Renewed", "Renewed through override", "Request status changed", "Send", "Staff information only added", "Transferred fully", "Transferred partially", 
+"Waived fully", "Waived partially".
+
+MAIN TABLES INCLUDED
+audit_circulation_log, locations_service_points (derived table), users_groups
+
+FILTERS FOR USERS TO SELECT 
+start and end dates, actions. 
+
+*/
 WITH parameters AS (
     SELECT
         /* Choose a start and end date for the request period */
-        '2000-01-01'::date AS start_date,
-        '2022-01-01'::date AS end_date,
+        '2021-07-01'::date AS start_date,
+        '2022-06-30'::date AS end_date,
         /* Fill in a library name, or leave blank */
         ''::varchar AS action_library_filter,
         /* Fill in 1-4 action names, or leave all blank for all actions */
@@ -41,7 +61,6 @@ SELECT
     ac.description AS action_description,
     ac.object AS action_result,
     ac.source AS action_source,
-    ac.service_point_id AS service_point_id,
     json_extract_path_text(ac.data, 'linkToIds', 'userId') AS user_id,
     json_extract_path_text(ac.data, 'linkToIds', 'feeFineId') AS fee_fine_id,
     ia.item_id,
@@ -53,6 +72,7 @@ SELECT
     ug.user_middle_name AS patron_middle_name,
     ug.user_email AS patron_email,
     lsp.library_name AS library_name,
+    ac.service_point_id AS service_point_id,
     lsp.service_point_discovery_display_name AS service_point_display_name
 FROM
     public.audit_circulation_logs AS ac
