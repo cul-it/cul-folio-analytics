@@ -2,8 +2,8 @@
 WITH parameters AS (
     SELECT
         /* enter invoice payment start date and end date in YYYY-MM-DD format */
-    	'2021-06-24' :: DATE AS voucher_date_start_date,
-        '2021-06-25' :: DATE AS voucher_date_end_date -- Excludes the selected date
+    	'2021-07-01' :: DATE AS voucher_date_start_date,
+        '2022-06-30' :: DATE AS voucher_date_end_date -- Excludes the selected date
 )
 SELECT 
 		(SELECT
