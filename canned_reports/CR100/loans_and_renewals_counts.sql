@@ -1,68 +1,31 @@
-/* Report produces a list of individual loans which can then
- * be grouped and summed to create loans and renewals counts.
- * 
- * FIELDS INCLUDED:
- * (id fields are used as table joins and do not get outputted in the final table)
-Loans table
- Loan id 
- Loan date
- loan due date
- Loan return date
- Loan status
- Loan policy id
- Loan count
- Loan renewal count
- Item id 
- Patron group id at checkout
-Items table
- Item id 
- Material type id 
- Permanent location id 
- Temporary location id 
- Effective location id
- Permanent loan type id
- Temporary loan type id
- Material types table
- Material type id
- Material type name
-Locations table
- Location id
- Location name
- Library id
- Campus id
- Institution id
-Libraries table
- Library id
- Library name
-Campuses Table
- Campus id
- Campus name
-Institutions table
- Institution id
- Institution name
-Groups table
- Group id
- Group name
-Loan policies table
- Loan id
- Loan name
-Loan type table
- Loan type id
- Loan type name
- */
+/* PURPOSE
+This report produces a list of individual loans which can then be grouped and summed to create loans and renewals counts.
+
+MAIN TABLES INCLUDED
+loans_items (derived table)
+
+AGGREGATION
+No aggregation
+
+FILTERS FOR USER TO SELECT
+start_date, end_date, item_permanent_location, item_temporary_location, item_effective_location, item_permanent_location_institution_name, 
+item_permanent_location_campus_name, item_permanent_location_library_name.
+
+*/
+ 
 WITH parameters AS (
     SELECT
         /* Choose a start and end date for the loans period */
-        '2000-01-01'::date AS start_date,
-        '2022-01-01'::date AS end_date,
+        '2021-07-01'::date AS start_date,
+        '2022-06-30'::date AS end_date,
         /* Fill one out, leave others blank to filter by location */
-        'Olin'::varchar AS items_permanent_location_filter, -- Olin, ILR, Africana, etc.
-        ''::varchar AS items_temporary_location_filter, -- Olin, ILR, Africana, etc.
-        ''::varchar AS items_effective_location_filter, --Olin, ILR, Africana, etc.
+        ''::varchar AS items_permanent_location_filter, -- Examples: Olin, ILR, Africana, etc.
+        ''::varchar AS items_temporary_location_filter, -- Examples: Olin, ILR, Africana, etc.
+        ''::varchar AS items_effective_location_filter, --Examples: Olin, ILR, Africana, etc.
         /* The following connect to the item's permanent location */
-        ''::varchar AS institution_filter, -- Cornell University
-        ''::varchar AS campus_filter, -- Ithaca, etc.
-        ''::varchar AS library_filter -- Nestle Library', Library Annex, etc.
+        ''::varchar AS institution_filter, -- Examples: Cornell University
+        ''::varchar AS campus_filter, -- Examples: Ithaca
+        ''::varchar AS library_filter -- Examples: Nestle Library', Library Annex, etc.
 )
     --MAIN QUERY
     SELECT
