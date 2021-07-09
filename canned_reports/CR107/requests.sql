@@ -66,6 +66,7 @@ SELECT
         (SELECT end_date::varchar FROM parameters) AS date_range,
     cr.id AS request_id,
     cr.request_date,
+    json_extract_path_text(cr.data, 'metadata','updatedDate')::date AS request_updated_date,
     cr.request_type,
     cr.status AS request_status,
     --cr.pickup_service_point_id,
