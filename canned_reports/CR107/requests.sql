@@ -37,8 +37,8 @@
 WITH parameters AS (
     SELECT
         /* Choose a start and end date for the request period */
-        '2000-01-01'::date AS start_date,
-        '2022-01-01'::date AS end_date,
+        '2021-07-01'::date AS start_date,
+        '2022-06-30'::date AS end_date,
         /* Fill in a location name, or leave blank for all locations */
         ''::varchar AS items_permanent_location_filter, --Olin, ILR, Africana, etc.
         /* Fill in 1-4 request statuses, or leave all blank for all statuses */
