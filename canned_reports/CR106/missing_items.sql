@@ -1,17 +1,19 @@
 /*Missing items query*/
+?*Can also be used to filter for different item statuses*/
 
 /* Change the lines below to adjust the date and location filters */
 WITH parameters AS (
     SELECT
-        '2000-01-01'::date AS start_date,
-        '2022-01-01'::date AS end_date,
-        'Missing'::varchar AS item_status_filter, --  Should be 'Missing'
+        '2021-07-01'::date AS start_date,
+        '2022-06-30'::date AS end_date,
+	/*Enter item status*/
+        ''::varchar AS item_status_filter, --  Examples: Missing
               ---- Fill out one location or service point filter, leave others blank ----
-        ''::varchar AS item_permanent_location_filter, -- Olin, ILR, Africana, etc.
-        ''::varchar AS item_temporary_location_filter, -- Olin, ILR, Africana, etc.
-        ''::varchar AS holdings_permanent_location_filter, -- Olin, ILR, Africana, etc.
-        ''::varchar AS holdings_temporary_location_filter, -- Olin, ILR, Africana, etc.
-        ''::varchar AS effective_location_filter -- Olin, ILR, Africana, etc.
+        ''::varchar AS item_permanent_location_filter, -- Examples: Olin, ILR, Africana, etc.
+        ''::varchar AS item_temporary_location_filter, -- Examples: Olin, ILR, Africana, etc.
+        ''::varchar AS holdings_permanent_location_filter, -- Examples: Olin, ILR, Africana, etc.
+        ''::varchar AS holdings_temporary_location_filter, -- Examples: Olin, ILR, Africana, etc.
+        ''::varchar AS effective_location_filter -- Examples: Olin, ILR, Africana, etc.
 ),
 ---------- SUB-QUERIES/TABLES ----------
 item_subset AS (
