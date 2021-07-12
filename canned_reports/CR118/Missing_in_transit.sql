@@ -1,8 +1,8 @@
 WITH parameters AS (
     SELECT
   /*This is the date range when the items were checked in (discharged) at a circ desk*/  
-        '2021-01-01'::DATE AS start_date,
-        '2022-01-01'::DATE AS end_date,
+        '2021-07-01'::DATE AS start_date,
+        '2022-06-30'::DATE AS end_date,
         'In transit'::VARCHAR AS item_status_filter, --  'Checked out', 'Available', 'In transit'
         ---- Fill out one location or service point filter, leave others blank ----
         'Olin'::varchar AS item_permanent_location_filter, -- 'Olin, Mann, etc.'
