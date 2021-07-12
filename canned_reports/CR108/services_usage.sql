@@ -20,8 +20,8 @@ date filter, then checkout actions that match, then just unions them together
 /* Change the lines below to adjust the date filter */
 WITH parameters AS (
     SELECT
-        '2000-01-01'::date AS start_date,
-        '2021-01-01'::date AS end_date
+        '2021-07-01'::date AS start_date,
+        '2022-06-30'::date AS end_date
 ),
 checkout_actions AS (
     SELECT
