@@ -1,17 +1,18 @@
-/*This report contains a liost of active patrons, including netids, names, addresses, patron group, and patron blocks. 
-To get a list of active AND inactive patrons, remove last line of the report, which is the active status filter.*/
+/*This report contains a list of active patrons, including netids, names, addresses, patron group, and patron blocks. 
+To get a list of active AND inactive patrons, delete last line of the report, which is "and ug.active=TRUE"
+*/
 
 WITH parameters AS (
     SELECT
         /* Fill in an address type */
-   		/*NOTE: As users have multiple addresses, leaving this blank will result in multiple records per user*/
+   		/*NOTE: As users have multiple addresses, and each address is on a separate row, leaving the address type filter will result in multiple records per user*/
         'Campus'::varchar AS address_type_name_filter, --Example: Home, Campus, Claim
         /* Fill in a custom field to include in the report */
         ''::varchar AS custom_field_filter,--Example: college
         /* Fill in patron filters */
         '2000-01-01'::date AS created_after_filter, -- use early date to include all users
         '2000-01-01'::date AS updated_after_filter, -- Example: 2021-06-02
-        /*Leave patron group filter to get all patron groups*/
+        /*Leave patron group filter blank to get all patron groups*/
         'Undergraduate'::varchar AS patron_group_filter, -- Example: Undergraduate, Graduate, Faculty, Staff
         ''::varchar AS active_status_filter, -- can be true or false (or '' for either)
         ''::varchar AS is_blocked_filter -- can be true or false (or '' for either)
