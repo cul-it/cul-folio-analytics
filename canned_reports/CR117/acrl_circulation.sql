@@ -32,8 +32,8 @@ Filters:
 WITH parameters AS (
     SELECT
         /* Choose a start and end date for the loans period */
-        '2000-01-01'::date AS start_date,
-        '2022-01-01'::date AS end_date,
+        '2021-07-01'::date AS start_date,
+        '2022-06-30'::date AS end_date,
         /* Fill in a material type name, or leave blank for all types */
         ''::varchar AS material_type_filter,
         /* Fill in a location name, or leave blank for all locations */
