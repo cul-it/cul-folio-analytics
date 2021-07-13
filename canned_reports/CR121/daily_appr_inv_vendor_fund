@@ -1,54 +1,63 @@
---This query provides the voucher lines details per vendor invoice and funds
---The results show vendor invoice payments from transactions on the previous day
 
-/* Change the lines below to filter or leave blank to return all results. Add details in '' for a specific filter.*/
---get invoices paid yesterday
+--This query provides the list of approved invoices within a date range along with vendor name, invoice number and fund details.
+
 WITH parameters AS (
     SELECT
-           current_date - integer '1' AS start_date -- get all invoices paid yesterday       	  
+        /* enter invoice payment start date and end date in YYYY-MM-DD format */
+    	'2021-07-01' :: DATE AS payment_date_start_date,
+        '2022-06-30' :: DATE AS payment_date_end_date, -- Excludes the selected date
+        '':: VARCHAR AS invoice_no --Ex: 12345, CUL01 etc.
 ),
---get ledger name
 ledger_fund AS (
 	SELECT 
-		fl.name,
-		ff.external_account_no
+		fl.name AS ledger_name,
+		ff.external_account_no,
+		ff.code AS fund_code
 	FROM 
 		finance_ledgers fl 
 		LEFT JOIN finance_funds AS ff ON FF.ledger_id = fl.id
 	GROUP BY 
 		external_account_no,
-		fl.name
+		fl.name,
+		ff.code
 )
---get additional data attributes
-SELECT
-	lf.name AS ledger_name,	
-	  org.erp_code AS vendor_erp_code,
- 	org.name AS vendor_name,
-	inv.vendor_invoice_no AS invoice_number,
-    inv.invoice_date AS invoice_date,
-	invv.voucher_number AS voucher_number,
-	invvlfd.fund_name AS fund_name,
-	invl.total AS invoice_line_total,
-	invvlfd.invoice_voucher_lines_external_account_number AS voucher_line_ext_acct,
-	invv.export_to_accounting AS export_to_accounting
-	  
+SELECT 
+		(SELECT
+			payment_date_start_date::varchar
+     	FROM
+        	parameters) || ' to '::varchar || (
+     	SELECT
+        	payment_date_end_date::varchar
+     	FROM
+        	parameters) AS date_range,	
+	CASE WHEN lf.ledger_name IS NULL THEN lf2.ledger_name ELSE lf.ledger_name END,
+	org.erp_code AS vendor_code,
+	fti.invoice_vendor_name AS vendor_name,
+	inv.vendor_invoice_no AS invoice_no,
+	inv.export_to_accounting AS export_to_accounting,
+	inv.invoice_date::date,
+	inv.payment_date::date,
+	inv.voucher_number,
+	fti.transaction_from_fund_code AS from_fund_code,
+	fti.transaction_to_fund_code AS to_fund_code,
+	CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >1 THEN fti.transaction_amount *-1 ELSE fti.transaction_amount END AS transaction_amount,
+	CASE WHEN fti.transaction_from_fund_code IS NOT NULL THEN lf.external_account_no ELSE lf2.external_account_no END
 FROM 
-	invoice_voucher_lines AS invvl 
-	LEFT JOIN folio_reporting.invoice_voucher_lines_fund_distributions AS invvlfd ON invvlfd.invoice_voucher_line_id = invvl.id
-	LEFT JOIN invoice_lines AS invl ON invl.id = invvlfd.fund_distribution_invl_id
-	LEFT JOIN invoice_vouchers AS invv ON invv.id = invvl.voucher_id
-	LEFT JOIN invoice_invoices AS inv ON inv.id = invv.invoice_id
-	LEFT JOIN po_lines AS pol ON pol.id = invl.po_line_id
-	LEFT JOIN folio_reporting.po_instance AS poins ON poins.po_line_number = pol.po_line_number 
-	LEFT JOIN organization_organizations AS org ON org.id = invv.vendor_id
-	LEFT JOIN ledger_fund AS lf ON lf.external_account_no = invvl.external_account_number
-	LEFT JOIN finance_funds AS ff ON invvlfd.fund_distribution_id = ff.id 
-	LEFT JOIN folio_reporting.finance_transaction_invoices AS fitrin ON fitrin.invoice_line_id = invl.id
-WHERE 
-	inv.status LIKE 'Paid'
-	AND invv.voucher_date::date >= (SELECT start_date FROM parameters)
-ORDER BY
-	vendor_name,
-	lf.name,
-	invoice_number;
+	folio_reporting.finance_transaction_invoices AS fti 
+	LEFT JOIN invoice_lines AS invl ON invl.id = fti.invoice_line_id 
+	LEFT JOIN invoice_invoices AS inv ON fti.invoice_id = inv.id
+	LEFT JOIN organization_organizations AS org ON org.id = inv.vendor_id
+	LEFT JOIN finance_budgets AS fb ON fti.transaction_from_fund_id = fb.fund_id AND fti.transaction_fiscal_year_id = fb.fiscal_year_id
+	LEFT JOIN finance_budgets AS fb2 ON fti.transaction_to_fund_id = fb2.fund_id AND fti.transaction_fiscal_year_id = fb2.fiscal_year_id
+	LEFT JOIN ledger_fund AS lf ON lf.fund_code = fti.transaction_from_fund_code 
+	LEFT JOIN ledger_fund AS lf2 ON lf2.fund_code = fti.transaction_to_fund_code
+WHERE
+	(inv.payment_date::date >= (SELECT payment_date_start_date FROM parameters)) 
+	AND (inv.payment_date::date < (SELECT payment_date_end_date FROM parameters))
+	AND inv.status LIKE 'Paid'
+	AND ((inv.vendor_invoice_no = (SELECT invoice_no  FROM parameters)) OR ((SELECT invoice_no  FROM parameters) = ''))
+ORDER BY 
+	lf.ledger_name, 
+	fti.invoice_vendor_name,
+	inv.vendor_invoice_no;
   
