@@ -1,5 +1,5 @@
 /*Missing items query*/
-?*Can also be used to filter for different item statuses*/
+/*Can also be used to filter for different item statuses*/
 
 /* Change the lines below to adjust the date and location filters */
 WITH parameters AS (
@@ -100,7 +100,7 @@ SELECT
     li.checkout_service_point_name,
     li.checkin_service_point_name,
     its.barcode,
-    its.call_number,
+    its.effective_call_number,
     its.enumeration,
     its.chronology,
     its.copy_number,
