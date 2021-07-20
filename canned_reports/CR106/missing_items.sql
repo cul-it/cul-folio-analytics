@@ -100,7 +100,7 @@ SELECT
     li.checkout_service_point_name,
     li.checkin_service_point_name,
     its.barcode,
-    its.effective_call_number,
+    ite.effective_call_number,
     its.enumeration,
     its.chronology,
     its.copy_number,
