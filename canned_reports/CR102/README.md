@@ -3,7 +3,7 @@ Title Count
 
 
 
-# Documentation for the RM title query (UXPROD-2395)
+# Documentation for the RM Title Query (UXPROD-2395)
 
 ## Contents
 * [Purpose](https://github.com/folio-org/folio-analytics/blob/main/sql/report_queries/title_count/README.md#purpose)
