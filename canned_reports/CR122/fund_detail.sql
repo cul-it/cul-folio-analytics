@@ -1,4 +1,4 @@
---This query provide fund details summary for active funds
+--This query provides fund details summary for active funds
 
 WITH parameters AS (
     SELECT
