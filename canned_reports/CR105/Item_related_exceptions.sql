@@ -21,26 +21,24 @@ start and end dates, actions.
 WITH parameters AS (
     SELECT
         /* Choose a start and end date for the request period */
-        '2021-07-01'::date AS start_date,
-        '2022-06-30'::date AS end_date,
-        /* Fill in a library name, or leave blank */
-        ''::varchar AS action_library_filter,
+       '2021-07-01'::date AS start_date,
+       '2022-06-30'::date AS end_date, 
+       ''::varchar AS action_service_point_name_filter, --Fill in a service point name, or leave blank */
         /* Fill in 1-4 action names, or leave all blank for all actions */
         ''::varchar AS action_filter1, -- see list of actions in README documentation 
         ''::varchar AS action_filter2, -- other action to also include
         ''::varchar AS action_filter3, -- other action to also include
         ''::varchar AS action_filter4 -- other action to also include
 ),
-service_point_libraries AS (
+service_points AS (
     SELECT
         service_point_id,
-        service_point_discovery_display_name,
-        library_name 
-    FROM folio_reporting.locations_service_points
-    GROUP BY
+        service_point_name
+           FROM folio_reporting.locations_service_points
+   GROUP BY
         service_point_id,
-        service_point_discovery_display_name,
-        library_name 
+       service_point_name
+     --   library_name 
 ),
 items_array AS (
     SELECT
@@ -71,20 +69,19 @@ SELECT
     ug.user_first_name AS patron_first_name,
     ug.user_middle_name AS patron_middle_name,
     ug.user_email AS patron_email,
-    lsp.library_name AS library_name,
     ac.service_point_id AS service_point_id,
-    lsp.service_point_discovery_display_name AS service_point_display_name
+    sp.service_point_name
 FROM
     public.audit_circulation_logs AS ac
     LEFT JOIN items_array AS ia ON ac.id = ia.log_id
     LEFT JOIN folio_reporting.users_groups AS ug ON json_extract_path_text(ac.data, 'linkToIds', 'userId') = ug.user_id
-    LEFT JOIN service_point_libraries AS lsp ON ac.service_point_id = lsp.service_point_id
+    LEFT JOIN service_points AS sp ON ac.service_point_id = sp.service_point_id
 WHERE
     ac.date >= (SELECT start_date FROM parameters)
     AND ac.date < (SELECT end_date FROM parameters)
     AND (
-        lsp.library_name = (SELECT action_library_filter FROM parameters)
-        OR '' = (SELECT action_library_filter FROM parameters)
+        sp.service_point_name = (SELECT action_service_point_name_filter FROM parameters)
+        OR '' = (SELECT action_service_point_name_filter FROM parameters)
     )
     AND (
         ac.action IN ((SELECT action_filter1 FROM parameters), 
