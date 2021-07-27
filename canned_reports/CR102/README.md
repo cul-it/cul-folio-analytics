@@ -1,15 +1,15 @@
 CR102
 Title Count
 
-
+PLEASE NOTE: THIS QUERY AND DOCUMENTATION WERE WRITTEN FOR ALL FOLIO USERS (I.E., NOT SPECIFICALLY FOR CUL). THIS QUERY AND DOCUMENTATION WILL BE UPDATED FOR CUL AS SOON AS POSSIBLE. FOR NOW, DON'T ASSUME IT WILL GIVE YOU FULLY CORRECT RESULTS.
 
 # Documentation for the RM Title Query (UXPROD-2395)
 
 ## Contents
-* [Purpose](https://github.com/folio-org/folio-analytics/blob/main/sql/report_queries/title_count/README.md#purpose)
-* [Filters](https://github.com/folio-org/folio-analytics/blob/main/sql/report_queries/title_count/README.md#filters)
-* [Output](https://github.com/folio-org/folio-analytics/blob/main/sql/report_queries/title_count/README.md#output)
-* [Requests not yet addressed](https://github.com/folio-org/folio-analytics/blob/main/sql/report_queries/title_count/README.md#requests-not-yet-addressed) 
+* [Purpose](https://github.com/cul-it/cul-folio-analytics/blob/main/canned_reports/CR102/README.md#purpose)
+* [Filters](https://github.com/cul-it/cul-folio-analytics/blob/main/canned_reports/CR102/README.md#filters)
+* [Output](https://github.com/cul-it/cul-folio-analytics/blob/main/canned_reports/CR102/README.md#output)
+* [Requests not yet addressed](https://github.com/cul-it/cul-folio-analytics/blob/main/canned_reports/CR102/README.md#requests-not-yet-addressed) 
 
 
 ## Purpose
