@@ -1,6 +1,4 @@
-/*This report contains a list of active patrons, including netids, names, addresses, patron group, and patron blocks. 
-To get a list of active AND inactive patrons, delete last line of the report, which is "and ug.active=TRUE"
-*/
+/*This report contains a list of patrons, including netids, names, addresses, patron group, and patron blocks. */
 
 WITH parameters AS (
     SELECT
@@ -13,7 +11,8 @@ WITH parameters AS (
         '2000-01-01'::date AS created_after_filter, -- use early date to include all users
         '2000-01-01'::date AS updated_after_filter, -- Example: 2021-06-02
         /*Leave patron group filter blank to get all patron groups*/
-        'Undergraduate'::varchar AS patron_group_filter, -- Example: Undergraduate, Graduate, Faculty, Staff
+        ''::varchar AS patron_group_filter, -- Example: Undergraduate, Graduate, Faculty, Staff
+        /*chose a status filter or leave blank to get all active and inactive patrons*/
         ''::varchar AS active_status_filter, -- can be true or false (or '' for either)
         ''::varchar AS is_blocked_filter -- can be true or false (or '' for either)
         ),
@@ -124,6 +123,4 @@ SELECT
   --      OR '' = (SELECT is_blocked_filter FROM parameters))
     AND ug.created_date >= (SELECT created_after_filter FROM parameters)
     AND ug.updated_date >= (SELECT updated_after_filter FROM parameters)
-    and ug.active=TRUE
-
-;
+    ;
