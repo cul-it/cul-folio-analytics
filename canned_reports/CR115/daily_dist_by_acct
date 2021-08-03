@@ -41,6 +41,7 @@ WHERE
 	(invv.voucher_date >= (SELECT voucher_date_start_date FROM parameters)) 
 	AND
 	(invv.voucher_date < (SELECT voucher_date_end_date FROM parameters))
+	AND inv.status LIKE 'Paid'
 GROUP BY 
 	voucher_line_account_number,
 	lf.name,
