@@ -2,9 +2,8 @@
 
 /* Change the lines below to filter or leave blank to return all results. Add details in '' for a specific filter.*/
 WITH parameters AS (
-	SELECT
-        '2021-07-01'::DATE AS voucher_date_start_date, --ex:2000-01-01 
-        '2022-06-30'::DATE AS voucher_date_end_date -- ex:2020-06-30 
+    SELECT
+           current_date - integer '1' AS start_date -- get all orders created XX days from today
 ),
 ledger_fund AS (
 	SELECT 
@@ -18,15 +17,9 @@ ledger_fund AS (
 		fl.name
 )
 SELECT
-	(SELECT
-			voucher_date_start_date::varchar
-     FROM
-        	parameters) || ' to '::varchar || (
-     SELECT
-        	voucher_date_end_date::varchar
-     FROM
-        	parameters) AS date_range,	
+	current_date - integer '1' AS voucher_date,   	
 	lf.name AS ledger_name,
+	invvl.external_account_number AS voucher_line_account_number,
 	inv.vendor_invoice_no,
 	org.erp_code AS vendor_erp_code,
 	org.name AS vendor_name,
@@ -39,20 +32,20 @@ FROM
 	LEFT JOIN ledger_fund AS lf ON lf.external_account_no = invvl.external_account_number
 	LEFT JOIN organization_organizations AS org ON org.id = invv.vendor_id
 WHERE 
-	(invv.voucher_date >= (SELECT voucher_date_start_date FROM parameters)) 
-	AND
-	(invv.voucher_date < (SELECT voucher_date_end_date FROM parameters))
-	AND inv.status LIKE 'Paid'
+	inv.status LIKE 'Paid'
+	AND invv.voucher_date::date >= (SELECT start_date FROM parameters)
 	AND invv.export_to_accounting = FALSE
 GROUP BY 
 	vendor_invoice_no,	
 	lf.name,
 	org.erp_code,
 	org.name,
+	invvl.external_account_number,
 	invv.export_to_accounting,
 	inv.note,
 	invvl.amount
  ORDER BY
  	lf.name;
+ 	
   
   
