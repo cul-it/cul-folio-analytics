@@ -1,11 +1,11 @@
---This query provides a fund details summary for active funds
+--This query provide fund details summary for active funds
 
 WITH parameters AS (
     SELECT
-        ''::VARCHAR AS fiscal_year_code,--Ex:FY2022    NOTE: This is case sensitive.
-        ''::VARCHAR AS fund_code,--Ex: 300, p1165    NOTE: This is case sensitive.
- 	''::VARCHAR AS fund_name,--Ex: 300 Sciences CC, p1198 Mann Lib    NOTE: This is case sensitive. 
- 	''::VARCHAR AS group_name -- Ex: Sciences, Central, Law....  NOTE: This is case sensitive. 
+        ''::VARCHAR AS fiscal_year_code,
+        ''::VARCHAR AS fund_code,
+ 		''::VARCHAR AS fund_name,
+ 		''::VARCHAR AS group_name
 )
 SELECT 
 	CURRENT_DATE,
@@ -17,21 +17,26 @@ SELECT
 	ff.name AS fund_name,
 	ff.description AS fund_description,
 	fg.name AS fund_group_name,
-	COALESCE (fb.allocated,0) AS allocated,
+	COALESCE (fb.initial_allocation,0) AS initial_allocation,
+	COALESCE (fb.allocation_to,0) AS increase_in_allocation,
+	COALESCE (fb.allocation_from,0) AS decrease_in_allocation,
+	COALESCE (fb.allocated,0) AS total_allocation,
 	COALESCE (fb.net_transfers,0) AS net_transfers,
+	COALESCE (fb.total_funding,0) AS total_funding,--This amount includes allocations and net transfers
 	COALESCE (fb.expenditures,0) AS expenditures,
 	COALESCE (fb.encumbered,0) AS encumbered,
 	COALESCE (fb.awaiting_payment,0) AS awaiting_payment,
-	COALESCE (fb.unavailable,0) AS unavailable,-- This is the total of expended, awaiting payment and encumbered
-	COALESCE(fb.available,0) AS available,
+	COALESCE (fb.unavailable,0) AS unavailable,-- This is the total of expenditures, awaiting payments and encumbrances
+	COALESCE (fb.cash_balance,0) AS cash_balance, -- This balance excludes encumbrances and awaiting payment
+	COALESCE(fb.available,0) AS available_balance,-- This balance includes expenditures, awaiting payments and encumbrances
 	COALESCE (unavailable / NULLIF(allocated,0)*100)::numeric(12,2)  AS perc_spent
 FROM 
 	finance_funds AS ff
 	LEFT JOIN finance_group_fund_fiscal_years AS fgffy ON fgffy.fund_id = ff.id 
 	LEFT JOIN finance_groups AS fg ON fg.id = fgffy.group_id
 	LEFT JOIN finance_fund_types AS fft ON fft.id = ff.fund_type_id
+	LEFT JOIN finance_budgets AS fb ON fb.id = fgffy.budget_id
 	LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fgffy.fiscal_year_id
-	LEFT JOIN finance_budgets AS fb ON fb.id = fgffy.budget_id AND ffy.id = fb.fiscal_year_id
 	LEFT JOIN finance_ledgers AS fl ON fl.id = ff.ledger_id 
 WHERE 
 	ff.fund_status LIKE 'Active'
