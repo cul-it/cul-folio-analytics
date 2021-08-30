@@ -1,0 +1,29 @@
+WITH parameters AS (
+    SELECT
+           current_date - integer '2' AS start_date -- get all orders created XX days from today
+    )
+SELECT 
+pl.po_line_number AS pol_number,
+pl.description AS internal_note,
+json_extract_path_text(pl.data, 'receivingNote') AS receiving_note,
+    poi.po_number AS po_number,
+    poi.po_line_number,
+    poi.vendor_code AS vendor_code,
+    poi.po_wf_status,
+    poi.created_date AS po_created_date
+FROM po_lines pl 
+    LEFT JOIN folio_reporting.po_instance poi ON  pl.po_line_number = poi.po_line_number
+LEFT JOIN 
+    inventory_instances AS ii ON poi.pol_instance_hrid = ii.hrid 
+WHERE
+    poi.created_date::DATE >=(SELECT start_date FROM parameters)
+--AND json_extract_path_text(pl.data, 'receivingNote') IS NOT NULL 
+GROUP BY
+    poi.po_number,
+    poi.po_line_number,
+    poi.vendor_code,
+    poi.created_date,
+    poi.po_wf_status,
+    pl.po_line_number,
+    pl.description,
+   json_extract_path_text(pl.data, 'receivingNote');
