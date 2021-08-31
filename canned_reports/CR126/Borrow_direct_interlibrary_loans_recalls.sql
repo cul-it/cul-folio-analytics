@@ -13,10 +13,10 @@ WITH parameters AS (
          ''::varchar AS borrower_patron_group_name_filter3, -- Faculty
          ''::varchar AS borrower_patron_group_name_filter4, -- Graduate
         /* Fill in 1-4 request statuses, or leave all blank for all statuses */
-        ''::VARCHAR AS request_status_filter1, --  'Open - Not yet filled', 'Open - Awaiting pickup','Open - In transit', ''Open, Awaiting delivery', 'Closed - Filled', 'Closed - Cancelled', 'Closed - Unfilled', 'Closed - Pickup expired'
-        ''::VARCHAR AS request_status_filter2, -- other request status to also include
-        ''::VARCHAR AS request_status_filter3, -- other request status to also include
-        ''::VARCHAR AS request_status_filter4 -- other request status to also include
+        'Open - Not yet filled'::VARCHAR AS request_status_filter1, --  'Open - Not yet filled', 'Open - Awaiting pickup','Open - In transit', ''Open, Awaiting delivery', 'Closed - Filled', 'Closed - Cancelled', 'Closed - Unfilled', 'Closed - Pickup expired'
+        'Open - Awaiting pickup'::VARCHAR AS request_status_filter2, -- other request status to also include
+        'Open - In transit'::VARCHAR AS request_status_filter3, -- other request status to also include
+        'Open, Awaiting delivery'::VARCHAR AS request_status_filter4 -- other request status to also include
 )     
 SELECT
     (SELECT start_date::varchar FROM parameters) || 
@@ -60,6 +60,17 @@ WHERE
     AND cr.request_date < (SELECT end_date FROM parameters)
     AND cr.request_type = (SELECT request_type_filter FROM parameters)
     AND (
+        cr.status IN ((SELECT request_status_filter1 FROM parameters),
+                      (SELECT request_status_filter2 FROM parameters),
+                      (SELECT request_status_filter3 FROM parameters),
+                      (SELECT request_status_filter4 FROM parameters)
+                    )
+        OR ('' = (SELECT request_status_filter1 FROM parameters) AND
+            '' = (SELECT request_status_filter2 FROM parameters) AND
+            '' = (SELECT request_status_filter3 FROM parameters) AND
+            '' = (SELECT request_status_filter4 FROM parameters)
+            )
+    AND (
         li.patron_group_name IN ((SELECT borrower_patron_group_name_filter1 FROM parameters),
                       			(SELECT borrower_patron_group_name_filter2 FROM parameters),
                       			(SELECT borrower_patron_group_name_filter3 FROM parameters),
@@ -74,16 +85,6 @@ WHERE
         ie.permanent_location_name = (SELECT items_permanent_location_filter FROM parameters)
         OR '' = (SELECT items_permanent_location_filter FROM parameters)
     )
-   AND (
-        cr.status IN ((SELECT request_status_filter1 FROM parameters),
-                      (SELECT request_status_filter2 FROM parameters),
-                      (SELECT request_status_filter3 FROM parameters),
-                      (SELECT request_status_filter4 FROM parameters)
-                    )
-        OR ('' = (SELECT request_status_filter1 FROM parameters) AND
-            '' = (SELECT request_status_filter2 FROM parameters) AND
-            '' = (SELECT request_status_filter3 FROM parameters) AND
-            '' = (SELECT request_status_filter4 FROM parameters)
-            )
+   
             )  )  
 ;
