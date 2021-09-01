@@ -16,7 +16,7 @@ WITH parameters AS (
         'Open - Not yet filled'::VARCHAR AS request_status_filter1, --  'Open - Not yet filled', 'Open - Awaiting pickup','Open - In transit', ''Open, Awaiting delivery', 'Closed - Filled', 'Closed - Cancelled', 'Closed - Unfilled', 'Closed - Pickup expired'
         'Open - Awaiting pickup'::VARCHAR AS request_status_filter2, -- other request status to also include
         'Open - In transit'::VARCHAR AS request_status_filter3, -- other request status to also include
-        'Open, Awaiting delivery'::VARCHAR AS request_status_filter4 -- other request status to also include
+        'Open - Awaiting delivery'::VARCHAR AS request_status_filter4 -- other request status to also include
 )     
 SELECT
     (SELECT start_date::varchar FROM parameters) || 
