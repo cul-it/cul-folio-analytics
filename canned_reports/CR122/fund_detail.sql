@@ -29,7 +29,7 @@ SELECT
 	COALESCE (fb.unavailable,0) AS unavailable,-- This is the total of expenditures, awaiting payments and encumbrances
 	COALESCE (fb.cash_balance,0) AS cash_balance, -- This balance excludes encumbrances and awaiting payment
 	COALESCE(fb.available,0) AS available_balance,-- This balance includes expenditures, awaiting payments and encumbrances
-	COALESCE (unavailable / NULLIF(allocated,0)*100)::numeric(12,2)  AS perc_spent
+	COALESCE (unavailable / NULLIF(total_funding,0)*100)::numeric(12,2)  AS perc_spent
 FROM 
 	finance_funds AS ff
 	LEFT JOIN finance_group_fund_fiscal_years AS fgffy ON fgffy.fund_id = ff.id 
