@@ -1,4 +1,5 @@
 
+
 WITH parameters AS (
     SELECT
      ---- Fill out one, leave others blank to filter location name or code ----
@@ -52,23 +53,23 @@ statistical_codes AS (
         RIGHT JOIN folio_reporting.instance_statistical_codes AS isc3 ON ie2.instance_id = isc3.instance_id
 )
 SELECT 
-    DISTINCT inst.title,
-    inst.instance_id,
-    inst.instance_hrid,
+    DISTINCT frie.title,
+    frie.instance_id,
+    frie.instance_hrid,
     oclcno.oclc_number,
-    inst.mode_of_issuance_name AS instance_mode_of_issuance
+    frie.mode_of_issuance_name AS instance_mode_of_issuance
 FROM 
     folio_reporting.instance_ext AS frie
     --LEFT JOIN location_filtering AS loc_fil ON frie.item_id = loc_fil.i_id
     LEFT JOIN folio_reporting.holdings_ext AS hol ON frie.instance_id = hol.instance_id
-    LEFT JOIN folio_reporting.instance_ext AS inst ON hol.instance_id = inst.instance_id 
+    --LEFT JOIN folio_reporting.instance_ext AS inst ON hol.instance_id = inst.instance_id 
     --LEFT JOIN folio_reporting.item_statistical_codes AS itmsc ON frie.item_id = itmsc.item_id 
     LEFT JOIN folio_reporting.holdings_statistical_codes AS holsc ON hol.holdings_id = holsc.holdings_id
-    LEFT JOIN folio_reporting.instance_statistical_codes AS insc ON inst.instance_id = insc.instance_id
-    LEFT JOIN folio_reporting.instance_identifiers AS instind ON inst.instance_id = instind.instance_id 
-    LEFT JOIN folio_reporting.instance_formats AS if2 ON inst.instance_id = if2.instance_id 
+    LEFT JOIN folio_reporting.instance_statistical_codes AS insc ON frie.instance_id = insc.instance_id
+    LEFT JOIN folio_reporting.instance_identifiers AS instind ON frie.instance_id = instind.instance_id 
+    LEFT JOIN folio_reporting.instance_formats AS if2 ON frie.instance_id = if2.instance_id 
     LEFT JOIN inventory_holdings_types AS iht ON hol.type_id = iht.id 
-    LEFT JOIN oclc_no AS oclcno ON inst.instance_hrid = oclcno.instance_id
+    LEFT JOIN oclc_no AS oclcno ON frie.instance_id = oclcno.instance_id
     --LEFT JOIN statistical_codes AS statcodes ON frie.item_id = statcodes.item_id
 -- Filters
 WHERE
@@ -80,9 +81,9 @@ WHERE
 --AND 
     --(loc_fil.location_name = (SELECT location_filter FROM parameters) OR (SELECT location_filter FROM parameters) = '')
 --AND 
-    (inst.status_name = (SELECT status_name_filter FROM parameters) OR (SELECT status_name_filter FROM parameters) = '')
+    (frie.status_name = (SELECT status_name_filter FROM parameters) OR (SELECT status_name_filter FROM parameters) = '')
 --AND
    --(instind.identifier_type_name = (SELECT identifier_filter FROM parameters) OR (SELECT identifier_filter FROM parameters) = '')
 AND
-    (inst.mode_of_issuance_name = (SELECT mode_of_issuance_filter FROM parameters) OR (SELECT mode_of_issuance_filter FROM parameters) = '')
+    (frie.mode_of_issuance_name = (SELECT mode_of_issuance_filter FROM parameters) OR (SELECT mode_of_issuance_filter FROM parameters) = '')
 ;
