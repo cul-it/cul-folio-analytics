@@ -2,88 +2,34 @@
 
 WITH parameters AS (
     SELECT
-     ---- Fill out one, leave others blank to filter location name or code ----
-        --'' ::VARCHAR AS institution_filter, -- 'KÃ¸benhavns Universitet','Montoya College'
-        '' ::VARCHAR AS campus_filter, -- 'Main Campus','City Campus','Online'
-        '' ::VARCHAR AS library_filter, -- 'Datalogisk Institut','Adelaide Library'
-        '' ::VARCHAR AS location_filter, -- 'Main Library','Annex','Online'
         'serial' ::VARCHAR AS mode_of_issuance_filter, -- 'serial'
-        --'OCLC' ::VARCHAR AS identifier_filter, -- 'OCLC'
+        'ISSN' ::VARCHAR AS identifier_filter, -- 'OCLC'
         '' ::VARCHAR AS status_name_filter, -- 'Cataloged'
         '' ::VARCHAR AS identifier_filter -- 'ISSN'
-),
-location_filtering AS (SELECT 
-    flhe.permanent_location_id,
-    flhe.permanent_location_name AS perm_loc
-    FROM folio_reporting.holdings_ext AS flhe
-    LEFT JOIN folio_reporting.instance_ext AS flie ON flhe.instance_id = flie.instance_id
-    LEFT JOIN srs_marctab AS sm ON flhe.instance_id = sm.instance_id 
-    WHERE flhe.permanent_location_name NOT in ('serv,remo','Borrow Direct')
-    AND flhe.call_number NOT IN ('%On Order%','%In Process%','%Available for the library to purchase%','%Film%','%fiche%')
-    AND  
-    (sm.field = '245' AND sm.sf != 'h')
-),
-oclc_no AS (
-    SELECT
-        ii2.instance_id,
-        ii2.identifier_type_name AS oclc_type,
-        ii2.identifier AS oclc_number
-    FROM 
-        folio_reporting.instance_identifiers AS ii2
-    WHERE   
-        ii2.identifier_type_name = 'OCLC'
-),
-statistical_codes AS (
-    SELECT
-        ie.item_id,
-        isc.statistical_code_type_name AS item_stat_code_type_name,
-        isc.statistical_code_name AS item_stat_code_name,
-        he.holdings_id,
-        hsc.statistical_code_type_name AS hol_stat_code_type_name,
-        hsc.statistical_code_name AS hol_stat_code_name,
-        ie2.instance_id,
-        isc3.statistical_code_type_name AS inst_stat_code_type_name,
-        isc3.statistical_code_name AS inst__stat_code_name
-    FROM 
-        folio_reporting.item_ext AS ie 
-        RIGHT JOIN folio_reporting.item_statistical_codes AS isc ON ie.item_id = isc.item_id
-        RIGHT JOIN folio_reporting.holdings_ext AS he ON ie.holdings_record_id = he.holdings_id 
-        RIGHT JOIN folio_reporting.instance_ext AS ie2 ON he.instance_id = ie2.instance_id 
-        RIGHT JOIN folio_reporting.holdings_statistical_codes AS hsc ON  he.holdings_id = hsc.holdings_id 
-        RIGHT JOIN folio_reporting.instance_statistical_codes AS isc3 ON ie2.instance_id = isc3.instance_id
 )
 SELECT 
     DISTINCT frie.title,
-    frie.instance_id,
+    hol.permanent_location_name,
     frie.instance_hrid,
-    oclcno.oclc_number,
-    frie.mode_of_issuance_name AS instance_mode_of_issuance
+    --oclcno.oclc_number,
+    instind.identifier AS oclc_number,
+    frie.mode_of_issuance_name AS instance_mode_of_issuance,
+    iht.name AS holdings_type
 FROM 
     folio_reporting.instance_ext AS frie
-    --LEFT JOIN location_filtering AS loc_fil ON frie.item_id = loc_fil.i_id
     LEFT JOIN folio_reporting.holdings_ext AS hol ON frie.instance_id = hol.instance_id
-    --LEFT JOIN folio_reporting.instance_ext AS inst ON hol.instance_id = inst.instance_id 
-    --LEFT JOIN folio_reporting.item_statistical_codes AS itmsc ON frie.item_id = itmsc.item_id 
-    LEFT JOIN folio_reporting.holdings_statistical_codes AS holsc ON hol.holdings_id = holsc.holdings_id
-    LEFT JOIN folio_reporting.instance_statistical_codes AS insc ON frie.instance_id = insc.instance_id
     LEFT JOIN folio_reporting.instance_identifiers AS instind ON frie.instance_id = instind.instance_id 
     LEFT JOIN folio_reporting.instance_formats AS if2 ON frie.instance_id = if2.instance_id 
     LEFT JOIN inventory_holdings_types AS iht ON hol.type_id = iht.id 
-    LEFT JOIN oclc_no AS oclcno ON frie.instance_id = oclcno.instance_id
-    --LEFT JOIN statistical_codes AS statcodes ON frie.item_id = statcodes.item_id
--- Filters
+    LEFT JOIN srs_marctab AS sm ON hol.instance_id = sm.instance_id
 WHERE
-    --(loc_fil.institution_name = (SELECT institution_filter FROM parameters) OR (SELECT institution_filter FROM parameters) = '')
---AND
-    --(loc_fil.campus_name = (SELECT campus_filter FROM parameters) OR (SELECT campus_filter FROM parameters) = '')
---AND 
-    --(loc_fil.library_name = (SELECT library_filter FROM parameters) OR (SELECT library_filter FROM parameters) = '')
---AND 
-    --(loc_fil.location_name = (SELECT location_filter FROM parameters) OR (SELECT location_filter FROM parameters) = '')
---AND 
     (frie.status_name = (SELECT status_name_filter FROM parameters) OR (SELECT status_name_filter FROM parameters) = '')
---AND
-   --(instind.identifier_type_name = (SELECT identifier_filter FROM parameters) OR (SELECT identifier_filter FROM parameters) = '')
 AND
     (frie.mode_of_issuance_name = (SELECT mode_of_issuance_filter FROM parameters) OR (SELECT mode_of_issuance_filter FROM parameters) = '')
-;
+AND 
+   (iht.name = 'Serial')
+AND (instind.identifier_type_name = 'OCLC')
+AND (hol.permanent_location_name NOT in ('serv,remo','Borrow Direct'))
+    AND (hol.call_number NOT IN ('%On Order%','%In Process%','%Available for the library to purchase%','%Film%','%fiche%'))
+    AND  
+    (sm.field = '245' AND sm.sf != 'h');
