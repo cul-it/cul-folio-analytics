@@ -3,33 +3,56 @@
 WITH parameters AS (
     SELECT
         'serial' ::VARCHAR AS mode_of_issuance_filter, -- 'serial'
-        'ISSN' ::VARCHAR AS identifier_filter, -- 'OCLC'
-        '' ::VARCHAR AS status_name_filter, -- 'Cataloged'
-        '' ::VARCHAR AS identifier_filter -- 'ISSN'
-)
+        '' ::VARCHAR AS identifier_filter, -- 'OCLC'
+        '' ::VARCHAR AS status_name_filter -- 'Cataloged'
+),
+oclc_no AS (
+    SELECT
+        ii2.instance_id,
+        ii2.identifier_type_name AS id_type,
+        ii2.identifier AS oclc_number2
+    FROM 
+        folio_reporting.instance_identifiers AS ii2
+         WHERE   
+       ii2.identifier_type_name = 'OCLC'
+),
+gov_doc AS (SELECT
+    sm.instance_hrid,
+    CASE 
+        WHEN substring(sm.content, 18, 1) IN ('u') 
+             AND substring(sm.content, 29, 1) IN ('f') 
+        THEN '1'
+        ELSE '0' END AS gov_doc_indicator
+FROM
+    srs_marctab sm
+WHERE
+    sm.field = '008')
 SELECT 
     DISTINCT frie.title,
     hol.permanent_location_name,
     frie.instance_hrid,
-    --oclcno.oclc_number,
-    instind.identifier AS oclc_number,
     frie.mode_of_issuance_name AS instance_mode_of_issuance,
-    iht.name AS holdings_type
+    iht.name AS holdings_type,
+    oclcno.oclc_number2,
+    ii3.identifier AS issn3,
+    govdoc.gov_doc_indicator
 FROM 
-    folio_reporting.instance_ext AS frie
+    oclc_no AS oclcno 
+LEFT JOIN folio_reporting.instance_ext AS frie ON frie.instance_id = oclcno.instance_id
     LEFT JOIN folio_reporting.holdings_ext AS hol ON frie.instance_id = hol.instance_id
     LEFT JOIN folio_reporting.instance_identifiers AS instind ON frie.instance_id = instind.instance_id 
     LEFT JOIN folio_reporting.instance_formats AS if2 ON frie.instance_id = if2.instance_id 
     LEFT JOIN inventory_holdings_types AS iht ON hol.type_id = iht.id 
     LEFT JOIN srs_marctab AS sm ON hol.instance_id = sm.instance_id
+    LEFT JOIN folio_reporting.instance_identifiers AS ii3 ON oclcno.instance_id = ii3.instance_id
+    LEFT JOIN gov_doc AS govdoc ON frie.instance_hrid = govdoc.instance_hrid
 WHERE
-    (frie.status_name = (SELECT status_name_filter FROM parameters) OR (SELECT status_name_filter FROM parameters) = '')
-AND
     (frie.mode_of_issuance_name = (SELECT mode_of_issuance_filter FROM parameters) OR (SELECT mode_of_issuance_filter FROM parameters) = '')
 AND 
    (iht.name = 'Serial')
-AND (instind.identifier_type_name = 'OCLC')
+AND ii3.identifier_type_name = 'ISSN' 
 AND (hol.permanent_location_name NOT in ('serv,remo','Borrow Direct'))
     AND (hol.call_number NOT IN ('%On Order%','%In Process%','%Available for the library to purchase%','%Film%','%fiche%'))
     AND  
-    (sm.field = '245' AND sm.sf != 'h');
+    (sm.field = '245' AND sm.sf != 'h')
+AND frie.instance_hrid between  '331814'and '350000';
