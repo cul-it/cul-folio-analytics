@@ -19,27 +19,27 @@ WITH parameters AS (
         'Open - Awaiting delivery'::VARCHAR AS request_status_filter4 -- other request status to also include
 )     
 SELECT
-    (SELECT start_date::varchar FROM parameters) || 
-        ' to ' || 
-        (SELECT end_date::varchar FROM parameters) AS date_range,
-    cr.request_date,
-    cr.request_type,
+  -- SELECT start_date::varchar FROM parameters) || 
+  --    ' to ' || 
+   --   (SELECT end_date::varchar FROM parameters) AS date_range,
+    to_char (cr.request_date:: DATE, 'mm/dd/yyyy')AS request_date,
+  --cr.request_type,
     cr.status AS request_status, 
-    li.patron_group_name as borrower_patron_group_name,
+    li.patron_group_name as borrowerPatronGrp,
     ie.barcode AS item_barcode,
-    li.user_id AS borrower_id,
+ -- li.user_id AS borrower_id,
     uu.barcode AS borrower_barcode,
-    li.loan_due_date,
-    cr.id AS request_id,
-    json_extract_path_text(cr.data, 'metadata','updatedDate')::date AS request_updated_date,
+ -- li.loan_due_date,
+ -- cr.id AS request_id,
+ -- json_extract_path_text(cr.data, 'metadata','updatedDate')::date AS request_updated_date,
     he.call_number,
-    ie.material_type_name,   
+  --ie.material_type_name,   
     ie.permanent_location_name,
     ins.title,
     ug.group_name AS requester_user_group,
-    ug.user_last_name AS requester_user_last_name,
-    ug.user_first_name AS requester_user_first_name,
-    ug.user_middle_name AS requester_user_middle_name,
+ -- ug.user_last_name AS requester_user_last_name,
+ -- ug.user_first_name AS requester_user_first_name,
+ --  ug.user_middle_name AS requester_user_middle_name,
     ug.user_email AS requester_user_email    
 FROM
 public.circulation_requests AS cr
