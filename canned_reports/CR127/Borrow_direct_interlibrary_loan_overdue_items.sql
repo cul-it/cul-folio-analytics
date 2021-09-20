@@ -18,16 +18,16 @@ days AS (
 )
 SELECT
     li.patron_group_name as borrower_patron_group_name,
-    ug.user_id AS borrower_id,
+ -- ug.user_id AS borrower_id,
     ug.barcode AS borrower_barcode,
-    li.loan_due_date,
+ -- li.loan_due_date,
     days.days_overdue, 
-    he.call_number,
+ -- he.call_number,
     ie.barcode AS item_barcode,
     ins.title,
-    ie.material_type_name,
-    ie.permanent_location_name,
-    ie.effective_location_name
+  --ie.material_type_name,
+    ie.permanent_location_name
+  --ie.effective_location_name
    FROM
 	folio_reporting.loans_items as li
  LEFT JOIN folio_reporting.item_ext AS ie
