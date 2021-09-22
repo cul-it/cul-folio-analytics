@@ -1,13 +1,13 @@
 --CR123
 --Open Orders
---This query provides a list of open purchase orders and their encumbrance and/or amount paid, broken down by purchase order lines. 
+--This query provides a list of open purchase orders and their encumbrance and/or amount paid, broken down by purchase order lines.
+--The transaction amount will differ from the invoice line sub-total amount when an  adjustment was made at the invoice level. The invoice line amount is capturing the payments made on deposit accounts where the transaction amount would be $0. 
 --It does not include any invoice line data not attached to a purchase order line and adjustments made at the invoice level.
 
 /* FIELDS TO INCLUDE:
  Invoice table:
  Invoice ID
  Invoice currency  
- Invocie vendor invoice 
  Invoice Line table:
  Invoice Lines iD
  Invoice Lines status
@@ -45,17 +45,17 @@
 /* Change the lines below to filter or leave blank to return all results. Add details in '' for a specific filter.*/
 WITH parameters AS (
     SELECT
-        ''::varchar AS order_type, -- select 'One-Time' or 'Ongoing' or leave blank for both
-        ''::varchar AS order_format, -- select 'Electronic Resource', 'Physical Resource', 'P/E Mix', 'Other' or leave blank for all
-        ''::varchar AS instance_format_name, -- example: select e-resources vs physical (eg. "computer-online resource" for electronic resources or "Phycical Resource" for phycial resources)
-        ''::varchar AS instance_mode_of_issuance, -- example: 'single unit', 'serial' etc. Mostly used by DBS
-        ''::varchar AS transaction_type, -- example:'Payment', 'Pending payment' etc.
-        '':: VARCHAR AS fund_group_name  --Ex: Humanities, Social Sciences, Central etc. This is case sensitive
+        ''::VARCHAR AS order_type, -- select 'One-Time' or 'Ongoing' or leave blank for both
+        ''::VARCHAR AS order_format, -- select 'Electronic Resource', 'Physical Resource', 'P/E Mix', 'Other' or leave blank for all
+        ''::VARCHAR AS instance_format_name, -- example: select e-resources vs physical (eg. "computer-online resource" for electronic resources or "Phycical Resource" for phycial resources)
+        ''::VARCHAR AS instance_mode_of_issuance, -- example: 'single unit', 'serial' etc. Mostly used by DBS
+        ''::VARCHAR AS transaction_type, -- example:'Payment', 'Pending payment' etc.
+        ''::VARCHAR AS fund_group_name  --Ex: Humanities, Social Sciences, Central etc. This is case sensitive
 ),
  fund_group_extract AS (
 	WITH parameters AS (
 	SELECT 
-	'':: VARCHAR AS fiscal_year_code --EX: FY2022, FY2023 etc.
+	'FY2022':: VARCHAR AS fiscal_year_code --EX: FY2022, FY2023 etc. Change as  needed
 	),
 	transac_fund AS (
 	SELECT
@@ -72,7 +72,8 @@ WITH parameters AS (
 			transaction_fund_code,
 			ffy.code AS fiscal_year_code,
 			transaction_fund_id
-		FROM transac_fund AS trfund
+		FROM 
+	 		transac_fund AS trfund
 			LEFT JOIN finance_group_fund_fiscal_years AS fgffy ON fgffy.fund_id = trfund.transaction_fund_id
 			LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fgffy.fiscal_year_id 
 			LEFT JOIN finance_groups AS fg ON fg.id = fgffy.group_id 
@@ -95,20 +96,21 @@ SELECT
    ifo.format_name AS instance_format_name,
    pol.payment_status,
    pol.receipt_status AS pol_receipt_status,
-   pol_phys_type.pol_mat_type_name AS pol_phys_mat_type_name,
-   pol_er_type.pol_er_mat_type_name AS pol_er_mat_type_name,
+   pol_phys_type.pol_mat_type_name AS pol_phys_mat_type_name, -- This is the physical material type name
+   pol_er_type.pol_er_mat_type_name AS pol_er_mat_type_name, -- This is the electronic material type name
    invl.id AS invl_id,
    invl.invoice_line_status AS invl_status,
-   inv.payment_date,
+   inv.payment_date::date,
    inv.vendor_invoice_no,
    frftp.transaction_encumbrance_initial_amount::NUMERIC(12,2),
-   CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >1 THEN fti.transaction_amount *-1 ELSE fti.transaction_amount END AS transaction_amount2,
-   --fti.transaction_id,
+   ffy.code AS transaction_fiscal_year,
+   CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >1 THEN fti.transaction_amount *-1 ELSE fti.transaction_amount END AS transaction_amount,
+   invl.sub_total AS invoice_line_sub_total,
    fti.transaction_currency,
    fti.transaction_type
 FROM
-	po_lines AS pol
-	LEFT JOIN po_purchase_orders AS ppo ON ppo.id = pol.purchase_order_id
+   po_lines AS pol
+   	LEFT JOIN po_purchase_orders AS ppo ON ppo.id = pol.purchase_order_id
 	LEFT JOIN invoice_lines AS invl ON pol.id = invl.po_line_id
 	LEFT JOIN invoice_invoices AS inv ON invl.invoice_id = inv.id
 	LEFT JOIN folio_reporting.po_organization poorg ON ppo.po_number = poorg.po_number
@@ -121,6 +123,7 @@ FROM
 	LEFT JOIN folio_reporting.finance_transaction_invoices AS fti ON fti.invoice_line_id=invl.id AND ilfd.finance_fund_code=fti.transaction_from_fund_code
 	LEFT JOIN folio_reporting.finance_transaction_purchase_order AS frftp ON frftp.pol_number = pol.po_line_number
 	LEFT JOIN fund_group_extract AS fgextract ON fgextract.transaction_fund_code = ilfd.finance_fund_code
+	LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fti.transaction_fiscal_year_id 
 WHERE  
 	ppo.workflow_status LIKE 'Open'
     	AND (ppo.order_type = (SELECT order_type FROM parameters) OR (SELECT order_type FROM parameters) = '')
@@ -129,6 +132,7 @@ WHERE
     	AND (iext.mode_of_issuance_name = (SELECT instance_mode_of_issuance FROM parameters) OR (SELECT instance_mode_of_issuance FROM parameters) = '')
     	AND (fti.transaction_type = (SELECT transaction_type FROM parameters) OR (SELECT transaction_type FROM parameters) = '')
 	AND (fgextract.fund_group_name = (SELECT fund_group_name FROM parameters) OR (SELECT fund_group_name FROM parameters) = '')
+
 GROUP BY
 	ppo.order_type,
    	ilfd.finance_fund_code,
@@ -159,7 +163,8 @@ GROUP BY
 	poi.created_date,
 	fgextract.fund_group_name,
 	fgextract.transaction_fund_code,
-	fti.transaction_id
+	fti.transaction_id,
+	ffy.code
 ORDER BY 
 	fund_group_name,
 	finance_fund_code ASC,
