@@ -35,8 +35,8 @@ SELECT
     frie.mode_of_issuance_name AS instance_mode_of_issuance,
     iht.name AS holdings_type,
     CASE 
-    	WHEN oclcno.oclc_number2 LIKE '(OCoLCocm)%' THEN SUBSTRING(oclcno.oclc_number2, 11)
-    	WHEN oclcno.oclc_number2 LIKE '(OCoLCocn)%' THEN SUBSTRING(oclcno.oclc_number2, 11)
+    	WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocm%' THEN SUBSTRING(oclcno.oclc_number2, 11)
+    	WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocn%' THEN SUBSTRING(oclcno.oclc_number2, 11)
     	WHEN oclcno.oclc_number2 LIKE '(OCoLC)%' THEN SUBSTRING(oclcno.oclc_number2, 8)
     	ELSE oclcno.oclc_number2 END AS oclcno,
     	ii3.identifier AS issn3,
