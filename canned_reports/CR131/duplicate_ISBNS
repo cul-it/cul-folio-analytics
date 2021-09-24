@@ -1,0 +1,51 @@
+WITH parameters AS (
+    SELECT
+           (current_date - integer '6')::DATE AS start_date,
+           (current_date - integer '1')::DATE end_date),
+isbns AS (
+SELECT
+    ii.instance_id AS instance_id,
+    ii.instance_hrid AS instance_hrid,
+    ii.identifier_type_name AS identifier_type_name,
+    ii.identifier AS identifier,
+    sr2.created_date::DATE AS date_created_2
+FROM
+    folio_reporting.instance_identifiers as ii
+    LEFT JOIN public.srs_records AS sr2 ON ii.instance_id = sr2.instance_id
+WHERE
+    ii.identifier_type_name in ('ISBN', 'Invalid ISBN')
+),
+local_ids AS (
+SELECT 
+    srsm.field AS local_899_773,
+    srsm.CONTENT AS local_name,
+    srsm.instance_id
+FROM srs_marctab AS srsm
+WHERE (srsm.field = '899' OR srsm.field = '773')
+)
+SELECT  
+    ie.discovery_suppress,
+    ie.instance_hrid AS instance_hrid,
+    sr.created_date::DATE AS date_created_1,
+    isbns.instance_hrid AS duplicate_instance_hrid,
+    isbns.date_created_2,
+    local_ids.local_899_773,
+    local_ids.local_name,
+    isbns.identifier_type_name AS duplicate_identifier_type,
+    isbns.identifier AS duplicate_identifier
+FROM
+    folio_reporting.instance_ext AS ie
+JOIN 
+    folio_reporting.instance_identifiers AS ii1 ON ie.instance_id = ii1.instance_id 
+LEFT JOIN 
+    public.srs_records AS sr ON ie.instance_id = sr.instance_id 
+LEFT JOIN 
+    isbns ON ii1.identifier = isbns.identifier
+LEFT JOIN 
+    local_ids ON sr.instance_id = local_ids.instance_id
+WHERE 
+    ii1.instance_id != isbns.instance_id    
+AND ii1.identifier_type_name IN ('ISBN', 'Invalid ISBN')
+AND (sr.created_date::DATE >= (SELECT start_date FROM parameters)
+AND sr.created_date::DATE < (SELECT end_date FROM parameters))
+AND ie.discovery_suppress = 'false';
