@@ -1,3 +1,6 @@
+For a list of all the options you may use with the filters at the top of this query, see the [Filter Directory](https://confluence.cornell.edu/display/folio/FOLIO+Reports+Filter+Directory)
+
+
 CR104
 
 Claimed Returned Report
