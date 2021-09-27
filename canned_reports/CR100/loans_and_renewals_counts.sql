@@ -23,8 +23,9 @@ WITH parameters AS (
         ''::varchar AS items_temporary_location_filter, -- Examples: Olin, ILR, Africana, etc.
         ''::varchar AS items_effective_location_filter, --Examples: Olin, ILR, Africana, etc.
         /* The following connect to the item's permanent location */
-        ''::varchar AS institution_filter, -- Examples: Cornell University
-        ''::varchar AS campus_filter, -- Examples: Ithaca
+        --''::varchar AS institution_filter, -- Examples: Cornell University
+        --''::varchar AS campus_filter, -- Examples: Ithaca
+ --suggestion: change libary_filter to library_name
         ''::varchar AS library_filter -- Examples: Nestle Library', Library Annex, etc.
 )
     --MAIN QUERY
