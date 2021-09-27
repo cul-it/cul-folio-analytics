@@ -25,8 +25,9 @@ WITH parameters AS (
         ''::varchar AS current_item_permanent_location_filter, --Examples: Olin, ILR, Africana, etc.
         ''::varchar AS current_item_temporary_location_filter, --Examples: Olin, ILR, Africana, etc.
         ''::varchar AS current_item_effective_location_filter, --Examples: Olin, ILR, Africana, etc.
-        ''::varchar AS current_item_permanent_location_institution_filter, -- Cornell University
-        ''::varchar AS current_item_permanent_location_campus_filter, -- Examples: Ithaca
+        --''::varchar AS current_item_permanent_location_institution_filter, -- Cornell University
+        --''::varchar AS current_item_permanent_location_campus_filter, -- Examples: Ithaca
+        --suggestion: rename this filter to library_name
         ''::varchar AS current_item_permanent_location_library_filter -- Examples: Nestle Library, Library Annex, etc.
 ),
 -- CTEs
