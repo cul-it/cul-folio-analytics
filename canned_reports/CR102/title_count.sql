@@ -44,12 +44,12 @@ WITH parameters AS (
         ''::VARCHAR AS instance_format_filter3, -- select 'audio -- audio disc', 'computer -- other' etc. or leave blank for all. You can use %% as wildcards.
         ''::VARCHAR AS instance_language_filter, -- select 'eng', 'ger' etc. or leave blank for all.
         ''::VARCHAR AS instance_mode_of_issuance_filter, -- select 'integrating resource', 'serial', 'multipart monograph' etc. or leave blank for all.
-        ''::VARCHAR AS nature_of_content_terms_filter, -- select 'textbook', 'journal' etc. or leave blank for all.
-        ''::VARCHAR AS holdings_receipt_status_filter, -- select 'partially received', 'fully received' etc. or leave blank for all.
+-- not used ''::VARCHAR AS nature_of_content_terms_filter, -- select 'textbook', 'journal' etc. or leave blank for all.
+-- not used consistently ''::VARCHAR AS holdings_receipt_status_filter, -- select 'partially received', 'fully received' etc. or leave blank for all.
         ''::VARCHAR AS holdings_type_filter, -- select 'Electronic', 'Monograph' etc. or elave blank for all. (This is case sensitive)
         ''::VARCHAR AS holdings_callnumber_type_filter, -- select 'LC Modified’, ‘Title’, ‘Shelved separately’ or leave blank for all.
         ''::VARCHAR AS holdings_callnumber_filter, -- use %% as wildcards '1234-abc%%','%%1234-abc','%%1234-abc%%'
-        ''::VARCHAR AS holdings_acquisition_method_filter, -- select ‘Purchase’, ‘Approval’, ‘Gifts’ or leave blank for all.
+-- not used''::VARCHAR AS holdings_acquisition_method_filter, -- select ‘Purchase’, ‘Approval’, ‘Gifts’ or leave blank for all.
         -- STATISTICAL CODES
         ''::VARCHAR AS instance_statistical_code_filter, -- select 'Active Serial', 'Book, print (books)', 'Book, electronic (ebooks), 'Microfiche' etc. or leave blank for all.
         ''::VARCHAR AS holdings_statistical_code_filter, -- select 'Active Serial', 'Book, print (books)', 'Book, electronic (ebooks), 'Microfiche' etc. or leave blank for all.
