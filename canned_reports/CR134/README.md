@@ -1,0 +1,1 @@
+This query provides the list of approved invoices within a date range along with vendor name, invoice number, fund details and purchase order data. It also provides some Bib data, which will be more complete after the release of Folio Kiwi scheduled for November 2021. The elements that will be added are commented out in the main query.
