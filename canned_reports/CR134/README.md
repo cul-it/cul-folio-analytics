@@ -7,7 +7,7 @@ It also provides some bib data, which will be more complete after the release of
 <p>
   
 ## Main tables used:
-Finance_transaction_invoices
+finance_transaction_invoices
   <br>
 finance_funds 
   <br>
@@ -36,7 +36,7 @@ srs_records
   
 ## Derived tables used:
   
-Folio_reporting.finance_transaction_invoices
+folio_reporting.finance_transaction_invoices
   <br>
 folio_reporting.instance_ext
   <br>
@@ -44,6 +44,8 @@ folio_reporting.po_lines_locations
 
 ## Filters/parameters:
 
+payment_date_start_date
+  <br>
 payment_date_end_date
   <br>
 transaction_fund_code
