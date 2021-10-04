@@ -18,6 +18,8 @@ instructions for using the query.
 
 For creating, understanding, and revising LDP-based queries, please follow the guidelines
 documented in the [QUERIES](https://github.com/folio-org/folio-analytics/edit/main/QUERIES.md) 
-guide on the [FOLIO Analytics](https://github.com/folio-org/folio-analytics) repository.
+guide on the [FOLIO Analytics](https://github.com/folio-org/folio-analytics) repository. You 
+can ignore the references to RedShift at the end of this guide, as we are not using this tool for the 
+CUL FOLIO LDP reporting database at this time.
 
 
