@@ -1,60 +1,212 @@
-
-
-WITH inst_type AS (SELECT 
-    sm.instance_hrid,
+------selects pull of records based on ldr and filters certain locations-----------
+DROP TABLE IF EXISTS LOCAL.hathi_loc_filter; 
+CREATE TABLE LOCAL.hathi_loc_filter AS
+SELECT
+DISTINCT sm.instance_hrid,
     sm.instance_id,
-    substring(sm.content, 7, 2) AS "type"
-    FROM srs_marctab sm
-    WHERE (sm.field = '000' AND substring(sm.content, 7, 2) IN ('as'))
-),
-title_filtering AS (SELECT
-    sm.instance_id AS instance_id
+    sm.field,
+    sm.sf,
+    sm.content,
+    substring(sm.content, 7, 2) AS "type",
+    he.permanent_location_name,
+    he.call_number 
     FROM srs_marctab sm 
+    LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id = he.instance_id
+    WHERE (sm.field = '000' AND substring(sm.content, 7, 2) IN ('as'))
+    AND he.permanent_location_name !~~ 'serv,remo'
+    AND he.permanent_location_name !~~ 'Borrow Direct'
+    AND he.permanent_location_name !~~* '%LTS%'
+;
+CREATE INDEX ON local.hathi_loc_filter (instance_hrid);
+CREATE INDEX ON local.hathi_loc_filter (instance_id);
+CREATE INDEX ON local.hathi_loc_filter (field);
+CREATE INDEX ON local.hathi_loc_filter (sf);
+CREATE INDEX ON local.hathi_loc_filter (content);
+CREATE INDEX ON local.hathi_loc_filter (permanent_location_name);
+CREATE INDEX ON local.hathi_loc_filter (call_number);
+
+--------------selects records with 945 (monoseries standing orders indentification) and filters it from hathi_loc_filter table-------------------------------------
+DROP TABLE IF EXISTS local.hathi_945
+CREATE TABLE LOCAL.hathi_945 AS
+WITH ninefortyfive AS 
+(SELECT
+    sm.instance_id
+    FROM
+    srs_marctab sm
+    WHERE (sm.sf = 'a' AND sm.field = '945')
+    GROUP BY
+    sm.instance_id)
+    SELECT 
+    hsr.instance_hrid,
+    hsr.instance_id,
+    hsr.permanent_location_name,
+    hsr.call_number 
+    FROM LOCAL.hathi_loc_filter hsr
+    LEFT JOIN ninefortyfive n ON hsr.instance_id = n.instance_id
+    WHERE n.instance_id IS NULL
+;
+CREATE INDEX ON local.hathi_945(instance_hrid);
+CREATE INDEX ON local.hathi_945(instance_id);
+CREATE INDEX ON local.hathi_945(permanent_location_name);
+CREATE INDEX ON local.hathi_945(call_number);
+
+--------------------------selects records with 245 $h[electronic resource] and filters from hathi_945 tabe------------------------
+DROP TABLE IF EXISTS LOCAL.hathi_245_h;   
+CREATE TABLE LOCAL.hathi_245_h AS
+WITH twofortyfive AS (
+SELECT
+    sm.instance_hrid,
+    sm.CONTENT,
+    sm.field,
+    sm.sf,
+    he.instance_id,
+    he.permanent_location_name,
+    he.call_number
+    FROM
+    srs_marctab sm
+    LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id = he.instance_id
     WHERE 
-    (sm.field = '245' AND sm.sf != 'h')
-),
-content_filtering AS (SELECT 
-    sm.instance_id AS instance_id
-    FROM srs_marctab sm
-    WHERE (sm.field = '336' AND sm.sf = 'a' and sm.CONTENT != 'unmediated')
-),
-mso_filtering AS (SELECT 
-    sm.instance_id AS instance_id
-    FROM srs_marctab sm
-    WHERE sm.field != '945'
-),
-maps_filtering AS (SELECT 
-    sm.instance_id AS instance_id
-    FROM srs_marctab sm
-    WHERE (sm.field = '300' AND sm.sf = 'a' and sm.CONTENT != 'map%')
-),
-location_filtering AS (SELECT 
-    hol.holdings_hrid AS holdings_hrid,
-    hol.instance_id AS instance_id,
-    hol.permanent_location_name AS "location"
-    FROM folio_reporting.holdings_ext AS hol
-    WHERE (hol.permanent_location_name 
-    NOT in ('serv,remo','Borrow Direct','LTS Review Shelves'))
-),
-call_number_filtering AS (SELECT
-    hol.instance_id AS instance_id 
-    FROM folio_reporting.holdings_ext AS hol
-    WHERE hol.call_number 
-    NOT IN ('%On Order%','%In Process%','%Available for the library to purchase%','%Film%','%fiche%')   
-),
-oclc_no AS (
+    (sm.field = '245' AND sm.sf ='h' AND sm.CONTENT like '%[electronic resource]%')
+    AND he.permanent_location_name !~~ 'serv,remo'
+    GROUP BY sm.instance_id, sm.instance_hrid, sm.CONTENT, sm.field, sm.sf, he.instance_id, 
+    he.permanent_location_name, he.call_number)
+    SELECT 
+    h.instance_id,
+    h.instance_hrid,
+    h.permanent_location_name,
+    h.call_number
+    FROM LOCAL.hathi_945 h 
+    LEFT JOIN twofortyfive t ON h.instance_id = t.instance_id
+    WHERE t.instance_id IS NULL
+;
+CREATE INDEX ON local.hathi_245_h (instance_hrid);
+CREATE INDEX ON local.hathi_245_h (instance_id);
+CREATE INDEX ON local.hathi_245_h (permanent_location_name);
+CREATE INDEX ON local.hathi_245_h (call_number);
+-----------------------selects records with 336 $aunmediated content and filters from hathi_245_h----------------  
+DROP TABLE IF EXISTS LOCAL.hathi_336;
+CREATE TABLE LOCAL.hathi_336 AS
+WITH threethirtysix AS (
+SELECT 
+    sm.instance_id,
+    sm.field,
+    sm.sf,
+    sm.content 
+    FROM 
+    srs_marctab sm
+    WHERE
+    (sm.field = '336' AND sm.sf = 'a' AND sm.CONTENT = 'unmediated')
+    GROUP BY sm.instance_id, sm.field, sm.sf, sm.CONTENT)
+    SELECT 
+    h.instance_id,
+    h.instance_hrid,
+    h.permanent_location_name,
+    h.call_number 
+    FROM LOCAL.hathi_245_h h
+    LEFT JOIN threethirtysix t ON h.instance_id = t.instance_id
+    WHERE t.instance_id IS NULL
+;
+CREATE INDEX ON local.hathi_336 (instance_hrid);
+CREATE INDEX ON local.hathi_336 (instance_id);
+CREATE INDEX ON local.hathi_336 (permanent_location_name);
+CREATE INDEX ON local.hathi_336 (call_number);
+
+----------------------selects records with 300 $amap or maps and filters from hathi_336------------------ 
+DROP TABLE IF EXISTS LOCAL.hathi_330;
+CREATE TABLE LOCAL.hathi_330 AS
+WITH threehundred AS 
+(SELECT
+    sm.instance_hrid,
+    sm.CONTENT,
+    sm.field,
+    sm.sf,
+    he.instance_id,
+    he.permanent_location_name,
+    he.call_number
+    FROM
+    srs_marctab sm
+    LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id = he.instance_id
+    WHERE 
+    (sm.field = '300' AND sm.sf ='a' AND sm.CONTENT like '%map%')
+    AND he.permanent_location_name !~~ 'serv,remo'
+    GROUP BY sm.instance_hrid, sm.CONTENT, sm.field, sm.sf, he.instance_id, he.permanent_location_name, he.call_number)
+    SELECT 
+    h.instance_id,
+    h.instance_hrid,
+    h.permanent_location_name,
+    h.call_number 
+    FROM LOCAL.hathi_245_h h
+    left JOIN threehundred t ON h.instance_id = t.instance_id
+    WHERE t.instance_id IS NULL
+;
+CREATE INDEX ON local.hathi_330 (instance_hrid);
+CREATE INDEX ON local.hathi_330 (instance_id);
+CREATE INDEX ON local.hathi_330 (field);
+CREATE INDEX ON local.hathi_330 (sf);
+CREATE INDEX ON local.hathi_330 (content);
+CREATE INDEX ON local.hathi_330 (permanent_location_name);
+CREATE INDEX ON local.hathi_330 (call_number);
+-------------------------filters records by certain values in call number from hathi_330-------------------
+DROP TABLE IF EXISTS LOCAL.hathi_call_no;
+CREATE TABLE LOCAL.hathi_call_no AS
+SELECT 
+    hsr.instance_hrid,
+    hsr.instance_id,
+    hsr.call_number,
+    hsr.permanent_location_name 
+    FROM LOCAL.hathi_330 hsr  
+    WHERE hsr.call_number !~~* 'on order%'
+    AND hsr.call_number !~~* 'in process%'
+    AND hsr.call_number !~~* 'Available for the library to purchase'
+    AND hsr.call_number !~~* '%film%' 
+    AND hsr.call_number !~~* '%fiche%'
+    AND hsr.call_number !~~* 'On selector%'
+;
+CREATE INDEX ON local.hathi_call_no (instance_hrid);
+CREATE INDEX ON local.hathi_call_no (instance_id);
+CREATE INDEX ON local.hathi_call_no (permanent_location_name);
+CREATE INDEX ON local.hathi_call_no (call_number);
+
+----------------------filters records for presents of oclc number------------------    
+DROP TABLE IF EXISTS LOCAL.hathi_oclc_no;
+CREATE TABLE LOCAL.hathi_oclc_no AS
+WITH oclc_no AS (
     SELECT
-        ii2.instance_id AS instance_id,
-        ii2.identifier_type_name AS id_type,
-        ii2.identifier AS oclc_number2
+    ii2.instance_id AS instance_id,
+    ii2.identifier_type_name AS id_type,
+    ii2.identifier AS oclc_number2
     FROM folio_reporting.instance_identifiers AS ii2
-    WHERE ii2.identifier_type_name = 'OCLC'
-),
-gov_doc AS (SELECT
-    sm.instance_id AS instance_id,
+    WHERE ii2.identifier_type_name = 'OCLC')
+    SELECT 
+    DISTINCT hsn.instance_id,
+    hsn.instance_hrid,
+    hsn.call_number,
+    hsn.permanent_location_name,
+    oclcno.id_type,
+    oclcno.oclc_number2,
     CASE 
-        WHEN substring(sm.content, 18, 1) IN ('u') 
-             AND substring(sm.content, 29, 1) IN ('f') 
+        WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocm%' THEN SUBSTRING(oclcno.oclc_number2, 11)
+        WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocn%' THEN SUBSTRING(oclcno.oclc_number2, 11)
+        WHEN oclcno.oclc_number2 LIKE '(OCoLC)%' THEN SUBSTRING(oclcno.oclc_number2, 8)
+        ELSE oclcno.oclc_number2 END AS oclc_no
+    FROM LOCAL.hathi_call_no hsn 
+    INNER JOIN oclc_no AS oclcno ON hsn.instance_id = oclcno.instance_id
+;
+CREATE INDEX ON local.hathi_oclc_no (instance_hrid);
+CREATE INDEX ON local.hathi_oclc_no (instance_id);
+CREATE INDEX ON local.hathi_oclc_no (permanent_location_name);
+CREATE INDEX ON local.hathi_oclc_no (call_number);
+CREATE INDEX ON local.hathi_oclc_no (id_type);
+CREATE INDEX ON local.hathi_oclc_no (oclc_number2);
+
+--------------------------------selects issn number and value for goverment document from 008 --------------
+DROP TABLE IF EXISTS LOCAL.hathi_serials_final;
+CREATE TABLE LOCAL.hathi_serials_final AS
+WITH gov_doc AS (SELECT
+    sm.instance_id AS instance_id,
+    CASE
+        WHEN substring(sm.content, 18, 1) IN ('u')
+             AND substring(sm.content, 29, 1) IN ('f')
              THEN '1'
              ELSE '0' END AS gov_doc
     FROM
@@ -63,43 +215,22 @@ gov_doc AS (SELECT
     sm.field = '008'
 ),
 issn_select AS (
- SELECT sm.instance_id AS instance_id,
-  sm.field AS field,
-  sm.CONTENT AS issn_no
-  FROM srs_marctab sm
-  WHERE (sm.field = '022' AND sm.sf = 'a' )
+    SELECT sm.instance_id AS instance_id,
+    sm.field AS field,
+    sm.CONTENT AS issn_no
+    FROM srs_marctab sm
+    WHERE (sm.field = '022' AND sm.sf = 'a' )
 )
 SELECT 
-    DISTINCT frie.title,
-    loc_filt."location",
-    frie.instance_hrid,
-    insttype."type",
-    issn_sel.issn_no,
-    --iht.name AS holdings_type,
-    --frie.mode_of_issuance_name AS mode_type,
-      CASE 
-        WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocm%' THEN SUBSTRING(oclcno.oclc_number2, 11)
-        WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocn%' THEN SUBSTRING(oclcno.oclc_number2, 11)
-        WHEN oclcno.oclc_number2 LIKE '(OCoLC)%' THEN SUBSTRING(oclcno.oclc_number2, 8)
-        ELSE oclcno.oclc_number2 END AS oclc_no,
-    --ii3.identifier AS issn,
-    govdoc.gov_doc
-FROM 
-    folio_reporting.instance_ext AS frie
-    left JOIN inst_type AS insttype ON frie.instance_id = insttype.instance_id
-    LEFT JOIN title_filtering AS titlefilter ON insttype.instance_id = titlefilter.instance_id
-    LEFT JOIN content_filtering AS contentfilter ON titlefilter.instance_id = contentfilter.instance_id
-    LEFT JOIN mso_filtering AS msofilter ON contentfilter.instance_id = msofilter.instance_id
-    LEFT JOIN maps_filtering AS mapsfilter ON msofilter.instance_id = mapsfilter.instance_id
-    LEFT JOIN oclc_no AS oclcno ON mapsfilter.instance_id = oclcno.instance_id
-    LEFT JOIN location_filtering AS loc_filt ON oclcno.instance_id = loc_filt.instance_id
-    LEFT JOIN call_number_filtering AS call_no_filter ON loc_filt.instance_id = call_no_filter.instance_id
-    LEFT JOIN gov_doc AS govdoc ON call_no_filter.instance_id = govdoc.instance_id
-    LEFT JOIN issn_select AS issn_sel ON call_no_filter.instance_id = issn_sel.instance_id
-    --LEFT JOIN folio_reporting.instance_formats AS if2 ON frie.instance_id = if2.instance_id 
-    --LEFT JOIN inventory_holdings_types AS iht ON hol.type_id = iht.id 
-    --LEFT JOIN folio_reporting.instance_identifiers AS ii3 ON oclcno.instance_id = ii3.instance_id
---WHERE (iht.name = 'Serial' OR frie.mode_of_issuance_name LIKE 'serial')
---AND (ii3.identifier_type_name = 'ISSN')
---where  CAST(frie.instance_hrid AS INTEGER) BETWEEN '1608800' AND '1608860'
+   gd.gov_doc,
+   issn.issn_no,
+   ho.instance_hrid,
+   ho.oclc_no
+   FROM LOCAL.hathi_oclc_no AS ho 
+   LEFT JOIN gov_doc AS gd ON ho.instance_id = gd.instance_id
+   LEFT JOIN issn_select AS issn ON ho.instance_id = issn.instance_id
 ;
+CREATE INDEX ON local.hathi_serials_final (gov_doc);
+CREATE INDEX ON local.hathi_serials_final (iss_no);
+CREATE INDEX ON local.hathi_serials_final (instance_hrid);
+CREATE INDEX ON local.hathi_serials_final (oclc_no);
