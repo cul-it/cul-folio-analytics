@@ -1,123 +1,64 @@
-/*List of patron requests query*/
-/*List of delivery requests by process status query*/
-/*Contactless pickup report query*/
-
-
-/* FIELDS INCLUDED
- * public.circulation_requests table:
- * - request_id
- * - request_date
- * - request_type
- * - request_status
- * - fulfilment_preference
- * folio_reporting.locations_service_points table:
- * - pickup_service_point_display_name
- * - pickup_service_point_name
- * - pickup_library_name
- * folio_reporting.item_ext table:
- * - barcode
- * - material_type_name
- * - permanent_location_name
- * - effective_location_name
- * folio_reporting.holdings_ext table:
- * - call_number
- * - shelving_title
- * folio_reporting.users_groups (derived) table:
- * - user_group
- * - user_last_name
- * - user_first_name
- * - user_middle_name
- * - user_email
- * 
- * FILTERS INCLUDED:
- * - start_date (for request_date)
- * - end_date (for request_date)
- * - items_permanent_location_filter
- */
 WITH parameters AS (
     SELECT
-        /* Choose a start and end date for the request period */
-        '2021-07-01'::date AS start_date,
-        '2022-06-30'::date AS end_date,
-        /* Fill in a location name, or leave blank for all locations */
-        ''::varchar AS items_permanent_location_filter, --Olin, ILR, Africana, etc.
-        /* Fill in 1-4 request statuses, or leave all blank for all statuses */
-        'Open - Not yet filled'::VARCHAR AS request_status_filter1, --  'Open - Not yet filled', 'Open - Awaiting pickup','Open - In transit', ''Open, Awaiting delivery', 'Closed - Filled', 'Closed - Cancelled', 'Closed - Unfilled', 'Closed - Pickup expired'
-        'Open - In transit'::VARCHAR AS request_status_filter2, -- other request status to also include
-        ''::VARCHAR AS request_status_filter3, -- other request status to also include
-        ''::VARCHAR AS request_status_filter4 -- other request status to also include
-),
-service_point_libraries AS (
-    SELECT
-        service_point_id,
-        service_point_discovery_display_name,
-        service_point_name,
-        library_name 
-    FROM folio_reporting.locations_service_points
-    GROUP BY
-        service_point_id,
-        service_point_discovery_display_name,
-        service_point_name,
-        library_name 
+  /*This is the date range for the requests; change the range as needed*/  
+        '2021-09-01'::DATE AS start_date,
+        '2021-11-01'::DATE AS end_date,
+   /*Other filters - fill in or leave blank*/  
+   /*Enter filter value IN BETWEEN the % signs, for example: %Open% ::VARCHAR AS request_status_filter */    
+     	'%%'::VARCHAR AS request_status_filter, 
+     	'%%'::VARCHAR AS request_type_filter, 
+        '%%'::VARCHAR AS patron_group_filter, 
+		'%%'::VARCHAR AS owning_library_filter
 )
 SELECT
-    (SELECT start_date::varchar FROM parameters) || 
-        ' to ' || 
-        (SELECT end_date::varchar FROM parameters) AS date_range,
-    cr.id AS request_id,
-    cr.request_date,
-    json_extract_path_text(cr.data, 'metadata','updatedDate')::date AS request_updated_date,
-    cr.request_type,
-    cr.status AS request_status,
-    --cr.pickup_service_point_id,
-    spl.service_point_discovery_display_name AS pickup_service_point_display_name,
-    spl.service_point_name AS pickup_service_point_name,
-    spl.library_name AS pickup_library_name,
-    cr.fulfilment_preference,
-    --ie.item_id,
-    he.call_number,
-    ie.barcode,
-    ie.material_type_name,
-    --ie.holdings_record_id,
-    ie.permanent_location_name,
-    ie.effective_location_name,
-    --he.holdings_id,
-    he.shelving_title,
-    --ug.user_id,
-    ug.group_name AS user_group,
-    ug.user_last_name,
-    ug.user_first_name,
-    ug.user_middle_name,
-    ug.user_email
-FROM
-    public.circulation_requests AS cr
-LEFT JOIN folio_reporting.item_ext AS ie
-	ON cr.item_id = ie.item_id
-LEFT JOIN folio_reporting.holdings_ext AS he
-	ON ie.holdings_record_id=he.holdings_id
-LEFT JOIN folio_reporting.users_groups AS ug
-	ON  cr.requester_id = ug.user_id
-LEFT JOIN public.inventory_service_points AS isp
-	ON cr.pickup_service_point_id = isp.id	
-LEFT JOIN service_point_libraries AS spl
-	ON cr.pickup_service_point_id = spl.service_point_id
-WHERE
-    cr.request_date >= (SELECT start_date FROM parameters)
-    AND cr.request_date < (SELECT end_date FROM parameters)
-    AND (
-        ie.permanent_location_name = (SELECT items_permanent_location_filter FROM parameters)
-        OR '' = (SELECT items_permanent_location_filter FROM parameters)
-    )
-    AND (
-        cr.status IN ((SELECT request_status_filter1 FROM parameters),
-                      (SELECT request_status_filter2 FROM parameters),
-                      (SELECT request_status_filter3 FROM parameters),
-                      (SELECT request_status_filter4 FROM parameters)
-                    )
-        OR ('' = (SELECT request_status_filter1 FROM parameters) AND
-            '' = (SELECT request_status_filter2 FROM parameters) AND
-            '' = (SELECT request_status_filter3 FROM parameters) AND
-            '' = (SELECT request_status_filter4 FROM parameters)
-            )
-    )     
-;
+        (
+            SELECT
+                start_date::VARCHAR
+            FROM
+                parameters) || ' to '::VARCHAR || (
+            SELECT
+                end_date::VARCHAR
+            FROM
+                parameters) AS date_range, 
+       invlib.name AS owning_library,
+       ri.pickup_service_point_name,
+       ri.request_type,
+       ri.request_status,
+       ri.request_id,
+       ri.request_date AS rdate,
+       to_char(ri.request_date:: DATE,'mm/dd/yyyy') AS request_date,
+       ri.item_effective_location_name,
+       ih.call_number,
+       ri.enumeration,
+       ri.chronology,
+       ri.item_copy_number,
+       ri.barcode AS item_barcode,
+       json_extract_path_text (ii.data,'status','name') AS item_status,
+       to_char (json_extract_path_text (ii.data, 'status','date'):: DATE,'mm/dd/yyyy') AS item_status_date,
+       itmnote.note AS item_note,
+       ihi.title,
+       json_extract_path_text (uu.data,'personal','lastName') AS requestor_last_name,
+       json_extract_path_text (uu.data,'personal','firstName') AS requestor_first_name,
+       uu.barcode AS patron_barcode,
+       uu.active,
+       ri.patron_group_name,
+       cr.patron_comments
+ FROM  
+		folio_reporting.requests_items AS ri 
+       	LEFT JOIN user_users AS uu ON ri.requester_id = uu.id 
+       	LEFT JOIN folio_reporting.items_holdings_instances AS ihi ON ri.item_id = ihi.item_id
+       	LEFT JOIN inventory_items AS ii ON ri.item_id = ii.id
+       	LEFT JOIN folio_reporting.item_notes AS itmnote ON ri.item_id = itmnote.item_id
+       	LEFT JOIN inventory_holdings AS ih ON ihi.holdings_id = ih.id
+       	LEFT JOIN circulation_requests AS cr ON ri.request_id = cr.id
+       	LEFT JOIN inventory_locations AS invloc ON ri.item_effective_location_name = invloc.name
+       	LEFT JOIN inventory_libraries AS invlib ON invloc.library_id = invlib.id
+ 	 WHERE
+        ri.request_date::DATE >= (SELECT start_date FROM parameters)
+            AND ri.request_date::DATE < (SELECT end_date FROM parameters)
+			AND (ri.request_status LIKE (SELECT request_status_filter FROM parameters))
+            AND (ri.request_type LIKE (SELECT request_type_filter FROM parameters))
+            AND (ri.patron_group_name LIKE (SELECT patron_group_filter FROM parameters))
+            AND (invlib.name LIKE (SELECT owning_library_filter FROM parameters))
+              
+       ORDER BY owning_library, pickup_service_point_name, request_date, item_effective_location_name, call_number, enumeration, chronology, item_copy_number;
