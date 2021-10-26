@@ -7,6 +7,7 @@ WITH parameters AS (
     	'2021-07-01' :: DATE AS payment_date_start_date,
         '2022-06-30' :: DATE AS payment_date_end_date, -- Excludes the selected date
         ''::VARCHAR AS transaction_fund_code, -- Ex: 999, 521, p1162 etc.
+        ''::VARCHAR AS fund_type, -- Ex: Endowment - Restricted, Appropriated - Unrestricted etc.
         ''::VARCHAR AS transaction_finance_group_name, -- Ex: Sciences, Central, Rare & Distinctive, Law, Cornell Medical, Course Reserves etc.
         ''::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
         ''::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023 etc.
@@ -55,12 +56,16 @@ finance_transaction_invoices_ext AS (
 		fti.invoice_vendor_name,
 		fti.transaction_type,
 		CASE WHEN ff.code IS NULL THEN ff2.code ELSE ff.code END AS fund_code,
+		CASE WHEN fft.name IS NULL THEN fft2.name ELSE fft.name END AS fund_type,
+		--CASE WHEN ff.fund_type_id 
 		CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >1 THEN fti.transaction_amount *-1 ELSE fti.transaction_amount END AS transaction_amount,
 		CASE WHEN ff.external_account_no IS NULL THEN ff2.external_account_no ELSE ff.external_account_no END AS external_account_no
-	FROM
+FROM
 		folio_reporting.finance_transaction_invoices AS fti
 		LEFT JOIN finance_funds AS ff ON ff.code = fti.transaction_from_fund_code 
 		LEFT JOIN finance_funds AS ff2 ON ff2.code = fti.transaction_to_fund_code
+		LEFT JOIN finance_fund_types AS fft ON fft.id = ff.fund_type_id 
+		LEFT JOIN finance_fund_types AS fft2 ON fft2.id = ff2.fund_type_id 
 		LEFT JOIN finance_ledgers AS fl ON ff.ledger_id = fl.id
 		LEFT JOIN finance_ledgers AS fl2 ON ff2.ledger_id = fl2.id
 		LEFT JOIN finance_group_fund_fiscal_years AS fgffy ON fgffy.fund_id = ff.id
@@ -84,6 +89,7 @@ SELECT
 	ftie.finance_ledger_name,
 	ftie.finance_group_name,
 	ftie.fund_code,
+	ftie.fund_type,
 	inv.invoice_date::date,
 	inv.payment_date::date,
 	inv.voucher_number,
@@ -122,6 +128,7 @@ WHERE
 	AND (inv.payment_date::date < (SELECT payment_date_end_date FROM parameters))
 	AND inv.status LIKE 'Paid'
 	AND ((ftie.fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
+	AND ((ftie.fund_type = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
 	AND ((ftie.finance_group_name = (SELECT transaction_finance_group_name FROM parameters)) OR ((SELECT transaction_finance_group_name FROM parameters) = ''))
 	AND ((ftie.finance_ledger_name = (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) = ''))
 	AND ((ftie.finance_fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
@@ -129,6 +136,7 @@ WHERE
 ORDER BY 
 	ftie.finance_ledger_name,
 	ftie.finance_group_name,
+	fund_type,
 	ftie.invoice_vendor_name,
 	po.po_number, 
 	inv.vendor_invoice_no
