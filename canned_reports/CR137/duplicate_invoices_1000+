@@ -1,0 +1,35 @@
+--searches for duplicate invoices created within last 360 days 
+--for the total amount of the invoice more then or equal to $1000 ---
+
+WITH parameters AS (
+    SELECT
+           current_date - integer '360' AS start_date),
+user_name AS (
+SELECT 
+  json_extract_path_text(invoice_invoices.data, 'metadata','createdByUserId') AS created_by,
+  uu.username
+  FROM invoice_invoices 
+  LEFT JOIN user_users uu ON json_extract_path_text(invoice_invoices.data, 'metadata','createdByUserId') = uu.id 
+)
+SELECT  
+  CURRENT_DATE,
+  invoice_invoices.approval_date,
+  invoice_invoices.status,
+  invoice_invoices.invoice_date,
+  un.username,
+  oo.name AS vendor_name,
+  invoice_invoices.vendor_invoice_no,
+  SUM(iv.total) AS inv_total,
+  invoice_invoices.voucher_number,
+  invoice_invoices.note
+  FROM invoice_invoices 
+  LEFT JOIN organization_organizations AS oo ON invoice_invoices.vendor_id = oo.id
+  LEFT JOIN invoice_lines AS iv ON invoice_invoices.id = iv.invoice_id 
+  LEFT JOIN user_name AS un ON json_extract_path_text(invoice_invoices.data, 'metadata','createdByUserId') = un.created_by
+  WHERE ((select count(*) from invoice_invoices as ii2
+  WHERE invoice_invoices.vendor_invoice_no = ii2.vendor_invoice_no) > 1)
+  AND total >= 1000.00
+  GROUP BY invoice_invoices.approval_date, invoice_invoices.status, invoice_invoices.invoice_date, 
+  un.username, oo.name, invoice_invoices.vendor_invoice_no, 
+  invoice_invoices.voucher_number, invoice_invoices.note
+  ;
