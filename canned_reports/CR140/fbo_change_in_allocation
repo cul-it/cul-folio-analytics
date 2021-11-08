@@ -1,0 +1,49 @@
+--created: 11/8/21
+--This report provides a list of change in allocation per date range. A negative transaction amount 
+--is for an increase in allocation and a positive amount is for a decrease in allocation.
+
+WITH parameters AS (
+    SELECT
+        /* enter invoice payment start date and end date in YYYY-MM-DD format */
+    	'2021-07-01' :: DATE AS allocation_created_date_start_date,
+    	'2021-10-31' :: DATE AS allocation_created_date_end_date,
+    	'':: VARCHAR AS finance_fund_name
+),
+finance_transactions_ext AS (
+	SELECT 
+		json_extract_path_text(ft.data, 'metadata', 'createdDate')::DATE AS transaction_created_date,
+		amount,
+		currency,
+		description,
+		from_fund_id,
+		to_fund_id,
+		transaction_type
+	FROM 
+		finance_transactions AS ft 
+)
+SELECT 
+	CURRENT_DATE,
+	(SELECT
+		allocation_created_date_start_date::varchar
+     FROM
+        parameters) || ' to '::varchar || (
+     SELECT
+        allocation_created_date_end_date::varchar
+     FROM parameters) AS allocation_created_date_range,
+	CASE WHEN ff.external_account_no IS NULL THEN ff2.external_account_no ELSE ff.external_account_no END AS external_account_no,
+	CASE WHEN ff.name IS NULL THEN ff2.name ELSE ff.name END AS finance_fund_name,
+	ftext.transaction_created_date  AS transaction_created_date,
+	CASE WHEN ff.name IS NULL THEN ftext.amount::decimal *-1 ELSE ftext.amount END AS allocation_amount,
+	ftext.currency,
+	ftext.description
+FROM finance_transactions_ext AS ftext
+	LEFT JOIN finance_funds AS ff ON ff.id = ftext.from_fund_id
+	LEFT JOIN finance_funds AS ff2 ON ff2.id = ftext.to_fund_id
+WHERE transaction_type = 'Allocation'
+	AND (ftext.transaction_created_date >= (SELECT allocation_created_date_start_date FROM parameters)) 
+	AND (ftext.transaction_created_date < (SELECT allocation_created_date_end_date FROM parameters))
+	AND ((CASE WHEN ff.name IS NULL THEN ff2.name ELSE ff.name END = (SELECT finance_fund_name FROM parameters)) OR ((SELECT finance_fund_name FROM parameters) = ''))
+ORDER BY 
+	external_account_no,
+	transaction_created_date ASC;
+  
