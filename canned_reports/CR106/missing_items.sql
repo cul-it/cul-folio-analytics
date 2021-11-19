@@ -1,12 +1,11 @@
 WITH parameters AS (
     SELECT 
-        '2021-01-01'::date AS start_date,
-        '2022-11-18'::date AS end_date,
-	/*Enter item status*/
-        'Missing'::varchar AS item_status_filter, 
+        '01-01-2021'::date AS start_date,
+        '11-18-2021'::date AS end_date,
+        /*Enter item status*/
+        'Missing'::varchar AS item_status_filter, --Missing 
               ---- Fill out a location or an owning library filter ----
-        ''::varchar AS item_permanent_location_filter, -- Examples: Olin, ILR, Africana, etc.
-        ''::varchar AS owning_library_name_filter -- Examples: Olin, ILR, Africana, etc.
+         ''::varchar AS owning_library_name_filter -- Examples: Olin Library, Library Annex, etc.
         ),
 ---------- SUB-QUERIES/TABLES ----------
 item_subset AS (
@@ -63,15 +62,15 @@ SELECT DISTINCT
     (SELECT start_date::varchar FROM parameters) || 
         ' to ' || 
         (SELECT end_date::varchar FROM parameters) AS date_range,
-    li.current_item_permanent_location_library_name AS owning_library_name, 
-    ite.permanent_location_name AS current_item_permanent_location_name,
+    ll.library_name as owning_library_name,
+  --  ite.permanent_location_name AS item_permanent_location_name,
+    he.permanent_location_name as holdings_perm_loc_name,
     ite.effective_call_number,
     its.enumeration,
     its.chronology,
     its.copy_number,
     its.volume,
     its.barcode,
-    --its.item_hrid,
     ie.title,
     its.item_status,
     TO_CHAR(its.item_status_date :: date,'mm/dd/yyyy')AS item_status_date,
@@ -82,17 +81,15 @@ SELECT DISTINCT
   FROM
     item_subset AS its
     LEFT JOIN folio_reporting.item_ext AS ite ON its.item_id = ite.item_id 
-	LEFT JOIN folio_reporting.loans_items AS li ON its.item_id = li.item_id 
-	LEFT JOIN public.inventory_items AS ii on its.item_id=ii.id
+    LEFT JOIN folio_reporting.loans_items AS li ON its.item_id = li.item_id 
+    LEFT JOIN public.inventory_items AS ii on its.item_id=ii.id
     LEFT JOIN item_notes_list AS nl ON its.item_id = nl.item_id
     LEFT JOIN folio_reporting.holdings_ext AS he ON its.holdings_record_id = he.holdings_id
+    left join folio_reporting.locations_libraries as ll on he.permanent_location_id = ll.location_id
     LEFT JOIN folio_reporting.instance_ext AS ie ON he.instance_id = ie.instance_id
     LEFT JOIN publication_dates_list AS pd ON ie.instance_id = pd.instance_id
- WHERE (ite.permanent_location_name = 
-        (SELECT item_permanent_location_filter FROM parameters)
-        OR (SELECT item_permanent_location_filter FROM parameters) = '')
-    AND (li.current_item_permanent_location_library_name = 
+WHERE 
+     (ll.library_name = 
         (SELECT owning_library_name_filter FROM parameters)
         OR (SELECT owning_library_name_filter FROM parameters) = '')
-  ORDER BY effective_shelving_order,enumeration, chronology, copy_number
-            ;
+  ORDER BY owning_library_name, holdings_perm_loc_name, effective_shelving_order ;
