@@ -12,7 +12,7 @@ WITH parameters AS (
         '1900-01-01'::date AS start_date,
         '2022-06-30'::date AS end_date,
         /* Fill in a location name, OR leave blank for all locations */
-        ''::varchar AS permanent_location_filter, --Examples: Olin, ILR, Africana, etc.
+    --    ''::varchar AS permanent_location_filter, --Examples: Olin, ILR, Africana, etc.
         ''::varchar AS owning_library_filter -- Examples: Nestle Library, Library Annex, etc.
 ),
 -- CTEs
@@ -27,14 +27,16 @@ items_with_notes AS (
 )
 SELECT
 	(SELECT start_date::varchar FROM parameters) || ' to ' || (SELECT end_date::varchar FROM parameters) AS date_range,
-	li.current_item_permanent_location_library_name AS owning_library_name,
-    li.current_item_permanent_location_name AS permanent_location_name,
-    json_extract_path_text(uu.data, 'personal', 'firstName') AS first_name,
-    json_extract_path_text(uu.data, 'personal', 'lastName') AS last_name,
+	--li.current_item_permanent_location_library_name AS owning_library_name,
+    --li.current_item_permanent_location_name AS permanent_location_name,
+    ll.library_name AS owning_library_name,
+    json_extract_path_text(uu.data, 'personal', 'lastName') AS patron_last_name,
+    json_extract_path_text(uu.data, 'personal', 'firstName') AS patron_first_name,
     uu.active AS patron_active_status,
-    json_extract_path_text(uu.data, 'personal', 'email') AS email,
+    json_extract_path_text(uu.data, 'personal', 'email') AS patron_email,
     li.patron_group_name,
     ine.title,
+    ll.location_name AS holdings_location_name,
     json_extract_path_text(iit.data, 'effectiveCallNumberComponents', 'callNumber') AS call_number,
     li.enumeration,
     li.chronology,
@@ -57,13 +59,16 @@ SELECT
     LEFT JOIN public.inventory_instances AS ii ON he.instance_id = ii.id
     LEFT JOIN public.inventory_items AS iit ON li.item_id=iit.id
     LEFT JOIN folio_reporting.instance_ext as ine ON ine.instance_id = he.instance_id 
+    LEFT JOIN folio_reporting.locations_libraries as ll ON he.permanent_location_id = ll.location_id
  --   LEFT JOIN instances_with_publication_dates AS pd ON he.instance_id = pd.instance_id
   --  LEFT JOIN folio_reporting.instance_publication AS ip ON he.instance_id = ip.instance_id
     LEFT JOIN folio_reporting.loans_renewal_count AS lrc ON li.item_id = lrc.item_id
 WHERE li.item_status = 'Claimed returned' 
-	AND (li.current_item_permanent_location_name = (SELECT permanent_location_filter FROM parameters)
-		OR '' = (SELECT permanent_location_filter FROM parameters))
-        AND (li.current_item_permanent_location_library_name = (SELECT owning_library_filter FROM parameters)
+	--AND (li.current_item_permanent_location_name = (SELECT permanent_location_filter FROM parameters)
+	--	OR '' = (SELECT permanent_location_filter FROM parameters))
+        AND (ll.library_name = (SELECT owning_library_filter FROM parameters)
         OR '' = (SELECT owning_library_filter FROM parameters))
         AND li.loan_date >= (SELECT start_date FROM parameters)
-        AND li.loan_date < (SELECT end_date FROM parameters);
+        AND li.loan_date < (SELECT end_date FROM parameters)
+  ORDER BY owning_library_name, patron_last_name, patron_first_name
+  ;
