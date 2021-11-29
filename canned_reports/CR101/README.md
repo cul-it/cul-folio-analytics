@@ -1,8 +1,6 @@
 README for CR101
 
 # Fund Expenditures by PO Line Invoice Payments
-
-/* fund_expenditures_by_po_line_invoice_payments
  
 PURPOSE
 This report shows fund expenditures by purchase order line within 
@@ -40,3 +38,4 @@ po_line_number, fund_group, fund_name, fund_type, fund_code, fund_description, t
 FILTERS FOR USERS TO SELECT 
 invoice_payment_start and invoice_payment_end, fund_group, fund_code, fund_type, purchase_order_line_format, 
 expense_class, transaction_type, and transaction_fund_code
+
