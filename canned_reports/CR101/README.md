@@ -3,17 +3,19 @@ README for CR101
 # Fund Expenditures by PO Line Invoice Payments
  
 PURPOSE
+<p>
 This report shows fund expenditures by purchase order line within 
 a given invoice payment date range. For each purchase order line number, 
 the fund data attributes are shown alongside the purchase order line transaction amount. 
 Fund expenditures can be viewed by fund group, fund name, fund type, fund code, 
 purchase order line format, transaction type, and expense class. There can be 
-more than one fund distribution for each purchase order line.
-<br/>
+more than one fund distribution for each purchase order line.<br/>
+</p>
+<p>
 The transaction_fund_code is the fund code associated with each 
 purchase order line transaction. This column captures "Payment" and
-"Credit" transactions that are either to the fund or from the fund.
-<br/>
+"Credit" transactions that are either to the fund or from the fund.<br/>
+</p>
 The fund_transaction_source shows whether the transaction was posted 
 "to a fund" or "from a fund."
 <br/>
