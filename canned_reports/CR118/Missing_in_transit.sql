@@ -1,176 +1,56 @@
 WITH parameters AS (
     SELECT
-  /*This is the date range when the items were checked in (discharged) at a circ desk*/  
-        '2021-07-01'::DATE AS start_date,
-        '2022-06-30'::DATE AS end_date,
+  /*Days in transit filter is the number of days the item has been 'in transit', starting with today*/  
+    
+   		'7'::integer AS days_in_transit_filter, -- doesn't work if empty
         'In transit'::VARCHAR AS item_status_filter, --  'Checked out', 'Available', 'In transit'
         ---- Fill out one location or service point filter, leave others blank ----
-        'Olin'::varchar AS item_permanent_location_filter, -- 'Olin, Mann, etc.'
-''::varchar AS item_temporary_location_filter, -- 'Olin, Mann, etc.'
-''::varchar AS holdings_permanent_location_filter, -- 'Olin, Mann, etc.'
-''::varchar AS holdings_temporary_location_filter, -- 'Olin, Mann, etc.'
-''::varchar AS effective_location_filter, -- 'Olin, Mann, etc.'
-''::varchar AS in_transit_destination_service_point_filter -- 'Circ Desk 1'
+        'Library Annex'::varchar AS owning_library_filter -- 'Olin, Mann, etc.'
 ),
----------- SUB-QUERIES/TABLES ----------
-ranked_loans AS (
-    SELECT
+days AS (
+    SELECT 
         item_id,
-        id AS loan_id,
-        return_date AS loan_return_date,
-        item_status,
-        rank() OVER (PARTITION BY item_id ORDER BY return_date DESC) AS return_date_ranked
-FROM
-    public.circulation_loans
-    WHERE
-        item_status = (
-            SELECT
-                item_status_filter
-            FROM
-                parameters)
-            AND return_date::DATE >= (
-                SELECT
-                    start_date
-                FROM
-                    parameters)
-                AND return_date::DATE < (
-                    SELECT
-                        end_date
-                    FROM
-                        parameters)
-),
-/* This should be pulling the latest loan for each item. Will want to test again with real data. */
-latest_loan AS (
-    SELECT
-        item_id,
-        loan_id,
-        item_status,
-        loan_return_date
-    FROM
-        ranked_loans
-    WHERE
-        ranked_loans.return_date_ranked = 1
+        DATE_PART('day', NOW() - date(status_date)) AS days_in_transit
+    FROM folio_reporting.item_ext
 ),
 item_notes_list AS (
     SELECT
         item_id,
         string_agg(DISTINCT note, '|'::text) AS notes_list
+        
     FROM
         folio_reporting.item_notes
     GROUP BY
         item_id
-),
-publication_dates_list AS (
-    SELECT
-        instance_id,
-        string_agg(DISTINCT date_of_publication, '|'::text) AS publication_dates_list
-    FROM
-        folio_reporting.instance_publication
-    GROUP BY
-        instance_id)
+)
     ---------- MAIN QUERY ----------
     SELECT
-        (
-            SELECT
-                start_date::VARCHAR
-            FROM
-                parameters) || ' to '::VARCHAR || (
-            SELECT
-                end_date::VARCHAR
-            FROM
-                parameters) AS date_range,
-        li.item_id,
-        ie.title,
-        he.shelving_title,
-        ll.item_status,
-        ll.loan_return_date,
-        li.checkout_service_point_name,
-        li.checkin_service_point_name,
-        li.in_transit_destination_service_point_name,
-        it.barcode,
-        it.call_number,
-        it.enumeration,
-        it.chronology,
-        it.copy_number,
-        it.volume,
+        TO_CHAR(ie.status_date :: date,'mm/dd/yyyy')AS status_date,
+        days.days_in_transit,
+        ine.title,
+        ie.status_name,
+        ie.in_transit_destination_service_point_name,
+        ie.barcode,
+        he.call_number,
+        ie.enumeration,
+        ie.chronology,
+        ie.copy_number,
+        ie.volume,
+        ll.library_name  AS owning_library_name,
         he.permanent_location_name AS holdings_permanent_location_name,
-        he.temporary_location_name AS holdings_temporary_location_name,
-        li.current_item_permanent_location_name,
-        li.current_item_temporary_location_name,
-        li.current_item_effective_location_name,
-        ie.cataloged_date,
-        pd.publication_dates_list,
         nl.notes_list,
-        li.material_type_name,
-        lc.num_loans,
-        lc.num_renewals
-    FROM
-        folio_reporting.loans_items AS li
-        INNER JOIN latest_loan AS ll ON li.loan_id = ll.loan_id
-        LEFT JOIN folio_reporting.item_ext AS it ON li.item_id = it.item_id
-        LEFT JOIN item_notes_list AS nl ON li.item_id = nl.item_id
-        LEFT JOIN folio_reporting.holdings_ext AS he ON li.holdings_record_id = he.holdings_id
-        LEFT JOIN folio_reporting.instance_ext AS ie ON he.instance_id = ie.instance_id
-        LEFT JOIN folio_reporting.instance_publication AS ip ON ie.instance_id = ip.instance_id
-        LEFT JOIN publication_dates_list AS pd ON ie.instance_id = pd.instance_id
-        LEFT JOIN folio_reporting.loans_renewal_count AS lc ON li.item_id = lc.item_id
-    WHERE (li.current_item_permanent_location_name = (
-            SELECT
-                item_permanent_location_filter
-            FROM
-                parameters)
-            OR (
-                SELECT
-                    item_permanent_location_filter
-                FROM
-                    parameters) = '')
-        AND (li.current_item_temporary_location_name = (
-                SELECT
-                    item_temporary_location_filter
-                FROM
-                    parameters)
-                OR (
-                    SELECT
-                        item_temporary_location_filter
-                    FROM
-                        parameters) = '')
-            AND (he.permanent_location_name = (
-                    SELECT
-                        holdings_permanent_location_filter
-                    FROM
-                        parameters)
-                    OR (
-                        SELECT
-                            holdings_permanent_location_filter
-                        FROM
-                            parameters) = '')
-                AND (he.temporary_location_name = (
-                        SELECT
-                            holdings_temporary_location_filter
-                        FROM
-                            parameters)
-                        OR (
-                            SELECT
-                                holdings_temporary_location_filter
-                            FROM
-                                parameters) = '')
-                    AND (current_item_effective_location_name = (
-                            SELECT
-                                effective_location_filter
-                            FROM
-                                parameters)
-                            OR (
-                                SELECT
-                                    effective_location_filter
-                                FROM
-                                    parameters) = '')
-                        AND (li.in_transit_destination_service_point_name = (
-                                SELECT
-                                    in_transit_destination_service_point_filter
-                                FROM
-                                    parameters)
-                                OR (
-                                    SELECT
-                                        in_transit_destination_service_point_filter
-                                    FROM
-                                        parameters) = '');
+        ie.material_type_name
+        FROM
+        folio_reporting.item_ext AS ie
+        LEFT JOIN days ON ie.item_id=days.item_id
+        LEFT JOIN item_notes_list AS nl ON ie.item_id = nl.item_id
+        LEFT JOIN folio_reporting.holdings_ext AS he ON ie.holdings_record_id = he.holdings_id
+        LEFT JOIN folio_reporting.instance_ext AS ine ON he.instance_id = ine.instance_id
+        LEFT JOIN folio_reporting.locations_libraries AS ll ON he.permanent_location_id=ll.location_id
+        WHERE (days.days_in_transit > 0 AND days.days_in_transit >= (SELECT days_in_transit_filter FROM parameters))
+        	AND (ll.library_name = (SELECT owning_library_filter FROM parameters)
+            	OR (SELECT owning_library_filter FROM parameters) = '')
+            AND ie.status_name = 'In transit'
+                                      
+            ORDER BY call_number, enumeration, chronology, copy_number
+                      ;
