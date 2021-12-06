@@ -1,4 +1,5 @@
 CR143_A
+<p>
 HathiTrust Serial Holdings
 
 This set of queries creates the list of serial holdings that CUL sends to HathiTrust. 
