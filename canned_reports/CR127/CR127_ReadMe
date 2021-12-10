@@ -1,4 +1,4 @@
 CR127 Borrow Direct/Interlibrary Loans Overdue Items
 
-This report contains a list of BD/ILL items that are OWNED BY CUL, and are overdue. The patron type for this report is Borrow Direct and InterLibrary Loan. The report includes filters for number of days ovedue, item permanent location, and the ability to 
-add in more patron types, apart from BD and ILL. 
+This report contains a list of BD/ILL items that are OWNED BY CUL, and are overdue. The patron type for this report is Borrow Direct and InterLibrary Loan. 
+The report includes filters for number of days ovedue. This filter MUST be filled in. 
