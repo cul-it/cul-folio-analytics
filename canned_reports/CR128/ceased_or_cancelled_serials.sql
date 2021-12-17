@@ -1,6 +1,6 @@
 WITH parameters AS (
 SELECT 
-'Olin'::varchar AS location_filter --enter the location name IN BETWEEN the two % signs
+'Olin'::varchar AS location_filter --enter the location name 
 ),
 
 inst AS
@@ -132,8 +132,8 @@ FROM main
 ORDER BY 
           main.main_location_call_no, ii.effective_shelving_order, main.instance_hrid, main.holdings_hrid
           )
- --including effective_shelving_order gives many duplicates but is needed to order the results, so in the final query it is omitted.         
- SELECT DISTINCT
+ 
+  SELECT DISTINCT
  	   main2.call_number_prefix,
        main2.main_location_call_no,
        main2.call_number_suffix,
