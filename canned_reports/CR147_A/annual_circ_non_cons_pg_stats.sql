@@ -17,7 +17,6 @@ WITH loans AS
 		ELSE 'Regular' END AS collection_type,
 	li.current_item_effective_location_id,
 	li.item_effective_location_name_at_check_out,
-	--li.checkout_service_point_name,
 	ll.location_id,
 	ll.location_name
 	
@@ -25,32 +24,25 @@ WITH loans AS
 	LEFT JOIN folio_reporting.locations_libraries AS ll 
 	ON li.item_effective_location_id_at_check_out = ll.location_id 
 
-WHERE li.loan_date >= '2021-07-01')
---and item_effective_location_name_at_check_out like '%Reserve%')
+WHERE li.loan_date >= '2021-07-01'
+)
 
-	--and li.loan_date < '2021-07-01')
-
----main query --
+---Main query --
 
 SELECT 
 	library_name,
-	--item_effective_location_name_at_check_out,
-	--checkout_service_point_name,
 	patron_group_name,
 	collection_type,
 	material_type_name,
-	count(loan_id) as number_of_checkouts,
-	sum(renew_count) as number_of_renewals,
-	count(loan_id) + sum(renew_count) as total_charges_and_renewals
+	COUNT(loan_id) AS number_of_checkouts,
+	sum(renew_count) AS number_of_renewals,
+	COUNT(loan_id) + sum(renew_count) AS total_charges_and_renewals
 
 FROM loans 
-
---WHERE collection_type = 'Laptop'
 
 GROUP BY 
 	library_name,
 	item_effective_location_name_at_check_out,
-	--checkout_service_point_name,
 	patron_group_name,
 	collection_type,
 	material_type_name
