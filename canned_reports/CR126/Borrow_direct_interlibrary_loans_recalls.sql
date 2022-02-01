@@ -83,24 +83,25 @@ LEFT JOIN days ON
 	days.item_id = cl.item_id
 
 	WHERE
-	cl.due_date_changed_by_recall = 'true'
-	AND cl.system_return_date IS NULL
-	AND cl.due_date < current_date
-	AND json_extract_path_text(ii.data, 'status', 'name') = 'Checked out'
-	)
-	
-	SELECT 
-		recall_request_date,
-		request_status,
-		item_barcode,
-		borrower_barcode,
-		call_number,
-		permanent_location_name,
-		title,
-		requester_patron_group,
-		requester_email
-	FROM main
-		
-	ORDER BY
-	recall_request_date ASC
+        cl.due_date_changed_by_recall = 'true'
+        AND cl.system_return_date IS NULL
+        AND cl.due_date < current_date
+        AND json_extract_path_text(ii.data, 'status', 'name') like 'Checked out%'
+        AND ri.request_status = 'Open - Not yet filled'
+        )
+        
+        SELECT distinct
+                recall_request_date,
+                request_status,
+                item_barcode,
+                borrower_barcode,
+                call_number,
+                permanent_location_name,
+                title,
+                requester_patron_group,
+                requester_email
+        FROM main
+                
+        ORDER BY
+        recall_request_date ASC
         ;
