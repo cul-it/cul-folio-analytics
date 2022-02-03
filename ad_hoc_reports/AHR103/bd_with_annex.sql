@@ -1,4 +1,4 @@
-DROP TABLE if EXISTS local_automation.np55_bdws;
+DROP TABLE if EXISTS local_automation.bd_bdws;
 CREATE TABLE local_automation.bd_with AS 
 WITH get_hld AS 
 (
