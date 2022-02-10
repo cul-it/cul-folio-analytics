@@ -1,4 +1,4 @@
 CR152
-Patron List with Demographics
+Patron Groups with Demographics
 
 This report groups and counts active patrons by college and department. 
