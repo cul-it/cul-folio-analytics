@@ -12,7 +12,6 @@ FROM folio_reporting.finance_transaction_invoices AS fti
         LEFT JOIN finance_expense_classes AS fec 
         ON fti.transaction_expense_class_id = fec.id
         
-          
 GROUP BY 
         fti.effective_fund_code,
         fti.effective_fund_name,
@@ -29,11 +28,11 @@ SELECT
         ff.name AS finance_funds_name,
         ff.description,
         fb.total_funding,
-        fb.encumbered,
         fb.expenditures,
+        fb.encumbered,
         fb.awaiting_payment,
+        (fb.total_funding - fb.available) as total_spent_encumbered_or_awaiting_payment,
         fb.cash_balance,
-        (fb.allocated - fb.available) as amount_spent_or_encumbered,
         fb.available AS available_balance,
         expense_class.expense_class_name,
         expense_class.amount_spent_in_expense_class,
@@ -43,7 +42,7 @@ SELECT
                 ELSE 0 
                 END AS percent_of_fund_spent_on_expense_class_to_date
 
-      
+        
 FROM 
         finance_group_fund_fiscal_years AS fgffy 
         LEFT JOIN finance_groups AS fg                   
@@ -64,5 +63,5 @@ FROM
         LEFT JOIN finance_fund_types AS fft
         ON ff.fund_type_id = fft.id
 
+
 ORDER BY team, finance_funds_code, finance_funds_name, expense_class_name
-;
