@@ -1,1 +1,1 @@
-# Linda Miller originally put the ACRL survey info here, which was just a readme. That information has been moved back to Confluence.  Linda or another reporter will reuse this folder with another report.
+#### Linda Miller originally put the ACRL survey info here, which was just a readme. That information has been moved back to Confluence ([which see](https://confluence.cornell.edu/x/HFqZGQ)).  Linda or another reporter will reuse this folder with another report.
