@@ -65,3 +65,4 @@ FROM
 
 
 ORDER BY team, finance_funds_code, finance_funds_name, expense_class_name
+;
