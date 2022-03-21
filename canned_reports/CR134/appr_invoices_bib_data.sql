@@ -14,7 +14,7 @@ WITH parameters AS (
         ''::VARCHAR AS transaction_finance_group_name, -- Ex: Sciences, Central, Rare & Distinctive, Law, Cornell Medical, Course Reserves etc.
         ''::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
         ''::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023 etc.
-        ''::VARCHAR AS po_number
+        ''::VARCHAR AS po_number,
         ''::VARCHAR AS bib_format_display -- Ex: Book, Serial, Textual Resource, etc.
 ),
 
