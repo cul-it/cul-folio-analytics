@@ -1,14 +1,10 @@
 --This query provides the list of approved invoices within a date range along with vendor name, invoice number, fund details and purchase order data.
 
---It also provides some Bib data, which will be more complete after the release of Folio Kiwi scheduled for November 2021. The elements that will be added are commented out in the main query.
-
-
 WITH parameters AS (
 
     SELECT
 
         /* enter invoice payment start date and end date in YYYY-MM-DD format */
-
         '2021-07-01' :: DATE AS payment_date_start_date,
         '2022-06-30' :: DATE AS payment_date_end_date, -- Excludes the selected date
 
@@ -18,11 +14,10 @@ WITH parameters AS (
         ''::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
         ''::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023 etc.
         ''::VARCHAR AS po_number
-
+        ''::VARCHAR AS bib_format_display -- Ex: Book, Serial, Textual Resource, etc.
 ),
 
 pol_holdings_id AS (
-
         SELECT
         pol.id AS pol_id,
         json_extract_path_text(locations.data, 'locationId') AS pol_loc_id,
@@ -76,7 +71,6 @@ instance_subject_extract as (
         CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'subjects'))
         WITH ORDINALITY AS subjects (data)
         WHERE subjects.ordinality = '1'
-
 ),
 
 finance_transaction_invoices_ext AS (
@@ -114,8 +108,9 @@ FROM
 -- MAIN QUERY
 SELECT
         current_date AS current_date,           
-                (SELECT
-                        payment_date_start_date::varchar
+        (    
+        SELECT payment_date_start_date::varchar
+            
         FROM
         parameters) || ' to '::varchar || (
        
@@ -173,6 +168,7 @@ WHERE
         AND ((ftie.finance_ledger_name = (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) = ''))
         AND ((ftie.finance_fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
         AND ((po.po_number = (SELECT po_number FROM parameters)) OR ((SELECT po_number FROM parameters) = ''))
+        AND ((format_extract.bib_format_display = (SELECT bib_format_display FROM parameters)) OR ((SELECT bib_format_display FROM parameters) = ''))
 
 ORDER BY
         ftie.finance_ledger_name,
