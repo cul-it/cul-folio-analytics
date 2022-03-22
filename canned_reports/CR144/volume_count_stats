@@ -1,34 +1,115 @@
---takes about 50-60 min to ran --------
-DROP TABLE IF EXISTS LOCAL.vol_ct; 
-CREATE TABLE LOCAL.vol_ct_inone AS
-WITH rec_type AS
-(SELECT
+/*These are the queries used by A&P to get volume counts for CUL's annual data collection (adc). 
+ * For the adc, these queries are run as close to the end of the fiscal year as possible 
+ *(date filter not used for volumes held). Don't hesitate to ask Lind Miller (LM15) for help 
+ *with these queries.
+ *
+ *The first 4 queries create local data tables stored in the "local_statistics" schema. They are
+ *used by the later queries to get counts of: volumes currently held; volumes added within 
+ *the given fiscal year (for new items and items already in the stacks but barcoded within the year);
+ *and an estimate of the number of volumes barcoded retrospectively in the fiscal year (had already 
+ *been available for circulation in the stacks - a subset of all volumes added). 
+ *Queries 5 and 6 also create data tables stored in "local_statistics". The results give counts of
+ *volumes held, and of item records created after the start of the fiscal year, by holdings 
+ *permanent location.
+ *Queries 7-10 are used by A&P for the adc to try to estimate which part of the item records
+ *added new during the fiscal year were added retrospectively. Queries 7 and 8 create local tables,
+ *and queries 9 and 10 are select queries only.
+ *
+ *Filtering requiring updates as needed:
+ *Query 2: locations to be excluded (review as needed with CUL)
+ *Query 4: how bound withs excluded will change over time (see documention in next row)
+ *    Linda M: 11/29/21: I see from the updated LTS policy 
+ *    https://confluence.cornell.edu/pages/viewpage.action?pageId=403238522 that in FOLIO, item 
+ *    records will not be created for other than the first title in a bound with. But it looks like
+ *    there are some 200K FOLIO item records with “Bound with” for the enumeration that I assume came
+ *    from Voyager (found just about the same amount in June 2021 in Voyager). I assume that in my 
+ *    volume counts, I should continue to exclude item records with “Bound with” for the enumeration, 
+ *    and that we won’t be cleaning up those records anytime soon?
+ *    Laura D: 11/29/21: Yes, continue to exclude item records with “Bound with” for enumeration. I 
+ *    believe we will be cleaning those up eventually, but I can’t imagine us doing so before the FOLIO
+ *    bound-with solution is fully implemented. I can’t remember off the top of my head if that’s even
+ *    got a release date yet, but it’s not Juniper or Kiwi.
+ *Queries 6-7: update the adc_loc_translation_csv table as (review as needed with CUL)
+ *Queries 6-9: each year, update the start of the fiscal year
+ *Query 9: each year update the publication dates to be excluded (those published in last 10 years)
+ *Query 10: each year update the chronology dates to be excluded (those with chronologies in the 
+ *last 5 years)
+ *
+ *Once tables 1-8 are created by A&P for the annual report or quarterly reporting to DFA 
+ *(CUL Division of *Financial Affairs), a few earlier runs are set aside for later use, by 
+ *adding dates to the end of the table names.
+ */
+
+/* Query 1: this query selects unique instance IDs and other instance info, including using the
+ * subquery "get_date" to add the date of publication.
+ * Stated quickly, it gets instance records whose bib format codes start with a, t, c or d;
+ * that are not suppressed; and whose srs_records state is “actual”.
+ */ 
+-- 13 minutes; 8,298,628 on 3/14/22 (why such a change from: 11 minutes; 8,438,329 records on 1/28/22; 8,638,080 on 2/10/22)
+DROP TABLE IF EXISTS local_statistics.vol_ct_1; 
+CREATE TABLE local_statistics.vol_ct_1 AS
+WITH get_date AS 
+(select 
     sm.instance_hrid,
     sm.instance_id,
     sm.field,
-    substring(sm."content", 7, 1) AS "format_type",
+    sm.content,
+    substring(sm.content, 8, 4)::text AS publication_date
+    FROM srs_marctab sm 
+    WHERE (sm.field = '008'))
+SELECT DISTINCT 
+    sm.instance_hrid,
+    sm.instance_id,
+    sm.field,
+    substring(sm."content", 7, 2) AS "format_type",
+    gd.publication_date,
     ie.discovery_suppress,
     ie.record_created_date::date 
-    FROM srs_marctab sm 
+FROM srs_marctab sm 
+    LEFT JOIN get_date AS gd ON sm.instance_id = gd.instance_id
     LEFT JOIN folio_reporting.instance_ext ie ON sm.instance_id = ie.instance_id
     LEFT JOIN srs_records sr ON sm.srs_id = sr.id
-    WHERE (sm.field = '000' AND substring(sm."content", 7, 1) IN ('a', 't', 'c', 'd'))
-    AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
-    AND sr.state  = 'ACTUAL'
-),
-loc_filter AS
-(SELECT 
+WHERE (sm.field = '000' AND substring(sm."content", 7, 2) LIKE 'a%' 
+OR sm.field = '000' AND substring(sm."content", 7, 2) like 't%' 
+OR sm.field = '000' AND substring(sm."content", 7, 2) like 'c%' 
+OR sm.field = '000' AND substring(sm."content", 7, 2) like 'd%')
+AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
+AND sr.state  = 'ACTUAL'
+;
+CREATE INDEX ON local_statistics.vol_ct_1 (instance_hrid);
+CREATE INDEX ON local_statistics.vol_ct_1 (instance_id);
+CREATE INDEX ON local_statistics.vol_ct_1 (field);
+CREATE INDEX ON local_statistics.vol_ct_1 ("format_type");
+CREATE INDEX ON local_statistics.vol_ct_1 (publication_date);
+CREATE INDEX ON local_statistics.vol_ct_1 (discovery_suppress);
+CREATE INDEX ON local_statistics.vol_ct_1 (record_created_date);
+
+/* Query 2: This query adds holdings information, and specifies that:
+ * item records for some 27 particular locations not be included because they are
+ * not volumes, are not owned by the library, are in process, etc.;
+ * that microforms, as well as items on order, in process or not yet selected are excluded
+ * via call number; AND that the holdings record is not suppressed.
+ * 
+ * For each run, update the list of locations to be excluded as needed.
+*/
+--3 minutes; 5,858,687 records on 3/14/22
+DROP TABLE IF EXISTS local_statistics.vol_ct_2; 
+CREATE TABLE local_statistics.vol_ct_2 AS
+SELECT 
     vc1.instance_id,
     vc1.instance_hrid,
+    vc1."format_type",
+    vc1.publication_date,
+    vc1.record_created_date::DATE,
     h.holdings_id,
     h.holdings_hrid,
+    h.type_name,
     h.permanent_location_name,
     h.call_number,
-    h.discovery_suppress,
-    vc1.record_created_date
-    FROM  rec_type vc1
-    LEFT JOIN  folio_reporting.holdings_ext h ON vc1.instance_id=h.instance_id
-    WHERE h.permanent_location_name NOT like 'serv,remo'
+    h.discovery_suppress
+FROM local_statistics.vol_ct_1 vc1
+LEFT JOIN folio_reporting.holdings_ext h ON vc1.instance_id = h.instance_id
+WHERE h.permanent_location_name NOT ilike 'serv,remo'
     AND h.permanent_location_name NOT ilike '%LTS%'
     AND h.permanent_location_name NOT ilike 'Agricultural Engineering'
     AND h.permanent_location_name NOT ilike 'Bindery Circulation'
@@ -61,79 +142,175 @@ loc_filter AS
     AND h.call_number !~~* '%film%' 
     AND h.call_number !~~* '%fiche%'
     AND h.call_number !~~* '%micro%'
-    AND h.call_number !~~*  '%vault%'
+    AND h.call_number !~~* '%vault%'
     AND h.call_number !~~* 'On selector%'
     AND (h.discovery_suppress = 'FALSE' 
     OR h.discovery_suppress IS NULL )
-),
-add_ie AS
+;
+CREATE INDEX ON local_statistics.vol_ct_2 (instance_id);
+CREATE INDEX ON local_statistics.vol_ct_2 (instance_hrid);
+CREATE INDEX ON local_statistics.vol_ct_2 ("format_type");
+CREATE INDEX ON local_statistics.vol_ct_2 (publication_date);
+CREATE INDEX ON local_statistics.vol_ct_2 (record_created_date);
+CREATE INDEX ON local_statistics.vol_ct_2 (holdings_id);
+CREATE INDEX ON local_statistics.vol_ct_2 (holdings_hrid);
+CREATE INDEX ON local_statistics.vol_ct_2 (type_name);
+CREATE INDEX ON local_statistics.vol_ct_2 (permanent_location_name);
+CREATE INDEX ON local_statistics.vol_ct_2 (call_number);
+CREATE INDEX ON local_statistics.vol_ct_2 (discovery_suppress);
+
+/* Query 3: This query adds item info, using the subquery “cr_by_user” to add the net ID of the person
+ * who created the item record (and possibly the last name of that person in the future?) to help get 
+ * at retrospective counts.
+ */
+--5 minutes; 8,630,193 records on 3/14/22
+DROP TABLE IF EXISTS local_statistics.vol_ct_3; 
+CREATE TABLE local_statistics.vol_ct_3 AS
+WITH cr_by_user AS
 (SELECT
-  fsc.instance_hrid,
-  fsc.holdings_hrid,
-  fsc.holdings_id,
-  fsc.permanent_location_name,
+ ii.id,
+ json_extract_path_text(
+               (json_extract_path(ii.data, 'metadata')),'createdByUserId') AS created_by,
+ json_extract_path_text(
+               (json_extract_path(ii.data, 'personal')),'lastName') AS last_name,
+ uu.username AS itecreate_user_name
+FROM inventory_items ii 
+LEFT JOIN user_users uu ON json_extract_path_text(
+               (json_extract_path(ii.data, 'metadata')),'createdByUserId') = uu.id
+)
+SELECT
+  vc2.instance_hrid,
+  vc2."format_type",
+  vc2.publication_date,
+  vc2.holdings_hrid,
+  vc2.holdings_id,
+  vc2.type_name,
+  vc2.permanent_location_name,
   ie.item_hrid,
   ie.item_id,
   ie.enumeration,
+  ie.chronology,
   ie.permanent_location_name AS item_loc,
-  ie.created_date
-  FROM loc_filter fsc
-  LEFT JOIN folio_reporting.item_ext ie ON fsc.holdings_id = ie.holdings_record_id
-),
-bd_with AS
+  ie.created_date::DATE,
+  cb.created_by,
+  cb.itecreate_user_name,
+  cb.last_name
+  FROM local_statistics.vol_ct_2 vc2
+  LEFT JOIN folio_reporting.item_ext ie ON vc2.holdings_id = ie.holdings_record_id
+  LEFT JOIN cr_by_user cb ON ie.item_id = cb.id
+;
+CREATE INDEX ON local_statistics.vol_ct_3 (instance_hrid);
+CREATE INDEX ON local_statistics.vol_ct_3 ("format_type");
+CREATE INDEX ON local_statistics.vol_ct_3 (publication_date);
+CREATE INDEX ON local_statistics.vol_ct_3 (holdings_hrid);
+CREATE INDEX ON local_statistics.vol_ct_3 (holdings_id);
+CREATE INDEX ON local_statistics.vol_ct_3 (type_name);
+CREATE INDEX ON local_statistics.vol_ct_3 (permanent_location_name);
+CREATE INDEX ON local_statistics.vol_ct_3 (item_hrid);
+CREATE INDEX ON local_statistics.vol_ct_3 (item_id);
+CREATE INDEX ON local_statistics.vol_ct_3 (enumeration);
+CREATE INDEX ON local_statistics.vol_ct_3 (chronology);
+CREATE INDEX ON local_statistics.vol_ct_3 (item_loc);
+CREATE INDEX ON local_statistics.vol_ct_3 (created_date);
+CREATE INDEX ON local_statistics.vol_ct_3 (created_by);
+CREATE INDEX ON local_statistics.vol_ct_3 (itecreate_user_name);
+CREATE INDEX ON local_statistics.vol_ct_3 (last_name);
+
+
+/* Query 4: Through the subquery "bd_with", this query excludes item records indicating 
+ * through their enumeration that they are item records for later titles in “bound with” volumes. 
+ * (%bound% about 50 more than %bound%with% so switched to the latter)
+ */
+-- ~1 minute; 8,477,172 records on 3/14/22 (but made %bound%with% on 3/11/22 - 50 fewer boundwiths)
+DROP TABLE IF EXISTS local_statistics.vol_ct_4; 
+CREATE TABLE local_statistics.vol_ct_4 AS
+WITH bd_with AS 
 (SELECT
-  fsx.instance_hrid,
-  fsx.holdings_hrid,
-  fsx.holdings_id,
-  fsx.permanent_location_name,
-  fsx.item_hrid,
-  fsx.item_id,
-  fsx.item_loc,
-  fsx.created_date
-  FROM add_ie fsx
-  WHERE fsx.enumeration ~~* '%bound%'
-),
-del_items AS 
-(SELECT 
-  n.instance_hrid,
-  n.holdings_hrid,
-  n.holdings_id,
-  n.permanent_location_name,
-  n.item_hrid,
-  n.enumeration,
-  n.item_id,
-  n.item_loc,
-  n.created_date
-  FROM add_ie n
-  LEFT JOIN bd_with ON n.item_hrid = bd_with.item_hrid
-  WHERE bd_with.item_hrid IS NULL
-),
-new_vols AS
-(SELECT 
-   ft.item_id,
-   ft.item_loc
-   FROM del_items ft
-   LEFT JOIN inventory_locations il ON ft.permanent_location_name = il.name
-   WHERE ft.created_date::DATE > '2021-07-01'
-   GROUP BY item_loc, item_id 
-),
-new_vols_count AS
-(SELECT
-   nt.item_loc,
-   count(item_loc) AS new_volumes
-   FROM new_vols nt
-   GROUP BY item_loc
+  vc3s.instance_hrid,
+  vc3s.holdings_hrid,
+  vc3s.holdings_id,
+  vc3s.permanent_location_name,
+  vc3s.item_hrid,
+  vc3s.item_id,
+  vc3s.item_loc,
+  vc3s.enumeration,
+  vc3s.created_date::DATE
+  FROM local_statistics.vol_ct_3 vc3s
+  WHERE vc3s.enumeration ~~* '%bound%with%'
 )
 SELECT 
-   ft.item_loc,
-   ntc.new_volumes,
-   il.code,
-   count(ft.item_loc) AS "vol_total"
-   FROM del_items ft
-   LEFT JOIN new_vols_count AS ntc ON ft.permanent_location_name = ntc.item_loc
-   LEFT JOIN inventory_locations il ON ft.permanent_location_name = il.name
-   GROUP BY 
-   ft.item_loc, 
-   il.code, 
-   ntc.new_volumes
+  vc3.instance_hrid,
+  vc3."format_type",
+  vc3.publication_date,
+  vc3.holdings_hrid,
+  vc3.holdings_id,
+  vc3.type_name,
+  vc3.permanent_location_name,
+  vc3.item_hrid,
+  vc3.enumeration,
+  vc3.chronology,
+  vc3.item_id,
+  vc3.item_loc,
+  vc3.created_date::DATE,
+  vc3.item_create_user_name,
+  vc3.last_name
+  FROM local_statistics.vol_ct_3 vc3
+  LEFT JOIN bd_with ON vc3.item_hrid = bd_with.item_hrid
+  WHERE bd_with.item_hrid IS NULL
+;
+CREATE INDEX ON local_statistics.vol_ct_4 (instance_hrid);
+CREATE INDEX ON local_statistics.vol_ct_4 ("format_type");
+CREATE INDEX ON local_statistics.vol_ct_4 (publication_date);
+CREATE INDEX ON local_statistics.vol_ct_4 (holdings_hrid);
+CREATE INDEX ON local_statistics.vol_ct_4 (holdings_id);
+CREATE INDEX ON local_statistics.vol_ct_4 (type_name);
+CREATE INDEX ON local_statistics.vol_ct_4 (permanent_location_name);
+CREATE INDEX ON local_statistics.vol_ct_4 (item_hrid);
+CREATE INDEX ON local_statistics.vol_ct_4 (enumeration);
+CREATE INDEX ON local_statistics.vol_ct_4 (chronology);
+CREATE INDEX ON local_statistics.vol_ct_4 (item_id);
+CREATE INDEX ON local_statistics.vol_ct_4 (item_loc);
+CREATE INDEX ON local_statistics.vol_ct_4 (created_date);
+CREATE INDEX ON local_statistics.vol_ct_4 (item_create_user_name);
+CREATE INDEX ON local_statistics.vol_ct_4 (last_name);
+
+
+/* Query 5: This query uses “local_statistics.vol_ct_4” to get counts of volumes held by 
+ * permanent_location_name. It uses the local_statistics table "adc_loc_translation_csv"
+ * to further group locations for the annual data collection.
+ */
+-- less than one minute; 118 rows summed to  8,374,157 records on 3/14/22 (Law doing a large wd project in 2022)
+DROP TABLE IF EXISTS local_statistics.vol_ct_5;
+CREATE TABLE local_statistics.vol_ct_5 as
+SELECT 
+alt.adc_loc_translation,
+vc4.permanent_location_name,
+count(vc4.item_id) AS "vol_total"
+FROM local_statistics.vol_ct_4 vc4
+LEFT JOIN local_statistics.adc_loc_translation_csv alt ON vc4."permanent_location_name" = alt.permanent_location_name
+GROUP BY alt.adc_loc_translation, vc4.permanent_location_name
+ORDER BY alt.adc_loc_translation
+;
+
+/* Query 6: Using "local_statistics.vol_ct_4", this query gets summary counts of item records 
+ * created after the beginning of the fiscal year, grouped by the holdings location. It uses 
+ * the local_statistics table "adc_loc_translation_csv" to further group locations for the 
+ * annual data collection.
+ * Note that this includes both those items created new and created retrospectively. For the
+ * annual data collection, we attempt to separate those counts in the following queries.
+ * 
+ * Each fiscal year, update the date the item records should have been created after.
+ */
+-- less than one minute; 78 rows summed to 38,567 on 3/14/22
+DROP TABLE IF EXISTS local_statistics.vol_ct_6; 
+CREATE TABLE local_statistics.vol_ct_6 AS
+SELECT
+alt.adc_loc_translation,
+vc4.permanent_location_name,
+count(vc4.item_id) AS new_volumes
+FROM local_statistics.vol_ct_4 vc4
+LEFT JOIN local_statistics.adc_loc_translation_csv alt ON vc4."permanent_location_name" = alt.permanent_location_name
+WHERE vc4.created_date::DATE > '2021-07-01'
+GROUP BY alt.adc_loc_translation, vc4.permanent_location_name
+ORDER BY alt.adc_loc_translation
 ;
