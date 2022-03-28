@@ -1,6 +1,52 @@
+/*Harvest Specification
+
+ I. Harvest the bibs that have the following characteristics.
+
+--A. Suppression don't care, want suppressed and unsuppressed bibs.
+
+--B. Leader/06-07=aa, am, cm, dm, em or tm
+
+--C. 008/6=m or q, r, s, or t
+
+D. Does not contain a 245 subfield h
+
+E. If 336 is present subfield a must equal "text".
+
+F. Must have an 035 (OCoLC) number
+
+G. Must not have in 300 subfield a and only subfield a “map” or “maps”
+
+H. Check  if 008/17=u and 008/28=f, if both conditions exist mark in report as “1” and if not “0”, see below for report formatting.
+Processing Description
+II. Examine all the MFHDs associated with each bib.
+--A. Suppression don’t care.
+--B. Discard any MFHD with the location serv,remo
+--C. Must have content in 852 subfield h other than “On Order,” “In Process,” “Available for the library to purchase”, Film or *fiche (all not case sensitive). 852 k or m subfields cannot contain work Disk or Disc.
+--D. MFHD must have at least one 866 or if one 866 cannot have text 1 v.
+E. Suppressed MFHDs that meet condition d mark as “WD” for “Withdrawn.”
+F. Unsuppressed MFHDs that meet condition  must examine item record and if the Voyager 
+item status = 12, 13, or 14 mark as “LM” for “Lost/Missing”. 
+Any item with status = 17 marks as “WD” for “Withdrawn” and ignore any other statuses for that item.
+ Any other item with any other status, mark as “CH” for “Current Holding.”
+G. Item must have text in item’s enumeration or chronology.
+H. Unsuppressed MFHDs that are not serv,remo that meets conditions c and d and lack items mark as CH
+III. For each MFHD which meets the criteria retrieve the following: OCoLC 035 number, drop the prefix (OCoLC) for report, drop any alpha characters preceding the number such as ocm or ocn. If more than one OCLC number in record, use the first occurrence.
+A. Bib id, add bib to number
+B. The marked status of the MFHD or item, CH, LM, or WD.
+C. Include null value for condition.
+D. Include text from enum/chron of item as applicable.
+E. Government document status either 0 (not) or 1 (is government document)
+F. Repeat tab delimited values for each holding/item for the bib that meets the criteria with a maximum file size of 100 MB to be place in HathiTrust server file space. File name: Hathi-MULTI-YYYYMMDD-[file number]
+
+For example: bib 12345 has 1 items which meet criteria unsuppressed.
+
+OCLC                Bib Id            Status      Condition  Enum/chron     GovDoc
+
+623445              bib12345       CH                           v.3                        0 */
+
 -------------------selects records based on type from a Leader/000------------------------------
-DROP table IF EXISTS LOCAL.h_mv_1;
-CREATE TABLE LOCAL.h_mv_1 AS
+DROP table IF EXISTS local_hathi.h_mv_1;
+CREATE TABLE local_hathi.h_mv_1 AS
 SELECT
     sm.instance_hrid,
     sm.instance_id,
@@ -14,17 +60,17 @@ SELECT
     and (sm.field = '000' AND substring(sm."content", 7, 2) IN ('aa', 'am', 'cm', 'dm', 'em', 'tm'))
 ;
 
-CREATE INDEX ON local.h_mv_1 (instance_hrid);
-CREATE INDEX ON local.h_mv_1 (instance_id);
-CREATE INDEX ON local.h_mv_1 (field);
-CREATE INDEX ON local.h_mv_1 (sf);
-CREATE INDEX ON local.h_mv_1 (ct1);
-CREATE INDEX ON local.h_mv_1 ("type_m");
+CREATE INDEX ON local_hathi.h_mv_1 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_1 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_1 (field);
+CREATE INDEX ON local_hathi.h_mv_1 (sf);
+CREATE INDEX ON local_hathi.h_mv_1 (ct1);
+CREATE INDEX ON local_hathi.h_mv_1 ("type_m");
 
 
 ----------------selects records from previous table and filters on 008 language material------------
-DROP table IF EXISTS LOCAL.h_mv_1b;
-CREATE TABLE LOCAL.h_mv_1b AS
+DROP table IF EXISTS local_hathi.h_mv_1b;
+CREATE TABLE local_hathi.h_mv_1b AS
 WITH publ_stat AS(
 SELECT
     sm.instance_hrid,
@@ -42,18 +88,18 @@ SELECT
     h1.instance_id,
     h1b."type_publ",
     h1."type_m"
-    FROM LOCAL.h_mv_1 h1
+    FROM local_hathi.h_mv_1 h1
     inner JOIN publ_stat h1b ON h1.instance_id = h1b.instance_id
 ;
 
-CREATE INDEX ON local.h_mv_1b (instance_hrid);
-CREATE INDEX ON local.h_mv_1b (instance_id);
-CREATE INDEX ON local.h_mv_1b ("type_publ");
-CREATE INDEX ON LOCAL.h_mv_1b ("type_m");
+CREATE INDEX ON local_hathi.h_mv_1b (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_1b (instance_id);
+CREATE INDEX ON local_hathi.h_mv_1b ("type_publ");
+CREATE INDEX ON local_hathi.h_mv_1b ("type_m");
 
 --2--------filters records based on locations-------------------------------
-DROP TABLE IF EXISTS LOCAL.h_mv_2; 
-CREATE TABLE LOCAL.h_mv_2 AS 
+DROP TABLE IF EXISTS local_hathi.h_mv_2; 
+CREATE TABLE local_hathi.h_mv_2 AS 
 SELECT 
     lhm.instance_id,
     lhm.instance_hrid,
@@ -62,7 +108,7 @@ SELECT
     h.permanent_location_name,
     h.call_number,
     h.discovery_suppress 
-    FROM  LOCAL.h_mv_1b lhm
+    FROM  local_hathi.h_mv_1b lhm
     LEFT JOIN  folio_reporting.holdings_ext h ON lhm.instance_id=h.instance_id
     WHERE h.permanent_location_name NOT like 'serv,remo'
     AND h.permanent_location_name NOT LIKE 'Borrow Direct'
@@ -70,19 +116,19 @@ SELECT
     AND h.permanent_location_name NOT LIKE '%A/V'
 ;
 
-CREATE INDEX ON local.h_mv_2 (instance_id);
-CREATE INDEX ON local.h_mv_2 (instance_hrid);
-CREATE INDEX ON LOCAL.h_mv_2 (holdings_id);
-CREATE INDEX ON LOCAL.h_mv_2 (holdings_hrid);
-CREATE INDEX ON LOCAL.h_mv_2 (permanent_location_name);
-CREATE INDEX ON local.h_mv_2 (call_number);
-CREATE INDEX ON LOCAL.h_mv_2 (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_2 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_2 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_2 (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_2 (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_2 (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_2 (call_number);
+CREATE INDEX ON local_hathi.h_mv_2 (discovery_suppress);
 
 
 
 --3------------------------selects/deselects records with 245 $h[electronic resource] and filters from h_mv_2------------------------
-DROP TABLE IF EXISTS LOCAL.h_mv_3;   
-CREATE TABLE LOCAL.h_mv_3 AS
+DROP TABLE IF EXISTS local_hathi.h_mv_3;   
+CREATE TABLE local_hathi.h_mv_3 AS
 WITH twofortyfive AS (
 SELECT
     sm.instance_hrid,
@@ -112,23 +158,23 @@ SELECT
     h.permanent_location_name,
     h.call_number,
     h.discovery_suppress
-    FROM LOCAL.h_mv_2 h
+    FROM local_hathi.h_mv_2 h
     LEFT JOIN twofortyfive t ON h.instance_id = t.instance_id
     WHERE t.instance_id IS NULL
 ;
 
-CREATE INDEX ON local.h_mv_3 (instance_id);
-CREATE INDEX ON local.h_mv_3 (instance_hrid);
-CREATE INDEX ON LOCAL.h_mv_3 (holdings_id);
-CREATE INDEX ON LOCAL.h_mv_3 (holdings_hrid);
-CREATE INDEX ON LOCAL.h_mv_3 (permanent_location_name);
-CREATE INDEX ON local.h_mv_3 (call_number);
-CREATE INDEX ON LOCAL.h_mv_3 (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_3 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_3 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_3 (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_3 (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_3 (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_3 (call_number);
+CREATE INDEX ON local_hathi.h_mv_3 (discovery_suppress);
 
 
 --4---------------------selects/deselects records with 336 $atext content and filters from h_mv_3----------------  
-DROP TABLE IF EXISTS LOCAL.h_mv_4;
-CREATE TABLE LOCAL.h_mv_4 AS
+DROP TABLE IF EXISTS local_hathi.h_mv_4;
+CREATE TABLE local_hathi.h_mv_4 AS
 WITH threethirtysix AS (
 SELECT 
     sm.instance_id,
@@ -148,21 +194,21 @@ SELECT
     h.permanent_location_name,
     h.call_number,
     h.discovery_suppress 
-    FROM LOCAL.h_mv_3 h
+    FROM local_hathi.h_mv_3 h
     LEFT JOIN threethirtysix t ON h.instance_id = t.instance_id
     WHERE t.instance_id IS NULL
 ;
-CREATE INDEX ON local.h_mv_4 (instance_hrid);
-CREATE INDEX ON local.h_mv_4 (instance_id);
-CREATE INDEX ON LOCAL.h_mv_4 (holdings_id);
-CREATE INDEX ON LOCAL.h_mv_4 (holdings_hrid);
-CREATE INDEX ON local.h_mv_4 (permanent_location_name);
-CREATE INDEX ON local.h_mv_4 (call_number);
-CREATE INDEX ON LOCAL.h_mv_4 (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_4 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_4 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_4 (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_4 (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_4 (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_4 (call_number);
+CREATE INDEX ON local_hathi.h_mv_4 (discovery_suppress);
 
 --5--------------------selects records with 300 $amap or maps and filters from h_mv_4------------------ 
-DROP TABLE IF EXISTS LOCAL.h_mv_5;
-CREATE TABLE LOCAL.h_mv_5 AS
+DROP TABLE IF EXISTS local_hathi.h_mv_5;
+CREATE TABLE local_hathi.h_mv_5 AS
 WITH threehundred AS 
 (SELECT
     sm.instance_hrid,
@@ -190,7 +236,7 @@ WITH threehundred AS
     he.holdings_hrid,
     he.permanent_location_name, 
     he.call_number, 
-    he.discovery_suppress
+    he.discovery_suppress)
     SELECT 
     h.instance_id,
     h.instance_hrid,
@@ -199,21 +245,21 @@ WITH threehundred AS
     h.permanent_location_name,
     h.call_number,
     h.discovery_suppress
-    FROM LOCAL.h_mv_4 h
+    FROM local_hathi.h_mv_4 h
     left JOIN threehundred t ON h.instance_id = t.instance_id
     WHERE t.instance_id IS NULL
 ;
-CREATE INDEX ON local.h_mv_5 (instance_id);
-CREATE INDEX ON local.h_mv_5 (instance_hrid);
-CREATE INDEX ON local.h_mv_5 (holdings_id);
-CREATE INDEX ON local.h_mv_5 (holdings_hrid);
-CREATE INDEX ON local.h_mv_5 (permanent_location_name);
-CREATE INDEX ON local.h_mv_5 (call_number);
-CREATE INDEX ON LOCAL.h_mv_5 (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_5 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_5 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_5 (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_5 (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_5 (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_5 (call_number);
+CREATE INDEX ON local_hathi.h_mv_5 (discovery_suppress);
 
 --6-----------------------filters records by certain values in call number from h_mv_5-------------------
-DROP TABLE IF EXISTS LOCAL.h_mv_6;
-CREATE TABLE LOCAL.h_mv_6 AS
+DROP TABLE IF EXISTS local_hathi.h_mv_6;
+CREATE TABLE local_hathi.h_mv_6 AS
 SELECT 
     hhn.instance_id,
     hhn.instance_hrid,
@@ -222,7 +268,7 @@ SELECT
     hhn.call_number,
     hhn.permanent_location_name,
     hhn.discovery_suppress
-    FROM LOCAL.h_mv_5 hhn  
+    FROM local_hathi.h_mv_5 hhn  
     WHERE hhn.call_number !~~* 'on order%'
     AND hhn.call_number !~~* 'in process%'
     AND hhn.call_number !~~* 'Available for the library to purchase'
@@ -234,17 +280,17 @@ SELECT
     AND hhn.call_number !~~* '%vault%'
 ;
 
-CREATE INDEX ON local.h_mv_6 (instance_id);
-CREATE INDEX ON local.h_mv_6 (instance_hrid);
-CREATE INDEX ON local.h_mv_6 (holdings_id);
-CREATE INDEX ON local.h_mv_6 (holdings_hrid);
-CREATE INDEX ON local.h_mv_6 (permanent_location_name);
-CREATE INDEX ON local.h_mv_6 (call_number);
-CREATE INDEX ON LOCAL.h_mv_6 (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_6 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_6 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_6 (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_6 (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_6 (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_6 (call_number);
+CREATE INDEX ON local_hathi.h_mv_6 (discovery_suppress);
 
 --7--------------------filters records with oclc number------------------    
-DROP TABLE IF EXISTS LOCAL.h_mv_7;
-CREATE TABLE LOCAL.h_mv_7 AS
+DROP TABLE IF EXISTS local_hathi.h_mv_7;
+CREATE TABLE local_hathi.h_mv_7 AS
 WITH oclc_no AS (
     SELECT
     ii2.instance_id AS instance_id,
@@ -267,24 +313,24 @@ WITH oclc_no AS (
         WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocn%' THEN SUBSTRING(oclcno.oclc_number2, 11)
         WHEN oclcno.oclc_number2 LIKE '(OCoLC)%' THEN SUBSTRING(oclcno.oclc_number2, 8)
         ELSE oclcno.oclc_number2 END AS oclc_no
-    FROM LOCAL.h_mv_6 hsn 
+    FROM local_hathi.h_mv_6 hsn 
     INNER JOIN oclc_no AS oclcno ON hsn.instance_id = oclcno.instance_id
 ;
 
-CREATE INDEX ON local.h_mv_7 (instance_id);
-CREATE INDEX ON local.h_mv_7 (instance_hrid);
-CREATE INDEX ON local.h_mv_7 (holdings_id);
-CREATE INDEX ON local.h_mv_7 (holdings_hrid);
-CREATE INDEX ON local.h_mv_7 (call_number);
-CREATE INDEX ON local.h_mv_7 (permanent_location_name);
-CREATE INDEX ON LOCAL.h_mv_7 (discovery_suppress);
-CREATE INDEX ON local.h_mv_7 (id_type);
-CREATE INDEX ON local.h_mv_7 (oclc_number2);
-CREATE INDEX ON LOCAL.h_mv_7 (oclc_no);
+CREATE INDEX ON local_hathi.h_mv_7 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_7 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_7 (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_7 (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_7 (call_number);
+CREATE INDEX ON local_hathi.h_mv_7 (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_7 (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_7 (id_type);
+CREATE INDEX ON local_hathi.h_mv_7 (oclc_number2);
+CREATE INDEX ON local_hathi.h_mv_7 (oclc_no);
 
 ----------8 clears holdings statements ----------
-drop table IF EXISTS LOCAL.h_mv_8 ;
-CREATE table LOCAL.h_mv_8 as
+drop table IF EXISTS local_hathi.h_mv_8 ;
+CREATE table local_hathi.h_mv_8 as
 SELECT
       hm.instance_id,
       hm.instance_hrid,
@@ -297,26 +343,26 @@ SELECT
       hm.call_number,
       he.type_name,
       hm.discovery_suppress 
-FROM local.h_mv_7 hm
+FROM local_hathi.h_mv_7 hm
 LEFT JOIN folio_reporting.holdings_ext  he ON hm.holdings_id = he.holdings_id
 LEFT JOIN folio_reporting.holdings_statements hs ON hm.holdings_id = hs.holdings_id 
 LEFT JOIN folio_reporting.holdings_notes hn ON hm.holdings_id = hn.holdings_id
 where (hs."statement" NOT IN ('1 v.'))
 ;
-CREATE INDEX ON local.h_mv_8 (instance_id);
-CREATE INDEX ON local.h_mv_8 (instance_hrid);
-CREATE INDEX ON local.h_mv_8 (holdings_id);
-CREATE INDEX ON local.h_mv_8 (holdings_hrid);
-CREATE INDEX ON local.h_mv_8 ("statement");
-CREATE INDEX ON local.h_mv_8 (permanent_location_name);
-CREATE INDEX ON local.h_mv_8 (note);
-CREATE INDEX ON local.h_mv_8 (call_number);
-CREATE INDEX ON LOCAL.h_mv_8 (type_name)
-CREATE INDEX ON LOCAL.h_mv_8 (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_8 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_8 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_8 (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_8 (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_8 ("statement");
+CREATE INDEX ON local_hathi.h_mv_8 (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_8 (note);
+CREATE INDEX ON local_hathi.h_mv_8 (call_number);
+CREATE INDEX ON local_hathi.h_mv_8 (type_name)
+CREATE INDEX ON local_hathi.h_mv_8 (discovery_suppress);
 
 ------------------------------------------
-DROP TABLE IF EXISTS LOCAL.h_mv_8b;
-CREATE TABLE LOCAL.h_mv_8b AS 
+DROP TABLE IF EXISTS local_hathi.h_mv_8b;
+CREATE TABLE local_hathi.h_mv_8b AS 
 SELECT 
 DISTINCT he.item_id,
 he.item_hrid,
@@ -335,31 +381,31 @@ he.damaged_status_name,
 hm.note,
 hm.discovery_suppress,
 hm.oclc_no
-FROM local.h_mv_8 hm
+FROM local_hathi.h_mv_8 hm
 LEFT JOIN folio_reporting.item_ext he ON hm.holdings_id = he.holdings_record_id
 --WHERE ((he.enumeration IS NULL and he.chronology IS NULL)
 --AND (hm.discovery_suppress IS TRUE OR hm.discovery_suppress IS NULL))
 ;
 
-CREATE INDEX ON LOCAL.h_mv_8b (item_hrid);
-CREATE INDEX ON local.h_mv_8b (instance_id);
-CREATE INDEX ON local.h_mv_8b (instance_hrid);
-CREATE INDEX ON local.h_mv_8b (holdings_id);
-CREATE INDEX ON local.h_mv_8b (holdings_hrid);
-CREATE INDEX ON local.h_mv_8b (permanent_location_name);
-CREATE INDEX ON local.h_mv_8b (call_number);
-CREATE INDEX ON LOCAL.h_mv_8b (enumeration);
-CREATE INDEX ON LOCAL.h_mv_8b (chronology);
-CREATE INDEX ON LOCAL.h_mv_8b (number_of_pieces);
-CREATE INDEX ON LOCAL.h_mv_8b (number_of_missing_pieces);
-CREATE INDEX ON LOCAL.h_mv_8b (status_name);
-CREATE INDEX ON LOCAL.h_mv_8b (damaged_status_name);
-CREATE INDEX ON local.h_mv_8b (note);
-CREATE INDEX ON LOCAL.h_mv_8b (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_8b (item_hrid);
+CREATE INDEX ON local_hathi.h_mv_8b (instance_id);
+CREATE INDEX ON local_hathi.h_mv_8b (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_8b (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_8b (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_8b (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_8b (call_number);
+CREATE INDEX ON local_hathi.h_mv_8b (enumeration);
+CREATE INDEX ON local_hathi.h_mv_8b (chronology);
+CREATE INDEX ON local_hathi.h_mv_8b (number_of_pieces);
+CREATE INDEX ON local_hathi.h_mv_8b (number_of_missing_pieces);
+CREATE INDEX ON local_hathi.h_mv_8b (status_name);
+CREATE INDEX ON local_hathi.h_mv_8b (damaged_status_name);
+CREATE INDEX ON local_hathi.h_mv_8b (note);
+CREATE INDEX ON local_hathi.h_mv_8b (discovery_suppress);
 
 ---9-------assigns statuses and conditions-----------
-DROP TABLE IF EXISTS LOCAL.h_mv_9;
-CREATE TABLE LOCAL.h_mv_9 as
+DROP TABLE IF EXISTS local_hathi.h_mv_9;
+CREATE TABLE local_hathi.h_mv_9 as
 SELECT 
 DISTINCT hs.item_id,
 hs.instance_hrid,
@@ -391,7 +437,7 @@ CASE WHEN (hs.enumeration IS NOT NULL)
             WHEN hs.enumeration IS NULL 
             THEN hs.chronology 
             ELSE '' END AS "Enum/Chron"
-FROM LOCAL.h_mv_8b hs 
+FROM local_hathi.h_mv_8b hs 
 GROUP BY 
 hs.instance_hrid,
 hs.instance_id,
@@ -407,28 +453,28 @@ hs.status_name,
 hs.discovery_suppress,
 hs.damaged_status_name
 ;
-CREATE INDEX ON LOCAL.h_mv_9 (item_id);
-CREATE INDEX ON local.h_mv_9 (instance_id);
-CREATE INDEX ON local.h_mv_9 (instance_hrid);
-CREATE INDEX ON local.h_mv_9 (holdings_id);
-CREATE INDEX ON local.h_mv_9 (holdings_hrid);
-CREATE INDEX ON local.h_mv_9 (permanent_location_name);
-CREATE INDEX ON local.h_mv_9 (call_number);
-CREATE INDEX ON LOCAL.h_mv_9 (enumeration);
-CREATE INDEX ON LOCAL.h_mv_9 (chronology);
-CREATE INDEX ON LOCAL.h_mv_9 (number_of_pieces);
-CREATE INDEX ON LOCAL.h_mv_9 (number_of_missing_pieces);
-CREATE INDEX ON LOCAL.h_mv_9 (status_name);
-CREATE INDEX ON LOCAL.h_mv_9 (status);
-CREATE INDEX ON LOCAL.h_mv_9 (oclc_no);
-CREATE INDEX ON LOCAL.h_mv_9 (damaged_status_name);
-CREATE INDEX ON LOCAL.h_mv_9 (discovery_suppress);
+CREATE INDEX ON local_hathi.h_mv_9 (item_id);
+CREATE INDEX ON local_hathi.h_mv_9 (instance_id);
+CREATE INDEX ON local_hathi.h_mv_9 (instance_hrid);
+CREATE INDEX ON local_hathi.h_mv_9 (holdings_id);
+CREATE INDEX ON local_hathi.h_mv_9 (holdings_hrid);
+CREATE INDEX ON local_hathi.h_mv_9 (permanent_location_name);
+CREATE INDEX ON local_hathi.h_mv_9 (call_number);
+CREATE INDEX ON local_hathi.h_mv_9 (enumeration);
+CREATE INDEX ON local_hathi.h_mv_9 (chronology);
+CREATE INDEX ON local_hathi.h_mv_9 (number_of_pieces);
+CREATE INDEX ON local_hathi.h_mv_9 (number_of_missing_pieces);
+CREATE INDEX ON local_hathi.h_mv_9 (status_name);
+CREATE INDEX ON local_hathi.h_mv_9 (status);
+CREATE INDEX ON local_hathi.h_mv_9 (oclc_no);
+CREATE INDEX ON local_hathi.h_mv_9 (damaged_status_name);
+CREATE INDEX ON local_hathi.h_mv_9 (discovery_suppress);
 
 
 --10------------------------------selects value for government document from 008 ---------
 -- total number of records as of 12/07/2021 is 928,334 --------------
-DROP TABLE IF EXISTS LOCAL.h_mv_final;
-CREATE TABLE LOCAL.h_mv_final AS
+DROP TABLE IF EXISTS local_hathi.h_mv_final;
+CREATE TABLE local_hathi.h_mv_final AS
 WITH gov_doc AS (
     SELECT
     sm.instance_hrid AS instance_hrid,
@@ -450,13 +496,13 @@ SELECT
    hm."condition" AS "Condition",
    hm."Enum/Chron",
    gd.GovDoc
-   FROM LOCAL.h_mv_9 AS hm
+   FROM local_hathi.h_mv_9 AS hm
    LEFT JOIN gov_doc AS gd ON hm.instance_hrid = gd.instance_hrid
    WHERE hm.status != 'NWD'
 ;
-CREATE INDEX ON local.h_mv_final (OCLC);
-CREATE INDEX ON local.h_mv_final (Bib_id);
-CREATE INDEX ON local.h_mv_final (Status);
-CREATE INDEX ON LOCAL.h_mv_final ("Condition");
-CREATE INDEX ON LOCAL.h_mv_final ("Enum/Chron")
-CREATE INDEX ON local.h_mv_final (GovDoc);
+CREATE INDEX ON local_hathi.h_mv_final (OCLC);
+CREATE INDEX ON local_hathi.h_mv_final (Bib_id);
+CREATE INDEX ON local_hathi.h_mv_final (Status);
+CREATE INDEX ON local_hathi.h_mv_final ("Condition");
+CREATE INDEX ON local_hathi.h_mv_final ("Enum/Chron")
+CREATE INDEX ON local_hathi.h_mv_final (GovDoc);
