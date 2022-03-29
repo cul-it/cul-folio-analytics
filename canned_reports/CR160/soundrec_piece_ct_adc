@@ -1,0 +1,298 @@
+/* This is the query used by A&P to get the number of pieces of physical sound recordings currently held in 
+ * Ithaca, by shelving unit, for CUL's annual data collection (adc). 
+ * For the adc, these queries are run as close to the end of the fiscal year as possible 
+ *(date filter not used here).
+ *
+ *The first 4 queries create local data tables stored in the "local_statistics" schema. They are
+ *used by the fifth query to get counts of sound recordings currently held, by shelving location. 
+ * 
+ *Filtering requiring updates as needed:
+ *Query 2: locations to be excluded (review as needed with CUL)
+ *Query 4: how bound withs excluded will change over time (see documention in next row)
+ *    Linda M: 11/29/21: I see from the updated LTS policy 
+ *    https://confluence.cornell.edu/pages/viewpage.action?pageId=403238522 that in FOLIO, item 
+ *    records will not be created for other than the first title in a bound with. But it looks like
+ *    there are some 200K FOLIO item records with “Bound with” for the enumeration that I assume came
+ *    from Voyager (found just about the same amount in June 2021 in Voyager). I assume that in my 
+ *    volume counts, I should continue to exclude item records with “Bound with” for the enumeration, 
+ *    and that we won’t be cleaning up those records anytime soon?
+ *    Laura D: 11/29/21: Yes, continue to exclude item records with “Bound with” for enumeration. I 
+ *    believe we will be cleaning those up eventually, but I can’t imagine us doing so before the FOLIO
+ *    bound-with solution is fully implemented. I can’t remember off the top of my head if that’s even
+ *    got a release date yet, but it’s not Juniper or Kiwi.
+ *Queries 5: update the adc_loc_translation_csv table as needed with CUL
+ *
+ *Once tables 1-4 are created by A&P for the annual report or quarterly reporting to DFA 
+ *(CUL Division of *Financial Affairs), a few earlier runs may be set aside for later use, by 
+ *adding dates to the end of the table names.
+ */
+
+/* Query 1: this query selects unique instance IDs and other instance info, including using the
+ * subquery "get_date" to add the date of publication.
+ * Stated quickly, it gets instance records whose bib format codes start with i or j;
+ * that are not suppressed; and whose srs_records state is “actual”.
+ */ 
+-- 7 minutes; 259,541 rows on 3/10/22
+DROP TABLE IF EXISTS local_statistics.sr_ct_1; 
+CREATE TABLE local_statistics.sr_ct_1 AS
+WITH get_date AS 
+(select 
+    sm.instance_hrid,
+    sm.instance_id,
+    sm.field,
+    sm.content,
+    substring(sm.content, 8, 4)::text AS publication_date
+    FROM srs_marctab sm 
+    WHERE (sm.field = '008'))
+SELECT DISTINCT 
+	sm.instance_hrid,
+    sm.instance_id,
+    sm.field,
+    substring(sm."content", 7, 2) AS "format_type",
+    gd.publication_date,
+    ie.discovery_suppress,
+    ie.record_created_date::date 
+FROM srs_marctab sm 
+    LEFT JOIN get_date AS gd ON sm.instance_id = gd.instance_id
+    LEFT JOIN folio_reporting.instance_ext ie ON sm.instance_id = ie.instance_id
+    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
+WHERE (sm.field = '000' AND substring(sm."content", 7, 2) LIKE 'i%' 
+OR sm.field = '000' AND substring(sm."content", 7, 2) like 'j%')
+AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
+AND sr.state  = 'ACTUAL'
+;
+CREATE INDEX ON local_statistics.sr_ct_1 (instance_hrid);
+CREATE INDEX ON local_statistics.sr_ct_1 (instance_id);
+CREATE INDEX ON local_statistics.sr_ct_1 (field);
+CREATE INDEX ON local_statistics.sr_ct_1 ("format_type");
+CREATE INDEX ON local_statistics.sr_ct_1 (publication_date);
+CREATE INDEX ON local_statistics.sr_ct_1 (discovery_suppress);
+CREATE INDEX ON local_statistics.sr_ct_1 (record_created_date);
+
+/* Query 2: This query adds holdings information, and specifies that:
+ * item records for some 27 particular locations not be included because they are
+ * not sound recordings, are not owned by the library, are in process, etc.;
+ * that microforms, as well as items on order, in process or not yet selected are excluded
+ * via call number; AND that the holdings record is not suppressed.
+ * 
+ * For each run, update the list of locations to be excluded as needed.
+*/
+--1 minute; 89,706 records on 3/10/22
+DROP TABLE IF EXISTS local_statistics.sr_ct_2; 
+CREATE TABLE local_statistics.sr_ct_2 AS
+SELECT 
+    sr1.instance_id,
+    sr1.instance_hrid,
+    sr1."format_type",
+    sr1.publication_date,
+    sr1.record_created_date::DATE,
+    h.holdings_id,
+    h.holdings_hrid,
+    h.permanent_location_name,
+    h.call_number,
+    h.discovery_suppress
+FROM local_statistics.sr_ct_1 sr1
+LEFT JOIN folio_reporting.holdings_ext h ON sr1.instance_id = h.instance_id
+WHERE h.permanent_location_name NOT ilike 'serv,remo'
+    AND h.permanent_location_name NOT ilike '%LTS%'
+    AND h.permanent_location_name NOT ilike 'Agricultural Engineering'
+    AND h.permanent_location_name NOT ilike 'Bindery Circulation'
+    AND h.permanent_location_name NOT ilike 'Biochem Reading Room'
+    AND h.permanent_location_name NOT iLIKE 'Borrow Direct'
+    AND h.permanent_location_name NOT ilike 'CISER'
+    AND h.permanent_location_name NOT ilike 'cons,opt'
+    AND h.permanent_location_name NOT ilike 'Engineering'
+    AND h.permanent_location_name NOT ilike 'Engineering Reference'
+    AND h.permanent_location_name NOT ilike 'Engr,wpe'
+    AND h.permanent_location_name NOT ilike 'Entomology'
+    AND h.permanent_location_name NOT ilike 'Food Science'
+    AND h.permanent_location_name NOT ilike 'Law Technical Services'
+    AND h.permanent_location_name NOT ilike 'LTS Review Shelves'
+    AND h.permanent_location_name NOT ilike 'LTS E-Resources & Serials'
+    AND h.permanent_location_name NOT ilike 'Mann Gateway'
+    AND h.permanent_location_name NOT ilike 'Mann Hortorium'
+    AND h.permanent_location_name NOT ilike 'Mann Hortorium Reference'
+    AND h.permanent_location_name NOT ilike 'Mann Technical Services'
+    AND h.permanent_location_name NOT ilike 'Iron Mountain'
+    AND h.permanent_location_name NOT ilike 'Interlibrary Loan%'
+    AND h.permanent_location_name NOT ilike 'Phys Sci'
+    AND h.permanent_location_name NOT ilike 'RMC Technical Services'
+    AND h.permanent_location_name NOT ilike 'No Library'
+    AND h.permanent_location_name NOT ilike 'x-test'
+    AND h.permanent_location_name NOT ilike 'z-test location'
+    AND h.call_number !~~* 'on order%'
+    AND h.call_number !~~* 'in process%'
+    AND h.call_number !~~* 'Available for the library to purchase'
+    AND h.call_number !~~* '%film%' 
+    AND h.call_number !~~* '%fiche%'
+    AND h.call_number !~~* '%micro%'
+    AND h.call_number !~~* '%vault%'
+    AND h.call_number !~~* 'On selector%'
+    AND (h.discovery_suppress = 'FALSE' 
+    OR h.discovery_suppress IS NULL )
+;
+CREATE INDEX ON local_statistics.sr_ct_2 (instance_id);
+CREATE INDEX ON local_statistics.sr_ct_2 (instance_hrid);
+CREATE INDEX ON local_statistics.sr_ct_2 ("format_type");
+CREATE INDEX ON local_statistics.sr_ct_2 (publication_date);
+CREATE INDEX ON local_statistics.sr_ct_2 (record_created_date);
+CREATE INDEX ON local_statistics.sr_ct_2 (holdings_id);
+CREATE INDEX ON local_statistics.sr_ct_2 (holdings_hrid);
+CREATE INDEX ON local_statistics.sr_ct_2 (permanent_location_name);
+CREATE INDEX ON local_statistics.sr_ct_2 (call_number);
+CREATE INDEX ON local_statistics.sr_ct_2 (discovery_suppress);
+
+/* Query 3: This query adds item info, using the subquery “cr_by_user” to add the net ID of the person
+ * who created the item record (and possibly the last name of that person in the future?)to help get
+ * at counts of item records created retrospectively (this is here because this query was originally
+ * written in the same script with the query to get item counts created retropectively; left here
+ * in case it is of use in the future.)
+ * Adds the item piece count field (number_of_pieces).
+ */
+--3 minutes; 97,435 records on 3/10/22
+DROP TABLE IF EXISTS local_statistics.sr_ct_3; 
+CREATE TABLE local_statistics.sr_ct_3 AS
+WITH cr_by_user AS
+(SELECT
+ ii.id,
+ json_extract_path_text(
+               (json_extract_path(ii.data, 'metadata')),'createdByUserId') AS created_by,
+ json_extract_path_text(
+               (json_extract_path(ii.data, 'personal')),'lastName') AS last_name,
+uu.username AS user_name
+FROM inventory_items ii 
+LEFT JOIN user_users uu ON json_extract_path_text(
+               (json_extract_path(ii.data, 'metadata')),'createdByUserId') = uu.id
+)
+SELECT
+  sr2.instance_hrid,
+  sr2."format_type",
+  sr2.publication_date,
+  sr2.holdings_hrid,
+  sr2.holdings_id,
+  sr2.permanent_location_name,
+  ie.item_hrid,
+  ie.item_id,
+  ie.number_of_pieces,
+  ie.enumeration,
+  ie.chronology,
+  ie.permanent_location_name AS item_loc,
+  ie.created_date::DATE,
+  cb.created_by,
+  cb.user_name,
+  cb.last_name
+  FROM local_statistics.sr_ct_2 sr2
+  LEFT JOIN folio_reporting.item_ext ie ON sr2.holdings_id = ie.holdings_record_id
+  LEFT JOIN cr_by_user cb ON ie.item_id = cb.id
+;
+CREATE INDEX ON local_statistics.sr_ct_3 (instance_hrid);
+CREATE INDEX ON local_statistics.sr_ct_3 ("format_type");
+CREATE INDEX ON local_statistics.sr_ct_3 (publication_date);
+CREATE INDEX ON local_statistics.sr_ct_3 (holdings_hrid);
+CREATE INDEX ON local_statistics.sr_ct_3 (holdings_id);
+CREATE INDEX ON local_statistics.sr_ct_3 (permanent_location_name);
+CREATE INDEX ON local_statistics.sr_ct_3 (item_hrid);
+CREATE INDEX ON local_statistics.sr_ct_3 (item_id);
+CREATE INDEX ON local_statistics.sr_ct_3 (number_of_pieces);
+CREATE INDEX ON local_statistics.sr_ct_3 (enumeration);
+CREATE INDEX ON local_statistics.sr_ct_3 (chronology);
+CREATE INDEX ON local_statistics.sr_ct_3 (item_loc);
+CREATE INDEX ON local_statistics.sr_ct_3 (created_date);
+CREATE INDEX ON local_statistics.sr_ct_3 (created_by);
+CREATE INDEX ON local_statistics.sr_ct_3 (user_name);
+CREATE INDEX ON local_statistics.sr_ct_3 (last_name);
+
+
+/* Query 4: Through the subquery "bd_with", this query excludes item records indicating 
+ * through their enumeration that they are item records for later titles in “bound with” items. 
+ * Note that for sound recordings there are very few of these. However, there are some (~90) 
+ * items with "bound in" notes indicating non-recording items cased with recordings in the same
+ * enumeration field and that are part of the number of pieces counts. While those other item pieces 
+ * maybe shouldn't be counted, there is no automated way to remove them. You can see these by changing
+ * the query to "WHERE sr3s.enumeration ~~* '%bound%'." And these have been included in past counts.
+ * */
+-- ~1 minute; 97,434 rows on 3/10/22
+DROP TABLE IF EXISTS local_statistics.sr_ct_4; 
+CREATE TABLE local_statistics.sr_ct_4 AS
+WITH bd_with AS 
+(SELECT
+  sr3s.instance_hrid,
+  sr3s.holdings_hrid,
+  sr3s.holdings_id,
+  sr3s.permanent_location_name,
+  sr3s.item_hrid,
+  sr3s.item_id,
+  sr3s.number_of_pieces,
+  sr3s.item_loc,
+  sr3s.enumeration,
+  sr3s.created_date::DATE
+  FROM local_statistics.sr_ct_3 sr3s
+  WHERE sr3s.enumeration ~~* '%bound%with%'
+)
+SELECT 
+  sr3.instance_hrid,
+  sr3."format_type",
+  sr3.publication_date,
+  sr3.holdings_hrid,
+  sr3.holdings_id,
+  sr3.permanent_location_name,
+  sr3.item_hrid,
+  sr3.enumeration,
+  sr3.chronology,
+  sr3.item_id,
+  sr3.number_of_pieces,
+  sr3.item_loc,
+  sr3.created_date::DATE,
+  sr3.user_name,
+  sr3.last_name
+  FROM local_statistics.sr_ct_3 sr3
+  LEFT JOIN bd_with ON sr3.item_hrid = bd_with.item_hrid
+  WHERE bd_with.item_hrid IS NULL
+;
+CREATE INDEX ON local_statistics.sr_ct_4 (instance_hrid);
+CREATE INDEX ON local_statistics.sr_ct_4 ("format_type");
+CREATE INDEX ON local_statistics.sr_ct_4 (publication_date);
+CREATE INDEX ON local_statistics.sr_ct_4 (holdings_hrid);
+CREATE INDEX ON local_statistics.sr_ct_4 (holdings_id);
+CREATE INDEX ON local_statistics.sr_ct_4 (permanent_location_name);
+CREATE INDEX ON local_statistics.sr_ct_4 (item_hrid);
+CREATE INDEX ON local_statistics.sr_ct_4 (enumeration);
+CREATE INDEX ON local_statistics.sr_ct_4 (chronology);
+CREATE INDEX ON local_statistics.sr_ct_4 (item_id);
+CREATE INDEX ON local_statistics.sr_ct_4 (number_of_pieces);
+CREATE INDEX ON local_statistics.sr_ct_4 (item_loc);
+CREATE INDEX ON local_statistics.sr_ct_4 (created_date);
+CREATE INDEX ON local_statistics.sr_ct_4 (user_name);
+CREATE INDEX ON local_statistics.sr_ct_4 (last_name);
+
+
+/* Query 5: This query uses “local_statistics.sr_ct_4” to get counts of sound recordings held by 
+ * permanent_location_name. It uses the local_statistics table "adc_loc_translation_csv"
+ * to further group locations for the annual data collection.
+ * Note that there may be locations that have no counts - that means there are no item records, but 
+ * are instance and holdings records.
+ */
+-- very fast; 44 rows summed to 145,838 pieces on 3/10/22
+SELECT 
+alt.adc_loc_translation,
+sr4.permanent_location_name,
+sum(sr4.number_of_pieces::NUMERIC) AS "sr_pieces_count"
+FROM local_statistics.sr_ct_4 sr4
+LEFT JOIN local_statistics.adc_loc_translation_csv alt ON sr4."permanent_location_name" = alt.permanent_location_name
+GROUP BY alt.adc_loc_translation, sr4.permanent_location_name
+ORDER BY alt.adc_loc_translation
+;
+
+/*This is to look at locations with no item records in this set.
+SELECT 
+  sr4.instance_hrid,
+  sr4.holdings_hrid,
+  sr4.permanent_location_name,
+  sr4.item_hrid,
+  sr4.enumeration,
+  sr4.chronology,
+  sr4.item_id,
+  sr4.number_of_pieces
+ FROM local_statistics.sr_ct_4 sr4
+ WHERE sr4.permanent_location_name iLIKE 'Math';
+*/
