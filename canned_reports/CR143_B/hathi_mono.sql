@@ -48,7 +48,7 @@ OCLC                Bib Id            Status      Condition           GovDoc
 */
 
 --1----selects pull of records based on ldr type ans 008 publication status and filters certain locations-----------
-DROP table IF EXISTS local_hathi_hathi.h_mo_1;
+DROP table IF EXISTS local_hathi.h_mo_1;
 CREATE TABLE local_hathi.h_mo_1 AS
 SELECT
     sm.instance_hrid,
@@ -72,7 +72,7 @@ CREATE INDEX ON local_hathi.h_mo_1 ("type_m");
 
 
 ----------------selects records from previous table and filters on 008 language material------------
-DROP table IF EXISTS local_hathi.h_mo_1b;
+DROP TABLE IF EXISTS local_hathi.h_mo_1b;
 CREATE TABLE local_hathi.h_mo_1b AS
 WITH publ_stat AS(
 SELECT
