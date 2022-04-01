@@ -134,6 +134,7 @@ SELECT
         lang.language AS language,
         format_extract.bib_format_display,
         ftie.invoice_vendor_name,
+        inv.vendor_invoice_no,
         inssub.subject AS instance_subject, -- This IS the subject that is first on the list.
         pol.title_or_package AS po_line_title_or_package,
         iext.title AS instance_title,
@@ -176,6 +177,8 @@ ORDER BY
         ftie.finance_group_name,
         fund_type,
         ftie.invoice_vendor_name,
-        po.po_number,
-        inv.vendor_invoice_no
+        inv.vendor_invoice_no,
+        po.po_number
+       
         ;
+        
