@@ -1,5 +1,5 @@
-Harvest Specification
-/*
+/*Harvest Specification
+
 --I.  Harvest the bibs that have the following characteristics.
 
 --A. Suppression don’t care, want suppressed and unsuppressed bibs.
@@ -121,7 +121,7 @@ SELECT
 CREATE INDEX ON local_hathi.h_mo_2 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_2 (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_2 (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_2 (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_2 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_2 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_2 (call_number);
 CREATE INDEX ON local_hathi.h_mo_2 (discovery_suppress);
@@ -164,7 +164,7 @@ SELECT
 CREATE INDEX ON local_hathi.h_mo_3 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_3 (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_3 (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_3 (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_3 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_3 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_3 (call_number);
 CREATE INDEX ON local_hathi.h_mo_3 (discovery_suppress);
@@ -199,7 +199,7 @@ SELECT
 CREATE INDEX ON local_hathi.h_mo_4 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_4 (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_4 (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_4 (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_4 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_4 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_4 (call_number);
 CREATE INDEX ON local_hathi.h_mo_4 (discovery_suppress);
@@ -242,7 +242,7 @@ WITH threehundred AS
 CREATE INDEX ON local_hathi.h_mo_5 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_5 (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_5 (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_5 (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_5 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_5 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_5 (call_number);
 CREATE INDEX ON local_hathi.h_mo_5 (discovery_suppress);
@@ -271,7 +271,7 @@ SELECT
 CREATE INDEX ON local_hathi.h_mo_6 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_6 (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_6 (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_6 (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_6 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_6 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_6 (call_number);
 CREATE INDEX ON local_hathi.h_mo_6 (discovery_suppress);
@@ -307,7 +307,7 @@ WITH oclc_no AS (
 CREATE INDEX ON local_hathi.h_mo_7 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_7 (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_7 (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_7 (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_7 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_7 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_7 (call_number);
 CREATE INDEX ON local_hathi.h_mo_7 (discovery_suppress);
@@ -334,7 +334,7 @@ CREATE INDEX ON local_hathi.h_mo_8 (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_8 ("statement");
 CREATE INDEX ON local_hathi.h_mo_8 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_8 (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_8 (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_8 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_8 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_8 (call_number);
 CREATE INDEX ON local_hathi.h_mo_8 (type_name);
@@ -368,7 +368,7 @@ CREATE INDEX ON local_hathi.h_mo_8b (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_8b ("statement");
 CREATE INDEX ON local_hathi.h_mo_8b (instance_id);
 CREATE INDEX ON local_hathi.h_mo_8b (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_8b (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_8b (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_8b (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_8b (call_number);
 CREATE INDEX ON local_hathi.h_mo_8b (note);
@@ -411,7 +411,7 @@ CREATE INDEX ON local_hathi.h_mo_9 (instance_hrid);
 CREATE INDEX ON local_hathi.h_mo_9 ("statement");
 CREATE INDEX ON local_hathi.h_mo_9 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_9 (holdings_id);
-CREATE INDEX ON local_hathi.h_mo_9 (hldings_hrid);
+CREATE INDEX ON local_hathi.h_mo_9 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_9 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_9 (call_number);
 CREATE INDEX ON local_hathi.h_mo_9 (note);
@@ -452,3 +452,5 @@ CREATE INDEX ON local_hathi.h_mo_final (Bib Id);
 CREATE INDEX ON local_hathi.h_mo_final ("Status");
 CREATE INDEX ON local_hathi.h_mo_final ("Condition");
 CREATE INDEX ON local_hathi.h_mo_final (OCLC);
+
+
