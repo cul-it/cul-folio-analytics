@@ -1,3 +1,6 @@
+/* This finds the last five fiscal years of newly acquired items in OKU. Groups by LC class, bib format, number of volumes and total 
+checkouts.Consolidated numbers, not individual for each item.Needs historical Voyager data, because we don't have year acquired in Folio.*/
+
 with raw as (
 	select 
 		bt.bib_id::VARCHAR,
