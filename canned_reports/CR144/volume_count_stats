@@ -1,19 +1,18 @@
-/*These are the queries used by A&P to get volume counts for CUL's annual data collection (adc). 
- * For the adc, these queries are run as close to the end of the fiscal year as possible 
- *(date filter not used for volumes held). Don't hesitate to ask Lind Miller (LM15) for help 
- *with these queries.
+/*Updated: 4/26/22 (adding that item records mustn't be suppressed; vacuum analyze)
+ * 
+ * These are the queries used by A&P to get volumes held and volumes added (new and retrospective)
+ * counts for CUL's annual data collection (adc). (We are currently working on queries to separate
+ * counts of item records created retrospectively during the fiscal year.) For the adc, these queries 
+ * are run as close to the end of the fiscal year as possible (date filter not used for volumes held). 
+ * Don't hesitate to ask Lind Miller (LM15) for help with these queries.
  *
  *The first 4 queries create local data tables stored in the "local_statistics" schema. They are
- *used by the later queries to get counts of: volumes currently held; volumes added within 
- *the given fiscal year (for new items and items already in the stacks but barcoded within the year);
- *and an estimate of the number of volumes barcoded retrospectively in the fiscal year (had already 
- *been available for circulation in the stacks - a subset of all volumes added). 
+ *used by the later queries to get counts of: volumes currently held; and volumes added (item records
+ *created) within the given fiscal year (for new items and items already in the stacks but barcoded 
+ *within the year). 
  *Queries 5 and 6 also create data tables stored in "local_statistics". The results give counts of
  *volumes held, and of item records created after the start of the fiscal year, by holdings 
  *permanent location.
- *Queries 7-10 are used by A&P for the adc to try to estimate which part of the item records
- *added new during the fiscal year were added retrospectively. Queries 7 and 8 create local tables,
- *and queries 9 and 10 are select queries only.
  *
  *Filtering requiring updates as needed:
  *Query 2: locations to be excluded (review as needed with CUL)
@@ -29,13 +28,10 @@
  *    believe we will be cleaning those up eventually, but I can’t imagine us doing so before the FOLIO
  *    bound-with solution is fully implemented. I can’t remember off the top of my head if that’s even
  *    got a release date yet, but it’s not Juniper or Kiwi.
- *Queries 6-7: update the adc_loc_translation_csv table as (review as needed with CUL)
- *Queries 6-9: each year, update the start of the fiscal year
- *Query 9: each year update the publication dates to be excluded (those published in last 10 years)
- *Query 10: each year update the chronology dates to be excluded (those with chronologies in the 
- *last 5 years)
+ *Queries 5-6: update the adc_loc_translation_csv table as (review as needed with CUL)
+ *Queries 6: each year, update the start of the fiscal year
  *
- *Once tables 1-8 are created by A&P for the annual report or quarterly reporting to DFA 
+ *Once the tables are created by A&P for the annual report or quarterly reporting to DFA 
  *(CUL Division of *Financial Affairs), a few earlier runs are set aside for later use, by 
  *adding dates to the end of the table names.
  */
@@ -45,7 +41,7 @@
  * Stated quickly, it gets instance records whose bib format codes start with a, t, c or d;
  * that are not suppressed; and whose srs_records state is “actual”.
  */ 
--- 13 minutes; 8,298,628 on 3/14/22 (why such a change from: 11 minutes; 8,438,329 records on 1/28/22; 8,638,080 on 2/10/22)
+-- 29 minutes; 8,315,899 on 4/26/22 (why such a change from: 11 minutes; 8,438,329 records on 1/28/22; 8,638,080 on 2/10/22)
 DROP TABLE IF EXISTS local_statistics.vol_ct_1; 
 CREATE TABLE local_statistics.vol_ct_1 AS
 WITH get_date AS 
@@ -73,7 +69,8 @@ WHERE (sm.field = '000' AND substring(sm."content", 7, 2) LIKE 'a%'
 OR sm.field = '000' AND substring(sm."content", 7, 2) like 't%' 
 OR sm.field = '000' AND substring(sm."content", 7, 2) like 'c%' 
 OR sm.field = '000' AND substring(sm."content", 7, 2) like 'd%')
-AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
+AND ie.discovery_suppress IS NOT TRUE 
+--AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
 AND sr.state  = 'ACTUAL'
 ;
 CREATE INDEX ON local_statistics.vol_ct_1 (instance_hrid);
@@ -83,16 +80,17 @@ CREATE INDEX ON local_statistics.vol_ct_1 ("format_type");
 CREATE INDEX ON local_statistics.vol_ct_1 (publication_date);
 CREATE INDEX ON local_statistics.vol_ct_1 (discovery_suppress);
 CREATE INDEX ON local_statistics.vol_ct_1 (record_created_date);
+VACUUM ANALYZE local_statistics.vol_ct_1;
 
 /* Query 2: This query adds holdings information, and specifies that:
- * item records for some 27 particular locations not be included because they are
+ * records for some 27 particular locations not be included because they are
  * not volumes, are not owned by the library, are in process, etc.;
  * that microforms, as well as items on order, in process or not yet selected are excluded
  * via call number; AND that the holdings record is not suppressed.
  * 
  * For each run, update the list of locations to be excluded as needed.
 */
---3 minutes; 5,858,687 records on 3/14/22
+--3 minutes; 5,866,010 records on 4/26/22
 DROP TABLE IF EXISTS local_statistics.vol_ct_2; 
 CREATE TABLE local_statistics.vol_ct_2 AS
 SELECT 
@@ -144,8 +142,7 @@ WHERE h.permanent_location_name NOT ilike 'serv,remo'
     AND h.call_number !~~* '%micro%'
     AND h.call_number !~~* '%vault%'
     AND h.call_number !~~* 'On selector%'
-    AND (h.discovery_suppress = 'FALSE' 
-    OR h.discovery_suppress IS NULL )
+    AND h.discovery_suppress IS NOT TRUE
 ;
 CREATE INDEX ON local_statistics.vol_ct_2 (instance_id);
 CREATE INDEX ON local_statistics.vol_ct_2 (instance_hrid);
@@ -158,12 +155,13 @@ CREATE INDEX ON local_statistics.vol_ct_2 (type_name);
 CREATE INDEX ON local_statistics.vol_ct_2 (permanent_location_name);
 CREATE INDEX ON local_statistics.vol_ct_2 (call_number);
 CREATE INDEX ON local_statistics.vol_ct_2 (discovery_suppress);
+VACUUM ANALYZE local_statistics.vol_ct_2;
 
 /* Query 3: This query adds item info, using the subquery “cr_by_user” to add the net ID of the person
  * who created the item record (and possibly the last name of that person in the future?) to help get 
- * at retrospective counts.
+ * at retrospective counts. It also specifies that it excludes suppressed item records.
  */
---5 minutes; 8,630,193 records on 3/14/22
+--5 minutes; 8,640,099 records on 4/26/22 (with the items suppressed = 8,640,237)
 DROP TABLE IF EXISTS local_statistics.vol_ct_3; 
 CREATE TABLE local_statistics.vol_ct_3 AS
 WITH cr_by_user AS
@@ -198,6 +196,7 @@ SELECT
   FROM local_statistics.vol_ct_2 vc2
   LEFT JOIN folio_reporting.item_ext ie ON vc2.holdings_id = ie.holdings_record_id
   LEFT JOIN cr_by_user cb ON ie.item_id = cb.id
+  WHERE ie.discovery_suppress IS NOT TRUE
 ;
 CREATE INDEX ON local_statistics.vol_ct_3 (instance_hrid);
 CREATE INDEX ON local_statistics.vol_ct_3 ("format_type");
@@ -215,13 +214,13 @@ CREATE INDEX ON local_statistics.vol_ct_3 (created_date);
 CREATE INDEX ON local_statistics.vol_ct_3 (created_by);
 CREATE INDEX ON local_statistics.vol_ct_3 (itecreate_user_name);
 CREATE INDEX ON local_statistics.vol_ct_3 (last_name);
-
+VACUUM ANALYZE local_statistics.vol_ct_3;
 
 /* Query 4: Through the subquery "bd_with", this query excludes item records indicating 
  * through their enumeration that they are item records for later titles in “bound with” volumes. 
  * (%bound% about 50 more than %bound%with% so switched to the latter)
  */
--- ~1 minute; 8,477,172 records on 3/14/22 (but made %bound%with% on 3/11/22 - 50 fewer boundwiths)
+-- ~1 minute; 8,487,078 records on 4/26/22 (but made %bound%with% on 3/11/22 - 50 fewer boundwiths)
 DROP TABLE IF EXISTS local_statistics.vol_ct_4; 
 CREATE TABLE local_statistics.vol_ct_4 AS
 WITH bd_with AS 
@@ -252,7 +251,7 @@ SELECT
   vc3.item_id,
   vc3.item_loc,
   vc3.created_date::DATE,
-  vc3.item_create_user_name,
+  vc3.itecreate_user_name,
   vc3.last_name
   FROM local_statistics.vol_ct_3 vc3
   LEFT JOIN bd_with ON vc3.item_hrid = bd_with.item_hrid
@@ -271,15 +270,15 @@ CREATE INDEX ON local_statistics.vol_ct_4 (chronology);
 CREATE INDEX ON local_statistics.vol_ct_4 (item_id);
 CREATE INDEX ON local_statistics.vol_ct_4 (item_loc);
 CREATE INDEX ON local_statistics.vol_ct_4 (created_date);
-CREATE INDEX ON local_statistics.vol_ct_4 (item_create_user_name);
+CREATE INDEX ON local_statistics.vol_ct_4 (itecreate_user_name);
 CREATE INDEX ON local_statistics.vol_ct_4 (last_name);
-
+VACUUM ANALYZE local_statistics.vol_ct_4;
 
 /* Query 5: This query uses “local_statistics.vol_ct_4” to get counts of volumes held by 
  * permanent_location_name. It uses the local_statistics table "adc_loc_translation_csv"
  * to further group locations for the annual data collection.
  */
--- less than one minute; 118 rows summed to  8,374,157 records on 3/14/22 (Law doing a large wd project in 2022)
+-- less than one minute; 119 rows summed to  8,383,955 records on 4/26/22 (Law doing a large wd project in 2022)
 DROP TABLE IF EXISTS local_statistics.vol_ct_5;
 CREATE TABLE local_statistics.vol_ct_5 as
 SELECT 
@@ -297,11 +296,11 @@ ORDER BY alt.adc_loc_translation
  * the local_statistics table "adc_loc_translation_csv" to further group locations for the 
  * annual data collection.
  * Note that this includes both those items created new and created retrospectively. For the
- * annual data collection, we attempt to separate those counts in the following queries.
+ * annual data collection, we are working to separate out counts of created retrospectively.
  * 
  * Each fiscal year, update the date the item records should have been created after.
  */
--- less than one minute; 78 rows summed to 38,567 on 3/14/22
+-- less than one minute; 81 rows summed to 48,709 on 4/26/22
 DROP TABLE IF EXISTS local_statistics.vol_ct_6; 
 CREATE TABLE local_statistics.vol_ct_6 AS
 SELECT
