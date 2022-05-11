@@ -1,23 +1,29 @@
+--CR163 title_count_microforms_adc_stats_May_2022 ~7 minutes
+--updates made: added sr.state = 'ACTUAL'; added names of the other sets of title queries used;
+--added VACUUM ANALYZE. 
+
 /*This set of queries pulls counts of microform titles (based on call number), by bib format.
-  * Includes any microforms cataloged on print records.
+ * Includes any microforms cataloged on print records.
  * 
  * A&P uses this and two other sets of queries to get the title counts needed for ARL, ACRL 
- * and NCES reporting. ARL asks for one title count (all formats). ACRL asks for title counts 
- * by bib format, and by electronic vs. physcial. For ACRL, all serials are counted as serials, 
- * and any non-serial microforms are counted as media. Duplication between formats is to be included.
+ * and NCES reporting (CR162 for titles with physical holdings - excluding microform holdings;
+ * and CR164 for remote electronic resources). ARL asks for one title count (all formats). ACRL 
+ * asks for title counts by bib format, and by electronic vs. physcial. For ACRL, all serials are 
+ * counted as serials, and any non-serial microforms are counted as media. Duplication between
+ * formats is to be included.
  * 
  *The first 3 queries create local data tables stored in the "local_statistics" schema. The results
  *of the third query are used by the fourth query to get a count of microform titles by translated 
  *bib format.
  * 
  *Filtering requiring updates as needed:
- *Query 2: locations to be excluded (review as needed with CUL)
- *Query 4: update the bib_fmt_and_location_trans_table_csv table (review as needed)
+ *Query 2: locations to be excluded (review as needed with LTS and unit libraries)
+ *Query 4: update the bib_fmt_and_location_trans_table_csv table (review as needed with LTS)
  */
 
  /* Query 1: This query pulls all unspressed records, with leader bib format type from 000 
   * and date created. Instance records must be unsuppressed.*/
--- 6 min; 8,705,395 on 3/3/22
+-- 6 min; 8,731,630 on 4/19/22
 DROP TABLE IF EXISTS LOCAL_statistics.titlmicr_ct_1; 
 CREATE TABLE local_statistics.titlmicr_ct_1 AS
 SELECT
@@ -29,8 +35,10 @@ DISTINCT sm.instance_hrid,
     ie.record_created_date::date AS date_created
     FROM srs_marctab sm 
     LEFT JOIN folio_reporting.instance_ext AS ie ON sm.instance_id = ie.instance_id
+    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
     WHERE sm.field LIKE '000'
     AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
+    AND sr.state  = 'ACTUAL'
 ;
 CREATE INDEX ON local_statistics.titlmicr_ct_1(instance_hrid);
 CREATE INDEX ON local_statistics.titlmicr_ct_1(instance_id);
@@ -38,10 +46,11 @@ CREATE INDEX ON local_statistics.titlmicr_ct_1(field);
 CREATE INDEX ON local_statistics.titlmicr_ct_1("format_type");
 CREATE INDEX ON local_statistics.titlmicr_ct_1(discovery_suppress);
 CREATE INDEX ON local_statistics.titlmicr_ct_1(date_created);
+VACUUM ANALYZE local_statistics.titlmicr_ct_1;
 
 /*Query 2: Adds holdings information and removes records with locations and statuses not wanted.
  * Gets records only with microform call numbers. Holdings records must be unsuppressed*/
--- ~2 min; 395,430 records on 3/3/22
+-- 1 min; 395,428 records on 4/19/22
 DROP TABLE IF EXISTS local_statistics.titlmicr_ct_2; 
 CREATE TABLE local_statistics.titlmicr_ct_2 AS 
 SELECT DISTINCT 
@@ -101,10 +110,11 @@ CREATE INDEX ON local_statistics.titlmicr_ct_2 (permanent_location_name);
 CREATE INDEX ON local_statistics.titlmicr_ct_2 (call_number);
 CREATE INDEX ON local_statistics.titlmicr_ct_2 (discovery_suppress);
 CREATE INDEX ON local_statistics.titlmicr_ct_2 (date_created);
+VACUUM ANALYZE local_statistics.titlmicr_ct_2;
 
 
 /*Query 3: To make title count unique again.*/
--- 1 minute; 381,039 rows on 3/3/22 
+-- 1 minute; 381,033 rows on 4/19/22 
 DROP TABLE IF EXISTS local_statistics.titlmicr_ct_3; 
 CREATE TABLE LOCAL_statistics.titlmicr_ct_3 AS 
 SELECT distinct
@@ -114,9 +124,10 @@ FROM local_statistics.titlmicr_ct_2 tc2
 ;
 CREATE INDEX ON local_statistics.titlmicr_ct_3 ("format_type");
 CREATE INDEX ON local_statistics.titlmicr_ct_3 (instance_hrid);
+VACUUM ANALYZE local_statistics.titlmicr_ct_3;
 
 /*Query 4: Groups and counts microform titles in titlmicr_ct_3 by format, adding format translation.*/
--- 1 minute; 22 rows grouping 381,039 titles on 3/3/22
+-- 1 minute; 22 rows grouping 381,033 titles on 4/19/22
 SELECT distinct
 tc3."format_type" AS "Bib Format",
 bft.bib_format_display,
