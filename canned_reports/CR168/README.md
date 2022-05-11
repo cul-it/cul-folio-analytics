@@ -1,4 +1,4 @@
 # CR168
 # Physical Serial Titles Currently Received
 
-Brief description: This report is used by A&P to report a database count to ACRL/NCES.  See documentation within the script.
+Brief description: Used by A&P to report on physical serial titles currently received.
