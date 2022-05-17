@@ -24,7 +24,7 @@ SELECT DISTINCT
     substring(sm."content", 7, 2) AS "format_type"
 FROM srs_marctab sm 
     LEFT JOIN srs_records sr ON sm.srs_id = sr.id
-WHERE (sm.field = '000' AND substring(sm.content, 7, 2) IN ('as','ts')) -- change to whatever format IS needed
+WHERE (sm.field = '000' AND substring(sm.content, 7, 2) IN ('%s')) -- change to whatever format IS needed
 )
 SELECT
 DISTINCT(ls.instance_id),
