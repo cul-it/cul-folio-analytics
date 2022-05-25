@@ -11,7 +11,7 @@ SELECT
        li.material_type_name,
        TO_CHAR (li.loan_date::DATE,'mm/dd/yyyy') AS loan_date,
        TO_CHAR (li.loan_return_date::DATE,'mm/dd/yyyy') AS return_date,
-       CASE WHEN li.loan_return_date IS NOT NULL THEN DATE_PART('day', li.loan_return_date - li.loan_date) ELSE date_part('day', NOW() - li.loan_date) END AS days_on_loan,
+       CASE WHEN li.loan_return_date IS NOT NULL THEN (li.loan_return_date::DATE - li.loan_date::DATE) ELSE (NOW()::DATE - li.loan_date::DATE) END AS days_on_loan,
        ie.title,
        ie.instance_hrid,
        he.holdings_hrid,
