@@ -87,7 +87,6 @@ GROUP BY
         "is".subject,
         to_char(po_instance.created_date::DATE,'mm/dd/yyyy'),
         to_char(po_lines.receipt_date::DATE,'mm/dd/yyyy'),
-        po_instance.pol_location_name,
         he.permanent_location_name,
         he.call_number,
         CONCAT(itemext.effective_call_number_prefix,' ',itemext.effective_call_number,' ',itemext.enumeration,' ',itemext.chronology, 
