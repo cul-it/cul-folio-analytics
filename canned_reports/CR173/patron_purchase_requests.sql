@@ -72,11 +72,9 @@ FROM po_lines
 
 WHERE
  (invoice_lines.invoice_line_status = (SELECT invoice_line_status FROM parameters) OR (SELECT invoice_line_status FROM parameters) = '')
-		AND (ilfd.finance_fund_code  = (SELECT finance_fund_code FROM parameters) OR (SELECT finance_fund_code FROM parameters) = '')
-		AND po_lines.requester >''
+	AND (ilfd.finance_fund_code  = (SELECT finance_fund_code FROM parameters) OR (SELECT finance_fund_code FROM parameters) = '')
+	AND po_lines.requester >''
         AND po_lines.requester not ilike '%Current issues in periodical room%'
-      --  AND invoice_lines.invoice_line_status = 'Paid'
-      --  AND ilfd.fund_name LIKE '521 %'
         AND ("is".subject_ordinality = 1  OR "is".subject_ordinality IS NULL)
         
 GROUP BY
