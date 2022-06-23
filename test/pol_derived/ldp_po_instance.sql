@@ -1,6 +1,6 @@
-DROP TABLE IF EXISTS po_instance;
+DROP TABLE IF EXISTS local_slm5_po_instance;
 
-CREATE TABLE po_instance AS
+CREATE TABLE local_slm5_po_instance AS
 SELECT
     json_extract_path_text(po_purchase_orders.data, 'poNumber') AS po_number,
     organization_organizations.code AS vendor_code,
@@ -21,7 +21,7 @@ SELECT
     json_extract_path_text(locations.data, 'holdingId') AS pol_holding_id,
     json_extract_path_text(locations.data, 'locationId') AS pol_location_id,
     inventory_locations.name AS pol_location_name,
-    il.name AS pol_holding_location_name
+    --il.name AS pol_holding_location_name
 FROM
     po_purchase_orders
     LEFT JOIN po_lines ON po_purchase_orders.id = json_extract_path_text(po_lines.data, 'purchaseOrderId')
@@ -31,7 +31,7 @@ FROM
     LEFT JOIN organization_organizations ON json_extract_path_text(po_purchase_orders.data, 'vendor') = organization_organizations.id
     LEFT JOIN configuration_entries ON json_extract_path_text(po_purchase_orders.data, 'billTo') = configuration_entries.id
     LEFT JOIN user_users ON json_extract_path_text(po_purchase_orders.data, 'metadata', 'createdByUserId') = user_users.id;
-    LEFT JOIN inventory_locations AS il ON json_extract_path_text(locations.data, 'holdingId') = inventory_holding.id
+    --LEFT JOIN inventory_locations AS il ON json_extract_path_text(locations.data, 'holdingId') = inventory_holding.id
 
 CREATE INDEX ON po_instance (po_number);
 
