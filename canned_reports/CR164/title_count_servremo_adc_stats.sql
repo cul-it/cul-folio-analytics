@@ -1,6 +1,9 @@
- --CR164 title_count_servremo_adc_stats_May2022 ~7 minutes
---updates made: added sr.state = 'ACTUAL'; added names of the other sets of title queries used;
---added VACUUM ANALYZE; added sql to remove unpurchased pda/dda.
+ --CR164 title_count_servremo_adc_stats-June142022 ~7 minutes
+ --6/14/22 updates: removing any requirements by call number.  some records are blank by call number, and so 
+ --are dropped.  Also, all the other locs exclusions are not needed. see also earlier changes.
+--earlier update: added sr.state = 'ACTUAL'; added names of the other sets of title queries used;
+--added VACUUM ANALYZE; added sql to remove unpurchased pda/dda (had somehow dropped the actual from
+--subquery in Query 4 by mistake by 6/23/22; put back in).
  
 /* This set of queries pulls counts of titles with holdings locations of serv,remo. Includes any
  * remote electronic resources cataloged on print records.
@@ -23,7 +26,7 @@
 
  /* Query 1: this query pulls all unspressed records, with leader bib format type from 000 and 
   * date created.*/
--- ~5 min; 8,679,670 Records on 5/10/22
+-- ~5 min; 8,731,475 Records on 4/15/22; 5 min, 8,711,927 on 6/14/22; 5 min, 8,713,315? on 6/23/22.
 DROP TABLE IF EXISTS LOCAL_statistics.titlservr_ct_1; 
 CREATE TABLE local_statistics.titlservr_ct_1 AS
 SELECT DISTINCT 
@@ -51,7 +54,7 @@ VACUUM ANALYZE local_statistics.titlservr_ct_1;
 /*Query 2: Adds holdings information and removes records with locations and statuses not wanted.
  * Gets records with serv,remo locations only (excluding microforms).
  * Holdings records must be unsuppressed*/
--- 1 min; 2,523,159 records on 4/15/22;  2,467,907 on 5/10/22
+-- 1 min; 2,523,159 records on 4/15/22; 1 min, 2,654,854 on 6/14/22; 1 min, 2,654,882 on 6/23/22.
 DROP TABLE IF EXISTS local_statistics.titlservr_ct_2; 
 CREATE TABLE local_statistics.titlservr_ct_2 AS 
 SELECT DISTINCT 
@@ -67,39 +70,6 @@ SELECT DISTINCT
     FROM  local_statistics.titlservr_ct_1 AS tc1
     LEFT JOIN  folio_reporting.holdings_ext AS h ON tc1.instance_id=h.instance_id
     WHERE h.permanent_location_name LIKE 'serv,remo'
-    AND h.permanent_location_name NOT ilike 'Agricultural Engineering'
-    AND h.permanent_location_name NOT ilike 'Bindery Circulation'
-    AND h.permanent_location_name NOT ilike 'Biochem Reading Room'
-    AND h.permanent_location_name NOT iLIKE 'Borrow Direct'
-    AND h.permanent_location_name NOT ilike 'CISER'
-    AND h.permanent_location_name NOT ilike 'cons,opt'
-    AND h.permanent_location_name NOT ilike 'Engineering'
-    AND h.permanent_location_name NOT ilike 'Engineering Reference'
-    AND h.permanent_location_name NOT ilike 'Engr,wpe'
-    AND h.permanent_location_name NOT ilike 'Entomology'
-    AND h.permanent_location_name NOT ilike 'Food Science'
-    AND h.permanent_location_name NOT ilike 'Law Technical Services'
-    AND h.permanent_location_name NOT ilike 'LTS Review Shelves'
-    AND h.permanent_location_name NOT ilike 'LTS E-Resources & Serials'
-    AND h.permanent_location_name NOT ilike 'Mann Gateway'
-    AND h.permanent_location_name NOT ilike 'Mann Hortorium'
-    AND h.permanent_location_name NOT ilike 'Mann Hortorium Reference'
-    AND h.permanent_location_name NOT ilike 'Mann Technical Services'
-    AND h.permanent_location_name NOT ilike 'Iron Mountain'
-    AND h.permanent_location_name NOT ilike 'Interlibrary Loan%'
-    AND h.permanent_location_name NOT ilike 'Phys Sci'
-    AND h.permanent_location_name NOT ilike 'RMC Technical Services'
-    AND h.permanent_location_name NOT ilike 'No Library'
-    AND h.permanent_location_name NOT ilike 'x-test'
-    AND h.permanent_location_name NOT ilike 'z-test location'
-    AND h.call_number !~~* 'on order%'
-    AND h.call_number !~~* 'in process%'
-    AND h.call_number !~~* 'Available for the library to purchase' 
-    AND h.call_number !~~* '%film%' 
-    AND h.call_number !~~* '%fiche%'
-    AND h.call_number !~~* '%micro%'
-    AND h.call_number !~~* '%vault%'
-    AND h.call_number !~~* 'On selector%'
     AND (h.discovery_suppress = 'FALSE' 
     OR h.discovery_suppress IS NULL )
 ;
@@ -116,7 +86,7 @@ VACUUM ANALYZE local_statistics.titlservr_ct_2;
 
 
 /*Query 3: To make title count unique again.*/
--- 1 minute; 2,523,139 rows on 4/15/22; 2,467,887 on 5/10/22
+-- 1 minute; 2,523,139 rows on 4/15/22; 1 min, 2,653,430 on 6/14/22 with correction; 1 min, 2,653,446 on 6/23/22.
 DROP TABLE IF EXISTS local_statistics.titlservr_ct_3; 
 CREATE TABLE LOCAL_statistics.titlservr_ct_3 AS 
 SELECT distinct
@@ -130,7 +100,8 @@ VACUUM ANALYZE local_statistics.titlservr_ct_3;
 
 --Query 4: Groups and counts titles in titlservr_ct_3 by format, adding format TRANSLATION. Also removes
 --known unpurchased PDA/DDA items through a subquery.*/
--- 1 minute; 46 rows group 2,516,100 titles on 4/15/22; 2,461,066 on 5/10/22
+-- 1 minute; 46 rows group 2,516,100 titles on 4/15/22; gets 2,461,016 on 5/20/22; gets 2,645,976 on 6/14/22;
+--gets 46 rows, 2,645,948; 1 min, 46 rows, 2,646,184 with ACTUAL added.
 WITH title_unpurch AS 
 (SELECT DISTINCT 
 	sm.instance_hrid,
@@ -164,62 +135,3 @@ WHERE title_unpurch.instance_hrid IS NULL
 GROUP BY tc3."format_type", bft.bib_format_display
 ORDER BY bft.bib_format_display
 ; 
-
-
-
-/*
-
-
---other testing for unpurchased. 4/4/22
-WITH title_unpurch AS 
-(SELECT DISTINCT 
-	sm.instance_hrid,
-    sm.instance_id,
-    sm.field,
-    sm."content",
-    ie.discovery_suppress
-    FROM srs_marctab sm 
-    LEFT JOIN folio_reporting.instance_ext AS ie ON sm.instance_id = ie.instance_id
-    WHERE sm.field LIKE '899'
-    AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
-    AND ((sm."content" ILIKE '%dda%') 
-    OR (sm."content" ILIKE '%PDA%'))
-)
-
-
-  
- 
- 
- --these are Natalya's 
- SELECT 
-ie.holdings_hrid,
-ie.call_number,
-ie.permanent_location_name
---count(ie.holdings_hrid)
-FROM folio_reporting.holdings_ext ie
-WHERE call_number ilike '%Available for the Library to Purchase%'
---GROUP BY ie.holdings_hrid, ie.call_number;
-
-
-SELECT
-    --sm.instance_id,
-    --sm.instance_hrid,
-    --sm.field,
-    --sm.sf,
-    sm."content" AS unpurchased,
-    count (sm.instance_id) AS groupcount
-    --ie.call_number,
-    --ie.permanent_location_name
-    --i.discovery_suppress,
-    --sr.state
-FROM
-    srs_marctab sm
-    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
-    LEFT JOIN inventory_instances i ON sm.instance_id = i.id 
-    LEFT JOIN folio_reporting.holdings_ext ie ON sm.instance_id=ie.instance_id 
-    WHERE (sm.field = '899' AND sm.sf = 'a' AND sm."content" iLIKE ('%DDA%')) -- FOR purchased
-    AND sr.state = 'ACTUAL' AND call_number IN ('No call number')
-    /*(sm."content" ilike ('%DDA%')FOR unpurchased */ 
-    GROUP BY unpurchased;
-    --GROUP BY sm.instance_hrid , sm."content", ie.call_number, ie.permanent_location_name;
-*/
