@@ -1,4 +1,6 @@
 CR179
 
-This report provides a date range filter for finding items that have been sent to the bursar for fines.
+This query finds bursared items with fines or fees using the payment method of "CUL Transfer Account" 
+and a fine fee type action of "Transferred Fully." Filters for fine date range and material type 
+are included.
 
