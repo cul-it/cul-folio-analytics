@@ -9,9 +9,14 @@ Before the Kiwi upgrade, only the locationID was included in the data array. We 
 
 
 -Derived tables impacted:
+
 po_instance
+
 po_pieces
+
 po_lines locations
+
 po_lines eresources
+
 
 
