@@ -18,8 +18,10 @@ SELECT
     json_extract_path_text(po_lines.data, 'requester') AS requester,
     json_extract_path_text(po_lines.data, 'rush')::boolean AS rush,
     json_extract_path_text(po_lines.data, 'selector') AS selector,
+    json_extract_path_text(locations.data, 'holdingId') AS pol_holding_id,
     json_extract_path_text(locations.data, 'locationId') AS pol_location_id,
-    inventory_locations.name AS pol_location_name
+    inventory_locations.name AS pol_location_name,
+    il.name AS pol_holding_location_name
 FROM
     po_purchase_orders
     LEFT JOIN po_lines ON po_purchase_orders.id = json_extract_path_text(po_lines.data, 'purchaseOrderId')
@@ -29,6 +31,7 @@ FROM
     LEFT JOIN organization_organizations ON json_extract_path_text(po_purchase_orders.data, 'vendor') = organization_organizations.id
     LEFT JOIN configuration_entries ON json_extract_path_text(po_purchase_orders.data, 'billTo') = configuration_entries.id
     LEFT JOIN user_users ON json_extract_path_text(po_purchase_orders.data, 'metadata', 'createdByUserId') = user_users.id;
+    LEFT JOIN inventory_locations AS il ON json_extract_path_text(locations.data, 'holdingId') = inventory_holding.id
 
 CREATE INDEX ON po_instance (po_number);
 
