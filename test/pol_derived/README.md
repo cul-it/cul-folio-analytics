@@ -12,7 +12,7 @@ Before the Kiwi upgrade, only the locationID was included in the data array. We 
 
 po_instance
 
-po_pieces
+po_pieces (cannot find original)
 
 po_lines locations
 
