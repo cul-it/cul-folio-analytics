@@ -1,3 +1,19 @@
+--soundrec_piece_ct_adc_20220624
+
+--Updates:  
+--6/24/22: added location translation table to query 4 so it can be used to get counts of pieces for item 
+--records with no piece count (assumed to be 1).  added those warnings. Added vacuum/analyze.
+--5/24/22: added item records must not be suppressed; note that the same query for video recordings
+--can no longer handle summing the piece counts.  Still works here (maybe because no blanks?). However, because 
+--in FOLIO people are not adding peice counts unless the count is more than one, you must export the resulting
+--table four to count those items with piece counts of null.
+--From the videorecording query:
+--Updates:  The fifth query is no longer working because we can't figure out how to translate the texts in 
+--the "number_of_pieces" field to integers. Instead, export the results of query 4 and get the sums of piece 
+--counts by location through Excel. There are also null values for records created in FOLIO with only 1 piece
+-- (as no piece count is addd unless there are more than one). These must be counted through an export of the 
+--fourth table created.
+
 /* This is the query used by A&P to get the number of pieces of physical sound recordings currently held in 
  * Ithaca, by shelving unit, for CUL's annual data collection (adc). 
  * For the adc, these queries are run as close to the end of the fiscal year as possible 
@@ -32,7 +48,7 @@
  * Stated quickly, it gets instance records whose bib format codes start with i or j;
  * that are not suppressed; and whose srs_records state is “actual”.
  */ 
--- 7 minutes; 259,541 rows on 3/10/22
+-- 7 minutes; 259,541 rows on 3/10/22; 259,670 on 5/20/22.
 DROP TABLE IF EXISTS local_statistics.sr_ct_1; 
 CREATE TABLE local_statistics.sr_ct_1 AS
 WITH get_date AS 
@@ -68,6 +84,7 @@ CREATE INDEX ON local_statistics.sr_ct_1 ("format_type");
 CREATE INDEX ON local_statistics.sr_ct_1 (publication_date);
 CREATE INDEX ON local_statistics.sr_ct_1 (discovery_suppress);
 CREATE INDEX ON local_statistics.sr_ct_1 (record_created_date);
+VACUUM ANALYZE local_statistics.sr_ct_1;
 
 /* Query 2: This query adds holdings information, and specifies that:
  * item records for some 27 particular locations not be included because they are
@@ -77,7 +94,7 @@ CREATE INDEX ON local_statistics.sr_ct_1 (record_created_date);
  * 
  * For each run, update the list of locations to be excluded as needed.
 */
---1 minute; 89,706 records on 3/10/22
+--1 minute; 89,706 records on 3/10/22; 89,762 on 5/20/22.
 DROP TABLE IF EXISTS local_statistics.sr_ct_2; 
 CREATE TABLE local_statistics.sr_ct_2 AS
 SELECT 
@@ -141,6 +158,7 @@ CREATE INDEX ON local_statistics.sr_ct_2 (holdings_hrid);
 CREATE INDEX ON local_statistics.sr_ct_2 (permanent_location_name);
 CREATE INDEX ON local_statistics.sr_ct_2 (call_number);
 CREATE INDEX ON local_statistics.sr_ct_2 (discovery_suppress);
+VACUUM ANALYZE local_statistics.sr_ct_2;
 
 /* Query 3: This query adds item info, using the subquery “cr_by_user” to add the net ID of the person
  * who created the item record (and possibly the last name of that person in the future?)to help get
@@ -149,7 +167,7 @@ CREATE INDEX ON local_statistics.sr_ct_2 (discovery_suppress);
  * in case it is of use in the future.)
  * Adds the item piece count field (number_of_pieces).
  */
---3 minutes; 97,435 records on 3/10/22
+--3 minutes; 97,435 records on 3/10/22; 97,486 on 5/20/22.
 DROP TABLE IF EXISTS local_statistics.sr_ct_3; 
 CREATE TABLE local_statistics.sr_ct_3 AS
 WITH cr_by_user AS
@@ -184,6 +202,7 @@ SELECT
   FROM local_statistics.sr_ct_2 sr2
   LEFT JOIN folio_reporting.item_ext ie ON sr2.holdings_id = ie.holdings_record_id
   LEFT JOIN cr_by_user cb ON ie.item_id = cb.id
+  WHERE ie.discovery_suppress IS NOT TRUE 
 ;
 CREATE INDEX ON local_statistics.sr_ct_3 (instance_hrid);
 CREATE INDEX ON local_statistics.sr_ct_3 ("format_type");
@@ -201,6 +220,7 @@ CREATE INDEX ON local_statistics.sr_ct_3 (created_date);
 CREATE INDEX ON local_statistics.sr_ct_3 (created_by);
 CREATE INDEX ON local_statistics.sr_ct_3 (user_name);
 CREATE INDEX ON local_statistics.sr_ct_3 (last_name);
+VACUUM ANALYZE local_statistics.sr_ct_3;
 
 
 /* Query 4: Through the subquery "bd_with", this query excludes item records indicating 
@@ -211,7 +231,8 @@ CREATE INDEX ON local_statistics.sr_ct_3 (last_name);
  * maybe shouldn't be counted, there is no automated way to remove them. You can see these by changing
  * the query to "WHERE sr3s.enumeration ~~* '%bound%'." And these have been included in past counts.
  * */
--- ~1 minute; 97,434 rows on 3/10/22
+--LM note that: didn't create index for alt_loc_translation as not used in alter query.
+-- ~1 minute; 97,434 rows on 3/10/22; 97,485 on 5/20/22.
 DROP TABLE IF EXISTS local_statistics.sr_ct_4; 
 CREATE TABLE local_statistics.sr_ct_4 AS
 WITH bd_with AS 
@@ -230,6 +251,7 @@ WITH bd_with AS
   WHERE sr3s.enumeration ~~* '%bound%with%'
 )
 SELECT 
+  alt.adc_loc_translation,  
   sr3.instance_hrid,
   sr3."format_type",
   sr3.publication_date,
@@ -247,7 +269,9 @@ SELECT
   sr3.last_name
   FROM local_statistics.sr_ct_3 sr3
   LEFT JOIN bd_with ON sr3.item_hrid = bd_with.item_hrid
+  LEFT JOIN local_statistics.adc_loc_translation_csv alt ON sr3."permanent_location_name" = alt.permanent_location_name
   WHERE bd_with.item_hrid IS NULL
+  ORDER BY alt.adc_loc_translation
 ;
 CREATE INDEX ON local_statistics.sr_ct_4 (instance_hrid);
 CREATE INDEX ON local_statistics.sr_ct_4 ("format_type");
@@ -264,7 +288,15 @@ CREATE INDEX ON local_statistics.sr_ct_4 (item_loc);
 CREATE INDEX ON local_statistics.sr_ct_4 (created_date);
 CREATE INDEX ON local_statistics.sr_ct_4 (user_name);
 CREATE INDEX ON local_statistics.sr_ct_4 (last_name);
+VACUUM ANALYZE local_statistics.sr_ct_4;
 
+
+--NOTE THAT WHILE THE FIFTH QUERY WORKS FOR SOUND RECORDINGS (6/2022), YOU ALSO HAVE TO USE THE RESULUTING TABLE FROM
+--QUERY 4 TO GET COUNTS FOR ITEM RECORDS WHOSE pIECE COUNTS ARE NULL. THEY ARE NULL BECAUSE IN FOLIO PEOPLE
+-- HAVE ONLY BEEN ADDING COUNTS FOR THOSE ITEMS WITH MORE THAN ONE PIECE. SO IT IS ASSUMED THAT THE PIECE 
+-- COUNT IS ONE FOR THOSE THAT ARE NULL.  (NOTE THERE ARE NO BLANKS HERE; THERE IS ONE FOR VIDEORECORDINGS.)
+-- EXPORT THE DATA SET. SELECT THAT THE NUMBER OF PIECES IS NULL OR BLANK. THEN SET THAT THE ITEM HRID IDENTITY 
+-- NOT NULL.   
 
 /* Query 5: This query uses “local_statistics.sr_ct_4” to get counts of sound recordings held by 
  * permanent_location_name. It uses the local_statistics table "adc_loc_translation_csv"
@@ -272,7 +304,7 @@ CREATE INDEX ON local_statistics.sr_ct_4 (last_name);
  * Note that there may be locations that have no counts - that means there are no item records, but 
  * are instance and holdings records.
  */
--- very fast; 44 rows summed to 145,838 pieces on 3/10/22
+-- very fast; 44 rows summed to 145,838 pieces on 3/10/22; 146,082 on 5/20/22.
 SELECT 
 alt.adc_loc_translation,
 sr4.permanent_location_name,
