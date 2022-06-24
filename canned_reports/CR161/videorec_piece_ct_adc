@@ -1,4 +1,13 @@
-/* This is the query used by A&P to get the number of pieces of videorecordings currently held in 
+--vidrec_piece_ct_adc_20220624
+
+--5/24/22 update: added item records must not be suppressed; added location translation table to query 4
+--as query 5 is no longer working because we can't figure out how to translate the texts in the "number_of_pieces"
+--field to integers. Instead, export the results of query 4 and get the sums of piece counts by 
+--location through Excel. Note that there are null values for records created in FOLIO with only 1 piece (as no 
+--piece count is addd unless there are more than one). These must be counted through an export of the fourth 
+--table created.
+
+/* These are the queries used by A&P to get the number of pieces of videorecordings currently held in 
  * Ithaca, by shelving unit, for CUL's annual data collection (adc). 
  * For the adc, these queries are run as close to the end of the fiscal year as possible 
  *(date filter not used here).
@@ -31,7 +40,7 @@
  * Stated quickly, it gets instance records whose bib format codes start with g or k; whose
  * type of visual material is v; that are not suppressed; and whose srs_records state is “actual”.
  */ 
--- 6 minutes; 59,451 rows on 3/11/22
+-- 6 minutes; 59,451 rows on 3/11/22; 6 min, 59,358 on 6/24/22;
 DROP TABLE IF EXISTS local_statistics.vr_ct_1; 
 CREATE TABLE local_statistics.vr_ct_1 AS
 WITH get_date_vistype AS 
@@ -80,7 +89,7 @@ CREATE INDEX ON local_statistics.vr_ct_1 (record_created_date);
  * 
  * For each run, update the list of locations to be excluded as needed.
 */
---1 minute; 33,773 records on 3/11/22
+--1 minute; 33,773 records on 3/11/22; 1 min, 33,822 on 6/24/22;
 DROP TABLE IF EXISTS local_statistics.vr_ct_2; 
 CREATE TABLE local_statistics.vr_ct_2 AS
 SELECT 
@@ -154,7 +163,7 @@ CREATE INDEX ON local_statistics.vr_ct_2 (discovery_suppress);
  * in case it is of use in the future.)
  * Adds the item piece count field (number_of_pieces).
  */
---1 minutes; 41,785 records on 3/11/22
+--1 minutes; 41,785 records on 3/11/22; 1 min, 41,830 on 6/24/22;
 DROP TABLE IF EXISTS local_statistics.vr_ct_3; 
 CREATE TABLE local_statistics.vr_ct_3 AS
 WITH cr_by_user AS
@@ -190,6 +199,7 @@ SELECT
   FROM local_statistics.vr_ct_2 vr2
   LEFT JOIN folio_reporting.item_ext ie ON vr2.holdings_id = ie.holdings_record_id
   LEFT JOIN cr_by_user cb ON ie.item_id = cb.id
+  WHERE ie.discovery_suppress IS NOT TRUE
 ;
 CREATE INDEX ON local_statistics.vr_ct_3 (instance_hrid);
 CREATE INDEX ON local_statistics.vr_ct_3 ("format_type");
@@ -215,7 +225,7 @@ CREATE INDEX ON local_statistics.vr_ct_3 (last_name);
  * Note that for videorecordings there are very few of these, but are some. You can see these by
  * running the bd_with subquery by itself.
  */
--- less than 1 minute; 41,773 rows on 3/11/22
+-- less than 1 minute; 41,773 rows on 3/11/22; 1 min, 41,828 rows on 6/24/22;
 DROP TABLE IF EXISTS local_statistics.vr_ct_4; 
 CREATE TABLE local_statistics.vr_ct_4 AS
 WITH bd_with AS 
@@ -234,6 +244,7 @@ WITH bd_with AS
   WHERE vr3s.enumeration ~~* '%bound%with%'
 )
 SELECT 
+  alt.adc_loc_translation,
   vr3.instance_hrid,
   vr3."format_type",
   vr3.publication_date,
@@ -246,13 +257,21 @@ SELECT
   vr3.chronology,
   vr3.item_id,
   vr3.number_of_pieces,
+ -- ISNULL(vr3.number_of_pieces,'0') AS fixedcount,
+  --COALESCE(vr3.number_of_pieces::INTEGER,0) AS numpiecesfixed,
+--CASE WHEN vr3.number_of_pieces::INTEGER Is null
+  --THEN 0 ELSE vr3.number_of_pieces::INTEGER END AS "vr_pieces_count",
+    --CASE WHEN(vr3.number_of_pieces::INTEGER is null OR vr3.number_of_pieces::INTEGER = '') 
+  --THEN 0 ELSE vr3.number_of_pieces::INTEGER END AS "vr_pieces_count",
   vr3.item_loc,
   vr3.created_date::DATE,
   vr3.user_name,
   vr3.last_name
   FROM local_statistics.vr_ct_3 vr3
   LEFT JOIN bd_with ON vr3.item_hrid = bd_with.item_hrid
+  LEFT JOIN local_statistics.adc_loc_translation_csv alt ON vr3."permanent_location_name" = alt.permanent_location_name
   WHERE bd_with.item_hrid IS NULL
+  ORDER BY alt.adc_loc_translation
 ;
 CREATE INDEX ON local_statistics.vr_ct_4 (instance_hrid);
 CREATE INDEX ON local_statistics.vr_ct_4 ("format_type");
@@ -266,12 +285,20 @@ CREATE INDEX ON local_statistics.vr_ct_4 (enumeration);
 CREATE INDEX ON local_statistics.vr_ct_4 (chronology);
 CREATE INDEX ON local_statistics.vr_ct_4 (item_id);
 CREATE INDEX ON local_statistics.vr_ct_4 (number_of_pieces);
+--CREATE INDEX ON local_statistics.vr_ct_4 (fixedcount);
 CREATE INDEX ON local_statistics.vr_ct_4 (item_loc);
 CREATE INDEX ON local_statistics.vr_ct_4 (created_date);
 CREATE INDEX ON local_statistics.vr_ct_4 (user_name);
 CREATE INDEX ON local_statistics.vr_ct_4 (last_name);
 
-
+--NOTE THAT THE FOLLOWING QUERY IS NOT WORKING AS OF 5/24/22 BECAUSE THE FIELD IS A TEXT FIELD MIX AND 
+--WE HAVEN'T FIGURED OUT HOW TO TRANSFORM IT TO INTEGERS.
+-- INSTEAD, EXPORT THE RESUTLS OF QUERY 4 AND GET SUMS OF PIECE COUNTS BY LOCATIONS THERE. YOU ALSO 
+-- HAVE TO ADD COUNTS FOR ITEM RECORDS WHOSE PIECE COUNTS ARE NULL. THEY ARE NULL BECAUSE IN FOLIO PEOPLE
+-- HAVE ONLY BEEN ADDING COUNTS FOR THOSE ITEMS WITH MORE THAN ONE PIECE. SO IT IS ASSUMED THAT THE PIECE 
+-- COUNT IS ONE FOR THOSE THAT ARE NULL.  (NOT THAT ONE IS BLANK INSTEAD OF NULL. COUNTING THAT AS ONE TOO.)
+-- EXPORT THE DATA SET. SELECT THAT THE NUMBER OF PIECES IS NULL OR BLANK. THEN SET THAT THE ITEM HRID IDENTITY 
+-- NOT NULL.   
 /* Query 5: This query uses “local_statistics.sr_ct_4” to get counts of videorecordings held by 
  * permanent_location_name. It uses the local_statistics table "adc_loc_translation_csv"
  * to further group locations for the annual data collection.
@@ -279,15 +306,48 @@ CREATE INDEX ON local_statistics.vr_ct_4 (last_name);
  * are instance and holdings records.
  */
 -- very fast; 58 rows summed to 53,262 pieces on 3/11/22 (included 2 no trans rows to be fixed)
+--on 5/20/22, this screwed up because NUMERIC no longer worked, becaues there are [NULL] and blank
+--values. See instructions above in Query 4.
+
+--5/24/22 this is my latest attempt to fix this, but the case when when doesn't seem to be working.
+WITH nullfix1 AS
+(SELECT 
+	vr3.item_id,
+	vr3.item_hrid,
+	CASE 
+		WHEN (vr3.number_of_pieces IS NULL AND vr3.item_hrid IS NOT null) THEN '0'
+		WHEN (vr3.number_of_pieces = '' AND vr3.item_hrid IS NOT NULL) THEN '0'
+		when vr3.number_of_pieces::integer >= 1 THEN number_of_pieces  
+		ELSE 'drop' END AS num_pieces_fix1
+	FROM local_statistics.vr_ct_3 vr3
+	),
+nullfix2 AS 
+(SELECT 
+	nfone.item_id,
+	nfone.item_hrid,
+	--vr3.number_of_pieces
+	CASE 
+		WHEN (nfone.num_pieces_fix1 LIKE '0' THEN num_pieces_fix1::INTEGER 
+		when nfone.num_pieces_fix1::integer >= 1 THEN num_pieces_fixl::integer 
+		ELSE 'fix' END AS num_pieces_fix2
+	FROM nullfix1 nfone
+	),
+
 SELECT 
 alt.adc_loc_translation,
 vr4.permanent_location_name,
-sum(vr4.number_of_pieces::NUMERIC) AS "vr_pieces_count"
+SUM (nf2.num_pieces_fix2) AS vr_pieces_count
+--SUM (CASE WHEN (vr4.number_of_pieces::INTEGER is null OR vr4.number_of_pieces::INTEGER = '') THEN 0 ELSE vr4.number_of_pieces::INTEGER END) AS vr_pieces_count
+--sum(vr4.number_of_pieces::INTEGER) AS vr_pieces_count
 FROM local_statistics.vr_ct_4 vr4
+LEFT JOIN nullfix2 nf2 ON vr4.item_id = px.item_id
 LEFT JOIN local_statistics.adc_loc_translation_csv alt ON vr4."permanent_location_name" = alt.permanent_location_name
 GROUP BY alt.adc_loc_translation, vr4.permanent_location_name
 ORDER BY alt.adc_loc_translation
 ;
+
+
+
 
 /*This is to look at locations with no item records in this set.
 SELECT 
