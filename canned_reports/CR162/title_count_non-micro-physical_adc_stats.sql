@@ -1,4 +1,5 @@
 --CR162 title_count_non-micro-physical_adc_stats_may2022 ~10 minutes
+--update 6/27/22: added sr.state = 'ATUAL' to Q4 subquery.
 --updates made: added sr.state = 'ACTUAL'; added names of the other sets of title queries used;
 --added VACUUM ANALYZE; added sql to remove unpurchased pda/dda.
 
@@ -139,10 +140,12 @@ WITH title_unpurch AS
     ie.discovery_suppress
     FROM srs_marctab sm 
     LEFT JOIN folio_reporting.instance_ext AS ie ON sm.instance_id = ie.instance_id
+    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
     WHERE sm.field LIKE '899'
     AND sm.sf LIKE 'a'
     AND sm."content" ILIKE 'Couttspdbappr'
     AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
+    AND sr.state  = 'ACTUAL'
 )
 SELECT DISTINCT
 tc3."format_type" AS "Bib Format",
