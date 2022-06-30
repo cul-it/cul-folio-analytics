@@ -1,4 +1,5 @@
 /*Updated: 4/26/22 (adding that item records mustn't be suppressed; vacuum analyze)
+ *Updated: 6/30/22 (changing item record created after date)
  * 
  * These are the queries used by A&P to get volumes held and volumes added (new and retrospective)
  * counts for CUL's annual data collection (adc). (We are currently working on queries to separate
@@ -309,7 +310,7 @@ vc4.permanent_location_name,
 count(vc4.item_id) AS new_volumes
 FROM local_statistics.vol_ct_4 vc4
 LEFT JOIN local_statistics.adc_loc_translation_csv alt ON vc4."permanent_location_name" = alt.permanent_location_name
-WHERE vc4.created_date::DATE > '2021-07-01'
+WHERE vc4.created_date::DATE > '2021-06-30'
 GROUP BY alt.adc_loc_translation, vc4.permanent_location_name
 ORDER BY alt.adc_loc_translation
 ;
