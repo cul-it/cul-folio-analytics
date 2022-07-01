@@ -1,5 +1,6 @@
 --vidrec_piece_ct_adc_20220624
 
+--7/1/22 update: added sr.state  = 'ACTUAL' requirement to first subquery
 --5/24/22 update: added item records must not be suppressed; added location translation table to query 4
 --as query 5 is no longer working because we can't figure out how to translate the texts in the "number_of_pieces"
 --field to integers. Instead, export the results of query 4 and get the sums of piece counts by 
@@ -52,7 +53,9 @@ WITH get_date_vistype AS
     substring(sm.content, 8, 4)::text AS publication_date,
     substring(sm.content, 34, 1)::text AS visualmat_type
     FROM srs_marctab sm 
-    WHERE (sm.field = '008'))
+    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
+    WHERE (sm.field = '008')
+    AND sr.state  = 'ACTUAL')
 SELECT DISTINCT 
 	sm.instance_hrid,
     sm.instance_id,
