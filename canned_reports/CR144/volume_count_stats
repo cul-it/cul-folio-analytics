@@ -1,5 +1,6 @@
 /*Updated: 4/26/22 (adding that item records mustn't be suppressed; vacuum analyze)
  *Updated: 6/30/22 (changing item record created after date)
+ *Updated: 7/1/22 (added sr.state  = 'ACTUAL' to first subquery)
  * 
  * These are the queries used by A&P to get volumes held and volumes added (new and retrospective)
  * counts for CUL's annual data collection (adc). (We are currently working on queries to separate
@@ -53,7 +54,9 @@ WITH get_date AS
     sm.content,
     substring(sm.content, 8, 4)::text AS publication_date
     FROM srs_marctab sm 
-    WHERE (sm.field = '008'))
+    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
+    WHERE (sm.field = '008')
+    AND sr.state  = 'ACTUAL')
 SELECT DISTINCT 
     sm.instance_hrid,
     sm.instance_id,
@@ -70,8 +73,8 @@ WHERE (sm.field = '000' AND substring(sm."content", 7, 2) LIKE 'a%'
 OR sm.field = '000' AND substring(sm."content", 7, 2) like 't%' 
 OR sm.field = '000' AND substring(sm."content", 7, 2) like 'c%' 
 OR sm.field = '000' AND substring(sm."content", 7, 2) like 'd%')
-AND ie.discovery_suppress IS NOT TRUE 
---AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
+--AND ie.discovery_suppress IS NOT TRUE 
+AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL)
 AND sr.state  = 'ACTUAL'
 ;
 CREATE INDEX ON local_statistics.vol_ct_1 (instance_hrid);
