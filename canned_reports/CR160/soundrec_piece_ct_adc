@@ -1,6 +1,7 @@
 --soundrec_piece_ct_adc_20220624
 
 --Updates:  
+--7/1/22 (added sr.state  = 'ACTUAL' to first subquery)
 --6/24/22: added location translation table to query 4 so it can be used to get counts of pieces for item 
 --records with no piece count (assumed to be 1).  added those warnings. Added vacuum/analyze.
 --5/24/22: added item records must not be suppressed; note that the same query for video recordings
@@ -59,7 +60,9 @@ WITH get_date AS
     sm.content,
     substring(sm.content, 8, 4)::text AS publication_date
     FROM srs_marctab sm 
-    WHERE (sm.field = '008'))
+    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
+    WHERE (sm.field = '008')
+    AND sr.state  = 'ACTUAL')
 SELECT DISTINCT 
 	sm.instance_hrid,
     sm.instance_id,
