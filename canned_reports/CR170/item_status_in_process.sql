@@ -1,41 +1,77 @@
 WITH parameters AS (
     SELECT 
          -- Fill out -owning library filter ----
-         '%%'::varchar AS owning_library 
+         'Olin Library'::varchar AS owning_library_name_filter -- Examples: Olin Library, Library Annex, etc.
         )
+SELECT
+        ll.library_name,
+        he.permanent_location_name,
+        instext.title,
+        CONCAT (itemext.effective_call_number_prefix,' ',itemext.effective_call_number,' ',itemext.effective_call_number_suffix,' ',itemext.enumeration,' ',
+        itemext.chronology,' ',CASE WHEN itemext.copy_number > '1' THEN CONCAT ('c.',itemext.copy_number) ELSE '' END) as whole_call_number,
+        itemext.barcode,
+        instext.instance_hrid,
+        he.holdings_hrid,
+        itemext.item_hrid,
+        itemext.material_type_name,
+        itemnotes.note,
+        itemext.status_name,
+        to_char(itemext.status_date::DATE,'mm/dd/yyyy') as item_status_date,
+        string_agg(srs."content",' | ') AS pagination_size,
+        CONCAT ('https://newcatalog.library.cornell.edu/catalog/', ii.hrid) AS catalog_link,
+        ii.effective_shelving_order COLLATE "C"
 
-select 
-	to_char(current_date::DATE,'mm/dd/yyyy') as todays_date,
-	ll.library_name as owning_library,
-	he.permanent_location_name as holdings_location,
-	ie.effective_location_name as item_location,
-	ii.hrid,
-	he.holdings_hrid,
-	ie.item_hrid,
-	ie.barcode,
-	ie.material_type_name,
-	ii.index_title,
-	concat_ws(' ',he.call_number_prefix,he.call_number, he.call_number_suffix, ie.enumeration, ie.chronology,
-		case when ie.copy_number >'1' then concat('c.',ie.copy_number) else '' END) as whole_call_number,
-	ie.status_name as item_status,
-	to_char(ie.status_date::DATE,'mm/dd/yyyy') as item_status_date,
-	concat('https://newcatalog.library.cornell.edu/catalog/',ii.hrid) as catalog_link
+                
+FROM folio_reporting.instance_ext AS instext
+        LEFT JOIN folio_reporting.holdings_ext AS he 
+        ON instext.instance_id = he.instance_id
+        
+        LEFT JOIN folio_reporting.locations_libraries AS ll 
+        ON he.permanent_location_id = ll.location_id
+        
+        LEFT JOIN folio_reporting.item_ext AS itemext 
+        ON he.holdings_id = itemext.holdings_record_id
+        
+        LEFT JOIN inventory_items AS ii 
+        ON itemext.item_id = ii.id
+        
+        LEFT JOIN folio_reporting.item_notes AS itemnotes
+        ON itemext.item_id = itemnotes.item_id
+        
+        LEFT JOIN srs_marctab AS srs 
+        ON instext.instance_id = srs.instance_id
+        
+WHERE  (ll.library_name = (SELECT owning_library_name_filter FROM parameters)
+        OR (SELECT owning_library_name_filter FROM parameters) = '')
+    AND itemext.status_name ILIKE '%in process%'
+        --AND itemext.status_date >'2019/01/01'
+    AND (srs.field = '300' or srs.field is null)
+    AND he.call_number NOT ILIKE '%In%ro%'
+        AND he.call_number NOT ILIKE '%Order%'
+        AND he.call_number not ILIKE '%Cancelled%'
 
-from inventory_instances as ii 
-	left join folio_reporting.holdings_ext as he 
-	on ii.id = he.instance_id 
-	
-	left join folio_reporting.item_ext as ie 
-	on he.holdings_id = ie.holdings_record_id 
-	
-	left join folio_reporting.locations_libraries as ll 
-	on he.permanent_location_id = ll.location_id
+GROUP BY 
+        ll.library_name,
+        he.permanent_location_name,
+        instext.title,
+        itemext.effective_call_number_prefix,
+        itemext.effective_call_number,
+        itemext.effective_call_number_suffix,
+        itemext.enumeration,
+        itemext.chronology,
+        itemext.copy_number,
+        itemext.barcode,
+        ii.hrid,
+        instext.instance_hrid,
+        he.holdings_hrid,
+        itemext.item_hrid,
+        itemext.material_type_name,
+        itemext.status_name,
+        itemext.status_date,
+        itemnotes.note,
+        ii.effective_shelving_order
+        
+ 
+ORDER BY permanent_location_name, effective_shelving_order COLLATE "C",  title
+;
 
-where ie.status_name = 'In process'
-	and ((ll.library_name ilike (select owning_library from parameters) OR (ll.library_name ilike '')))
-	and he.call_number not ilike '%In%rocess%'
-	and he.call_number not ilike '%Order%'
---	and  (ll.library_name = (SELECT owning_library_name_filter FROM parameters)
-      --  OR (SELECT owning_library_name_filter FROM parameters) = '')
-	
-order by holdings_location, he.call_number, ie.status_date, index_title ;
