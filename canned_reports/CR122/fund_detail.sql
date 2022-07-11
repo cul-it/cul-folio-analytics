@@ -2,7 +2,7 @@
 
 WITH parameters AS (
     SELECT
-        ''::VARCHAR AS fiscal_year_code,
+        'FY2023'::VARCHAR AS fiscal_year_code,
         ''::VARCHAR AS fund_code,
  		''::VARCHAR AS fund_name,
  		''::VARCHAR AS group_name
@@ -32,12 +32,12 @@ SELECT
 	COALESCE (unavailable / NULLIF(total_funding,0)*100)::numeric(12,2)  AS perc_spent
 FROM 
 	finance_funds AS ff
-	LEFT JOIN finance_group_fund_fiscal_years AS fgffy ON fgffy.fund_id = ff.id 
-	LEFT JOIN finance_groups AS fg ON fg.id = fgffy.group_id
-	LEFT JOIN finance_fund_types AS fft ON fft.id = ff.fund_type_id
-	LEFT JOIN finance_budgets AS fb ON fb.id = fgffy.budget_id
-	LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fgffy.fiscal_year_id
-	LEFT JOIN finance_ledgers AS fl ON fl.id = ff.ledger_id 
+	LEFT JOIN finance_budgets AS fb ON fb.fund_id = ff.id  
+    LEFT JOIN finance_fiscal_years AS ffy ON fb.fiscal_year_id = ffy.id
+    LEFT JOIN finance_group_fund_fiscal_years AS fgffy  ON fgffy.budget_id = fb.id
+    LEFT JOIN finance_groups AS fg ON fg.id = fgffy.group_id
+    LEFT JOIN finance_fund_types AS fft ON ff.fund_type_id = fft.id 
+    LEFT JOIN finance_ledgers AS fl ON fl.id = ff.ledger_id
 WHERE 
 	ff.fund_status LIKE 'Active'
 	AND ((ffy.code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
