@@ -1,5 +1,6 @@
 --This query provides the list of approved invoices within a date range along with vendor name, finance group name, 
 --vendor invoice number, fund details, purchase order details, language, instance subject, and bibliographic format.
+--NOTE: To run correctly, this query MUST HAVE parameter entries for payment_start_date, payment_end_date, and fiscal_year_code 
 
 WITH parameters AS (
 
