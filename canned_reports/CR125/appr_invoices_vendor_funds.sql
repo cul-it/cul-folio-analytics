@@ -1,10 +1,11 @@
---This query provides the list of approved invoices within a date range along with vendor name, invoice number, fund group and fund used.
+--This query provides the list of approved invoices within a date range and fiscal year along with vendor name, invoice number, fund group and fund used.
 
 WITH parameters AS (
     SELECT
         /* enter invoice payment start date and end date in YYYY-MM-DD format */
-    	'2021-07-01' :: DATE AS payment_date_start_date,
-        '2022-06-30' :: DATE AS payment_date_end_date, -- Excludes the selected date
+    	'2022-07-01' :: DATE AS payment_date_start_date,
+        '2023-07-01' :: DATE AS payment_date_end_date, -- Excludes the selected date
+        'FY2023'::VARCHAR AS fiscal_year_code, -- Ex: FY2022, FY2023 etc.,
         '':: VARCHAR AS invoice_no, --Ex: 12345, CUL01 etc.
         '':: VARCHAR AS from_fund_code, --Ex: 999, p2853. PLEASE SELECT FROM_FUND_CODE OR TO_FUND_CODE, NOT BOTH AT THE SAME TIME
         '':: VARCHAR AS to_fund_code, --Ex: 999, p2853. PLEASE SELECT FROM_FUND_CODE OR TO_FUND_CODE, NOT BOTH AT THE SAME TIME
@@ -33,6 +34,7 @@ SELECT
         	payment_date_end_date::varchar
      	FROM
         	parameters) AS date_range,	
+    ffy.code AS fiscal_year,
 	CASE WHEN lf.ledger_name IS NULL THEN lf2.ledger_name ELSE lf.ledger_name END,
 	CASE WHEN fg.name IS NULL THEN fg2.name ELSE fg.name END AS finance_group_name,
 	org.erp_code AS vendor_code,
@@ -49,6 +51,7 @@ SELECT
 FROM 
 	folio_reporting.finance_transaction_invoices AS fti 
 	LEFT JOIN invoice_lines AS invl ON invl.id = fti.invoice_line_id 
+	LEFT JOIN finance_fiscal_years ffy ON ffy.id = fti.transaction_fiscal_year_id
 	LEFT JOIN invoice_invoices AS inv ON fti.invoice_id = inv.id
 	LEFT JOIN organization_organizations AS org ON org.id = inv.vendor_id
 	LEFT JOIN finance_budgets AS fb ON fti.transaction_from_fund_id = fb.fund_id AND fti.transaction_fiscal_year_id = fb.fiscal_year_id
@@ -62,6 +65,7 @@ FROM
 WHERE
 	(inv.payment_date::date >= (SELECT payment_date_start_date FROM parameters)) 
 	AND (inv.payment_date::date < (SELECT payment_date_end_date FROM parameters))
+	AND ((ffy.code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
 	AND inv.status LIKE 'Paid'
 	AND ((inv.vendor_invoice_no = (SELECT invoice_no  FROM parameters)) OR ((SELECT invoice_no  FROM parameters) = ''))
 	AND ((fti.transaction_from_fund_code = (SELECT from_fund_code FROM parameters)) OR ((SELECT from_fund_code FROM parameters) = '')) 
