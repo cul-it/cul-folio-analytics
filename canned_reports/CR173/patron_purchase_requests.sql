@@ -1,8 +1,8 @@
 WITH parameters AS 
 (SELECT 
-''::VARCHAR AS fund_code_filter,
-'%%'::VARCHAR AS location_filter,
-'%%'::VARCHAR AS library_filter
+'521'::VARCHAR AS fund_code_filter, --select a fund code or leave blank
+'%%'::VARCHAR AS location_filter, --select a location filter or leave blank
+'%%'::VARCHAR AS library_filter --select a library filter or leave blank
 ),
 
 orders AS 
@@ -14,8 +14,7 @@ SELECT distinct
         "is".subject,
         TO_CHAR (po_instance.created_date::TIMESTAMP,'mm/dd/yyyy hh:mi am') AS request_create_date,
         TO_CHAR (po_lines.receipt_date::TIMESTAMP,'mm/dd/yyyy hh:mi am') AS receipt_date,
-        po_lines.receipt_status AS pol_receipt_status,
-        po_lines.payment_status AS pol_payment_status,        
+        po_lines.receipt_status,
         po_instance.pol_location_name,
         STRING_AGG (DISTINCT po_instance.publisher,' |') as publisher,
         he.permanent_location_name as holdings_location,
@@ -61,7 +60,7 @@ FROM po_lines
 WHERE
         po_lines.requester notnull
         and he.permanent_location_name = po_instance.pol_location_name
-     --   AND invoice_lines.invoice_line_status ILIKE '%Paid%'
+        AND invoice_lines.invoice_line_status ILIKE '%Paid%'
         AND (ilfd.finance_fund_code = (SELECT fund_code_filter FROM parameters) or (SELECT fund_code_filter FROM parameters) ='')
         AND ("is".subject_ordinality = 1 OR "is".subject_ordinality IS NULL)
         AND (po_instance.pol_location_name ILIKE (SELECT location_filter FROM parameters) OR (SELECT location_filter FROM parameters) ='')
@@ -75,7 +74,6 @@ GROUP BY
         TO_CHAR (po_instance.created_date::TIMESTAMP,'mm/dd/yyyy hh:mi am'),
         TO_CHAR (po_lines.receipt_date::TIMESTAMP,'mm/dd/yyyy hh:mi am'),
         po_lines.receipt_status,
-        po_lines.payment_status,
         po_instance.pol_location_name,
         he.permanent_location_name,
         ll.library_name,
@@ -126,8 +124,7 @@ SELECT DISTINCT
         orders.subject,
         orders.request_create_date,
         orders.receipt_date,
-        orders.pol_receipt_status,
-        orders.pol_payment_status,
+        orders.receipt_status,
         orders.library_name,
         CASE WHEN orders.pol_location_name IS NULL THEN orders.holdings_location ELSE orders.pol_location_name END AS holdings_loc,
         orders.holdings_call_number,
@@ -156,3 +153,4 @@ FROM orders
         
 ORDER BY orders.title
 ;
+
