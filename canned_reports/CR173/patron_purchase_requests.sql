@@ -1,3 +1,6 @@
+/*NOTE: Please examine results carefully, as this query picks up requester name from the purchase order lines table, and if a request was modified 
+or cancelled and then re-ordered, the item will show up multiple times. */
+
 WITH parameters AS 
 (SELECT 
 '521'::VARCHAR AS fund_code_filter, --select a fund code or leave blank
