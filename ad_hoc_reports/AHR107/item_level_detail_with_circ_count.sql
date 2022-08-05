@@ -5,10 +5,8 @@ WITH parameters AS
         '%' AS class_number_filter, -- enter an LC class number before the % sign. Ex: ‘273.5%’, ‘76.73%’, etc.
         '%%'::VARCHAR AS title_filter -- enter a title between the % signs (not case-sensitive). Ex: ‘%journal of rheology%’, ‘%sarawak club%’, ‘%european union%’  
         ),
-        
 recs AS 
-(
-SELECT 
+(SELECT 
         ii.title,
         ii.id AS instance_id,
         ii.hrid AS instance_hrid,
@@ -29,45 +27,23 @@ SELECT
         he.type_name AS holdings_type_name,
         STRING_AGG (distinct hn.note,' | ') AS holdings_note,
         item.historical_charges AS voyager_historical_charges
-
 FROM inventory_instances AS ii 
-        LEFT JOIN folio_reporting.holdings_ext AS he 
-        ON ii.id = he.instance_id 
-        
-        LEFT JOIN inventory_items AS invitems 
-        ON he.holdings_id = invitems.holdings_record_id
-        
-        LEFT JOIN folio_reporting.holdings_notes AS hn 
-        ON he.holdings_id = hn.holdings_id
-        
-        LEFT JOIN folio_reporting.instance_subjects AS is2 
-        ON ii.id = is2.instance_id 
-        
-        LEFT JOIN folio_reporting.instance_subjects AS is3 
-        ON ii.id = is3.instance_id 
-        
-        LEFT JOIN folio_reporting.instance_publication AS ip 
-        ON ii.id = ip.instance_id
-        
-        LEFT JOIN folio_reporting.locations_libraries AS ll 
-        ON he.permanent_location_id = ll.location_id 
-        
-        LEFT JOIN vger.item 
-        ON invitems.hrid = item.item_id::VARCHAR
-        
-        LEFT JOIN vger.bib_master 
-        ON ii.hrid = bib_master.bib_id::VARCHAR
-        
-WHERE (ll.location_name = (SELECT location_name_filter FROM parameters) OR (SELECT location_name_filter FROM parameters)='')
+        LEFT JOIN folio_reporting.holdings_ext AS he ON ii.id = he.instance_id 
+        LEFT JOIN inventory_items AS invitems ON he.holdings_id = invitems.holdings_record_id
+        LEFT JOIN folio_reporting.holdings_notes AS hn ON he.holdings_id = hn.holdings_id
+        LEFT JOIN folio_reporting.instance_subjects AS is2 ON ii.id = is2.instance_id 
+        LEFT JOIN folio_reporting.instance_subjects AS is3 ON ii.id = is3.instance_id 
+        LEFT JOIN folio_reporting.instance_publication AS ip ON ii.id = ip.instance_id
+        LEFT JOIN folio_reporting.locations_libraries AS ll ON he.permanent_location_id = ll.location_id 
+        LEFT JOIN vger.item ON invitems.hrid = item.item_id::VARCHAR
+        LEFT JOIN vger.bib_master ON ii.hrid = bib_master.bib_id::VARCHAR
+        WHERE (ll.location_name = (SELECT location_name_filter FROM parameters) OR (SELECT location_name_filter FROM parameters)='')
         AND (he.discovery_suppress = 'False' OR he.discovery_suppress = NULL)
         AND (SUBSTRING (he.call_number, '[A-Z]{1,3}') like (SELECT lc_class_filter FROM parameters) OR (SELECT lc_class_filter FROM parameters) = '')
         AND ((SELECT class_number_filter FROM parameters) ='' OR (SUBSTRING (he.call_number, '\d{1,}\.{0,}\d{0,}') LIKE (SELECT class_number_filter FROM parameters)))
         AND (ii.title ILIKE (SELECT title_filter FROM parameters) OR (SELECT title_filter FROM parameters) = '')
         AND (is2.subject_ordinality = 1 OR is2.subject_ordinality IS NULL)
-
-
 GROUP BY 
-
         ii.title,
         ii.id,
         ii.hrid,
@@ -85,9 +61,7 @@ GROUP BY
         SUBSTRING (he.call_number, '\d{1,}\.{0,}\d{0,}'),
         he.type_name,
         item.historical_charges
-        
-        ),
-
+),
 circs AS 
 (SELECT 
         recs.title,
@@ -109,11 +83,8 @@ circs AS
         recs.holdings_note,
         recs.voyager_historical_charges,
         COUNT(li.loan_id) AS folio_loans
-        
 FROM recs 
-        LEFT JOIN folio_reporting.loans_items AS li 
-        ON (CASE WHEN recs.item_id IS NULL THEN 'xxx' ELSE recs.item_id END) = li.item_id
-        
+        LEFT JOIN folio_reporting.loans_items AS li ON (CASE WHEN recs.item_id IS NULL THEN 'xxx' ELSE recs.item_id END) = li.item_id
 GROUP BY 
         recs.title,
         recs.instance_id,
@@ -134,7 +105,6 @@ GROUP BY
         recs.holdings_note,
         recs.voyager_historical_charges
 )
-
 SELECT DISTINCT
         circs.title,
         circs.instance_hrid,
@@ -154,18 +124,10 @@ SELECT DISTINCT
         circs.voyager_historical_charges,
         circs.folio_loans,
         invitems.effective_shelving_order COLLATE "C"
-        
-FROM circs 
-        LEFT JOIN srs_marctab AS sm 
-        ON circs.instance_id::VARCHAR = sm.instance_id::VARCHAR
-        
-        LEFT JOIN local.jl_bib_format_display_csv AS jlbfd
-        ON SUBSTRING (sm.content,7,2) = jlbfd.bib_format
-        
-        LEFT JOIN inventory_items AS invitems 
-        ON circs.item_id = invitems.id
-
+ FROM circs 
+        LEFT JOIN srs_marctab AS sm ON circs.instance_id::VARCHAR = sm.instance_id::VARCHAR
+        LEFT JOIN local.jl_bib_format_display_csv AS jlbfd ON SUBSTRING (sm.content,7,2) = jlbfd.bib_format
+        LEFT JOIN inventory_items AS invitems ON circs.item_id = invitems.id
 WHERE sm.field = '000'
-
 ORDER BY invitems.effective_shelving_order COLLATE "C", whole_call_number
 ;
