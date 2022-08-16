@@ -15,7 +15,7 @@ FROM
 	LEFT JOIN finance_ledgers AS fl ON fl.id = ff.ledger_id 
 WHERE 
 	ff.fund_status LIKE 'Active'
-	AND ffy.code LIKE 'FY2022'
+	AND ffy.code LIKE 'FY2023'
 GROUP BY 
 	external_account_no,
 	fl.name
