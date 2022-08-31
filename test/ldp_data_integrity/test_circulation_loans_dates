@@ -1,0 +1,22 @@
+--This query pulls the loan_date from the public.circulation_loans table
+--It allows you to specify a date range so you can see when the loan_date was last updated
+
+WITH parameters AS (
+    SELECT
+	/* Choose a start and end date */
+	'2021-08-10'::DATE AS start_date,
+	'2022-08-31'::DATE AS end_date
+)
+
+SELECT 
+	loan_date AS loan_date
+
+FROM circulation_loans
+ 
+WHERE
+	loan_date >= (SELECT start_date FROM parameters)
+    AND loan_date < (SELECT end_date FROM parameters)
+    
+ORDER BY
+	loan_date DESC
+;
