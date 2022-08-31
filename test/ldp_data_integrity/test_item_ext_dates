@@ -1,0 +1,22 @@
+--This query pulls the created_date from the folio_reporting.item_ext table
+--It allows you to specify a date range so you can see when the created_date was last updated
+
+WITH parameters AS (
+    SELECT
+        /* Choose a start and end date */
+        '2021-08-10'::VARCHAR AS start_date,
+        '2022-08-31'::VARCHAR AS end_date
+)
+
+SELECT 
+	ie.created_date AS created_date
+
+FROM folio_reporting.item_ext AS ie
+ 
+WHERE
+    created_date >= (SELECT start_date FROM parameters)
+    AND created_date < (SELECT end_date FROM parameters)
+    
+ORDER BY
+ie.created_date DESC
+;
