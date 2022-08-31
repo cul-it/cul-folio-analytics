@@ -1,0 +1,23 @@
+--This query pulls the status_updated_date from the folio_reporting.instance_ext table
+--It allows you to specify a date range so you can see when the status_updated_date was last updated
+
+WITH parameters AS (
+    SELECT
+        /* Choose a start and end date */
+        '2021-08-01'::date AS start_date,
+        '2022-08-31'::date AS end_date
+)
+
+SELECT 
+ie.status_updated_date::DATE AS status_updated_date
+
+FROM 
+folio_reporting.instance_ext AS ie
+ 
+WHERE
+    status_updated_date >= (SELECT start_date FROM parameters)
+    AND status_updated_date < (SELECT end_date FROM parameters)
+
+ORDER BY
+ie.status_updated_date DESC
+;
