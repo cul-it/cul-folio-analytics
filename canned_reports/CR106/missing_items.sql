@@ -1,7 +1,8 @@
+
 WITH parameters AS (
     SELECT 
          -- Fill out -owning library filter ----
-         'Olin Library'::varchar AS owning_library_name_filter -- Examples: Olin Library, Library Annex, etc.
+         'ILR Library'::varchar AS owning_library_name_filter -- Examples: Olin Library, Library Annex, etc.
         )
 SELECT
         ll.library_name,
@@ -18,7 +19,7 @@ SELECT
         he.holdings_hrid,
         itemext.item_hrid,
         he.type_name,
-        itemnotes.note,
+        string_agg(distinct itemnotes.note,' | ') as item_note,
         itemext.status_name,
         to_char(itemext.status_date::DATE,'mm/dd/yyyy') as item_status_date,
         string_agg(srs."content",' | ') AS pagination_size,
@@ -42,7 +43,7 @@ FROM folio_reporting.instance_ext AS instext
         ON itemext.item_id = itemnotes.item_id
         
         LEFT JOIN srs_marctab AS srs 
-        ON instext.instance_id = srs.instance_id
+        ON instext.instance_hrid = srs.instance_hrid
         
 WHERE  (ll.library_name = (SELECT owning_library_name_filter FROM parameters)
         OR (SELECT owning_library_name_filter FROM parameters) = '')
@@ -67,7 +68,6 @@ GROUP BY
         he.type_name,
         itemext.status_name,
         itemext.status_date,
-        itemnotes.note,
         ii.effective_shelving_order
         
  
