@@ -36,7 +36,7 @@ language_extract AS (
 
     FROM
         srs_marctab AS sm
-        LEFT JOIN srs_records AS sr on sr.id = sm.srs_id
+        LEFT JOIN srs_records AS sr on sr.id::uuid = sm.srs_id
         WHERE sm.field = '008' AND sr.state = 'ACTUAL'
 ),
 
@@ -51,7 +51,7 @@ format_extract as (
 
     FROM
         srs_marctab AS sm
-        LEFT JOIN srs_records AS sr ON sr.id = sm.srs_id
+        LEFT JOIN srs_records AS sr ON sr.id::uuid = sm.srs_id
         LEFT JOIN local.jl_bib_format_display_csv AS jl ON substring(sm.content,7,2) = jl.bib_format
 
         WHERE sm.field = '000' AND sr.state = 'ACTUAL'
@@ -167,9 +167,9 @@ FROM
         LEFT JOIN folio_reporting.po_lines_locations AS poll ON poll.pol_id = pol.id
         LEFT JOIN pol_holdings_id AS polholdid ON polholdid.pol_id = pol.id
         --------LEFT JOIN folio_reporting.holdings_ext AS frh ON frh.holdings_id = polholdid.pol_holding_id  -- Will add after the Kiwi release
-        LEFT JOIN language_extract AS lang ON lang.instance_id = pol.instance_id
+        LEFT JOIN language_extract AS lang ON lang.instance_id = pol.instance_id::uuid
         LEFT JOIN instance_subject_extract AS inssub ON inssub.instance_hrid = iext.instance_hrid
-        LEFT JOIN format_extract on pol.instance_id = format_extract.instance_id
+        LEFT JOIN format_extract on pol.instance_id::uuid = format_extract.instance_id
         LEFT JOIN fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
        
 WHERE
@@ -191,4 +191,3 @@ ORDER BY
         inv.vendor_invoice_no,
         po.po_number 
         ;
-        
