@@ -1,0 +1,12 @@
+-- This query counts the number of instance records created by date from the inventory_instances public table; modify date criteria as needed 
+
+select 
+	json_extract_path_text (ii.data,'metadata','createdDate')::date,
+	count (ii.id) 
+
+from inventory_instances as ii 
+
+where json_extract_path_text (ii.data,'metadata','createdDate')::date >= '2022-08-01'
+group by json_extract_path_text (ii.data,'metadata','createdDate')::date 
+order by json_extract_path_text (ii.data,'metadata','createdDate')::date 
+;
