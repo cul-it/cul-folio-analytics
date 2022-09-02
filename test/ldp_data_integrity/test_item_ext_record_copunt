@@ -1,0 +1,11 @@
+-- This query counts the number of item records created by date, using the item_ext derived table. Modify the date criteria as needed.
+
+select 
+	ie.created_date::date,
+	count (ie.item_id)
+
+from folio_reporting.item_ext as ie
+where ie.created_date::date >='2022-08-01'
+group by ie.created_date::date
+order by ie.created_date::date
+;
