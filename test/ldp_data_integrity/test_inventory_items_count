@@ -1,0 +1,13 @@
+-- This query counts the number of item records created by date, using the inventory_items public table. Modify the date criteria as needed.
+
+select 	
+	json_extract_path_text (invitems.data, 'metadata','createdDate')::date,
+	count (invitems.id)
+	
+from inventory_items as invitems 
+
+where json_extract_path_text (invitems.data, 'metadata','createdDate')>='2022-08-01'
+
+group by json_extract_path_text (invitems.data, 'metadata','createdDate')::date
+order by json_extract_path_text (invitems.data, 'metadata','createdDate')::date
+;
