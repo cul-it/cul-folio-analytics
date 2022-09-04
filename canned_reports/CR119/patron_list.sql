@@ -1,4 +1,5 @@
 /*This report contains a list of patrons, including netids, names, addresses, patron group, and patron blocks. */
+/*The patron notes will not display as of 8/12/22 because the "notes" table was not populated in the Lotus release. It will be restored in the next release.*/
 
 WITH parameters AS (
     SELECT
@@ -77,9 +78,9 @@ SELECT
     ug.user_preferred_first_name,
     ug.user_email,
     ug.group_name,
-    ug.created_date,
-    ug.expiration_date,
-    ug.updated_date,
+    uu.created_date::date,
+    uu.expiration_date::date,
+    uu.updated_date::date,
     ug.active,
     un.notes_list AS user_notes,
     ud.depts_list,
@@ -121,6 +122,6 @@ SELECT
         OR '' = (SELECT active_status_filter FROM parameters))
   --  AND (mb.code IS NOT NULL::varchar = (SELECT is_blocked_filter FROM parameters)
   --      OR '' = (SELECT is_blocked_filter FROM parameters))
-    AND ug.created_date >= (SELECT created_after_filter FROM parameters)
-    AND ug.updated_date >= (SELECT updated_after_filter FROM parameters)
+    AND uu.created_date::date >= (SELECT created_after_filter FROM parameters)
+    AND uu.updated_date::date >= (SELECT updated_after_filter FROM parameters)
     ;
