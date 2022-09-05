@@ -1,0 +1,11 @@
+-- This query finds the number of holdings records created by date, using the inventory_holdings public table. Modify the date criteria as needed.
+
+select 
+	json_extract_path_text (invhold.data, 'metadata','createdDate')::date, 
+	count (invhold.id) 
+
+from inventory_holdings as invhold 
+where json_extract_path_text (invhold.data, 'metadata','createdDate')::date >='2022-08-01' 
+group by json_extract_path_text (invhold.data, 'metadata','createdDate')::date 
+order by json_extract_path_text (invhold.data, 'metadata','createdDate')::date
+;

@@ -1,0 +1,12 @@
+-- This query counts the number of instance records created, using the instance_ext derived table. Modify the date criteria as needed.
+
+select 
+	instext.record_created_date::date,
+	count (instext.instance_id)
+
+from folio_reporting.instance_ext as instext 
+
+where instext.record_created_date::date >='2022-08-01' 
+group by instext.record_created_date::date 
+order by instext.record_created_date::date
+;

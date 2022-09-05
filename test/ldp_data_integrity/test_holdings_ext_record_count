@@ -1,0 +1,12 @@
+-- This query counts the number of holdings records created by date, from the holdings_ext derived table. Modify the date criteria as needed.
+
+select 
+	he.created_date::date,
+	count (he.holdings_id)
+
+from folio_reporting.holdings_ext as he 
+where he.created_date::date  >='2022-08-01'
+
+group by he.created_date::date 
+order by he.created_date::date
+;

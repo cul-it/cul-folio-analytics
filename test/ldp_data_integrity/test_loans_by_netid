@@ -1,0 +1,45 @@
+-- This query allows you to view loans by a user's net ID
+
+with filters as 
+	(select 
+	''::varchar as net_id_filter
+	)
+
+select 
+	cl.id as loan_id,
+	cl.user_id,
+	cl.item_id,
+	invitems.hrid as item_hrid,
+	ii.title,
+	il.name as location_name,
+	trim (concat_ws (' ',
+		ih.call_number,
+		invitems.enumeration,
+		invitems.chronology,
+		case when invitems.copy_number >'1' then concat ('c.',invitems.copy_number) else '' end))
+		as whole_call_number,
+	invitems.barcode,
+	to_char (cl.loan_date::timestamp,'mm/dd/yyyy hh:mi am') as loan_date,
+	to_char (cl.due_date::timestamp,'mm/dd/yyyy hh:mi am') as due_date,
+	uu.username,
+	concat(json_extract_path_text(uu.data,'personal','lastName'),', ',json_extract_path_text (uu.data,'personal','firstName')) as "user"
+
+from circulation_loans as cl 
+	left join inventory_items as invitems 
+	on cl.item_id = invitems.id
+	
+	inner join inventory_holdings as ih 
+	on invitems.holdings_record_id = ih.id
+	
+	inner join inventory_locations as il 
+	on ih.permanent_location_id = il.id
+	
+	inner join inventory_instances as ii 
+	on ih.instance_id = ii.id
+
+	inner join user_users as uu 
+	on cl.user_id = uu.id
+
+where uu.username = (select net_id_filter from filters)
+order by cl.loan_date asc
+;
