@@ -13,7 +13,23 @@ WITH parameters AS (
         ''::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
         'FY2023'::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023 etc.
         ''::VARCHAR AS po_number,
-        ''::VARCHAR AS bib_format_display -- Ex: Book, Serial, Textual Resource, etc.
+        ''::VARCHAR AS format_name -- Ex: Book, Serial, Textual Resource, etc.
+),
+
+        
+format_extract as (
+	SELECT
+		sr.external_id AS instance_id,    
+	    substring(sm.content,7,2) AS bib_format_code,
+        jl.bib_format_display
+     
+        FROM
+        srs_records AS sr
+        LEFT JOIN srs_marctab AS sm ON sr.id::uuid = sm.srs_id
+        LEFT JOIN local.jl_bib_format_display_csv AS jl ON substring(sm.content,7,2) = jl.bib_format
+
+        WHERE sm.field = '000' 
+        AND sr.state = 'ACTUAL'
 ),
 
 pol_holdings_id AS (
@@ -22,57 +38,12 @@ pol_holdings_id AS (
         json_extract_path_text(locations.data, 'locationId') AS pol_loc_id,
         json_extract_path_text(locations.data, 'holdingId') AS pol_holding_id
 
-    	FROM
-        	po_lines AS pol
-        	CROSS JOIN json_array_elements(json_extract_path(data, 'locations')) AS locations (data)
+                FROM
+               po_lines AS pol
+               CROSS JOIN json_array_elements(json_extract_path(data, 'locations')) AS locations (data)
 ),
 
-language_extract AS (
-        SELECT
-        sm.instance_id AS instance_id,
-        substring(sm.content, 36,3) AS LANGUAGE,
-        sr.state,
-        sr.id
-
-    FROM
-        srs_marctab AS sm
-        LEFT JOIN srs_records AS sr on sr.id::uuid = sm.srs_id
-        WHERE sm.field = '008' AND sr.state = 'ACTUAL'
-),
-
-format_extract as (
-
-	SELECT
-        sm.instance_id AS instance_id,
-        substring(sm.content,7,2) AS bib_format_code,
-        jl.bib_format_display,
-        sr.state,
-        sr.id
-
-    FROM
-        srs_marctab AS sm
-        LEFT JOIN srs_records AS sr ON sr.id::uuid = sm.srs_id
-        LEFT JOIN local.jl_bib_format_display_csv AS jl ON substring(sm.content,7,2) = jl.bib_format
-
-        WHERE sm.field = '000' AND sr.state = 'ACTUAL'
-),
-
-instance_subject_extract as (
-
-        SELECT
-        instances.id AS instance_id,
-        instances.hrid AS instance_hrid,
-        subjects.data #>> '{}' AS subject,
-        subjects.ordinality AS subject_ordinality
-
-        FROM
-        	inventory_instances AS instances
-        	CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'subjects'))
-        	WITH ORDINALITY AS subjects (data)
-        	WHERE subjects.ordinality = '1'
-),
-
-finance_transaction_invoices_ext AS (
+  finance_transaction_invoices_ext AS (
 
         SELECT
                 fti.invoice_payment_date::DATE AS invoice_payment_date,
@@ -87,7 +58,7 @@ finance_transaction_invoices_ext AS (
                 fti.transaction_amount,
                 fti.effective_fund_id AS effective_fund_id,
                 fti.effective_fund_code AS effective_fund_code,
-               	fft.name AS fund_type_name,
+                fft.name AS fund_type_name,
                 CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >1 THEN fti.transaction_amount *-1 ELSE fti.transaction_amount END AS effective_transaction_amount,
                 ff.external_account_no AS external_account_no
 
@@ -109,7 +80,7 @@ SELECT
     fgffy.fiscal_year_id AS fund_fiscal_year_id,
     ffy.code AS fiscal_year_code
 FROM
-	finance_groups AS FG 
+    finance_groups AS FG 
     LEFT JOIN finance_group_fund_fiscal_years AS FGFFY ON fg.id = fgffy.group_id
     LEFT JOIN finance_fiscal_years AS ffy ON ffy. id = fgffy.fiscal_year_id
     LEFT JOIN finance_funds AS FF ON FF.id = fgffy.fund_id
@@ -118,7 +89,7 @@ ORDER BY ff.code
 
 )
 -- MAIN QUERY
-SELECT
+SELECT distinct
         current_date AS current_date,           
         (    
         SELECT payment_date_start_date::varchar
@@ -131,7 +102,7 @@ SELECT
 
         FROM
         parameters) AS payment_date_range,
-        inv.payment_date::DATE,
+        inv.payment_date::DATE as invoice_payment_date,
         ftie.finance_ledger_name,
         ftie.fiscal_year_code AS transaction_fiscal_year_code,
         ffyg.finance_group_name,
@@ -141,40 +112,37 @@ SELECT
         pol.po_line_number,
         pol.order_format,
         po.order_type,
-        lang.language AS language,
-        format_extract.bib_format_display,
+        formatt.bib_format_display AS format_name,
         ftie.invoice_vendor_name,
         inv.vendor_invoice_no,
         inssub.subject AS instance_subject, -- This IS the subject that is first on the list.
+        lang.language AS language,
         pol.title_or_package AS po_line_title_or_package,
         iext.title AS instance_title,
-        --------frh.call_number -- Will de added after the Kiwi release
         iext.instance_hrid,
-        ------polholdid.pol_holding_id AS holdings_id, -- Will be addded after the Kiwi release
-        ------frh.holdings_hrid AS holdings_hrid, -- Will be addded after the Kiwi release
+        poll.pol_location_name,
         invl.description AS invoice_line_description,
         invl.comment AS invoice_line_comment,
-        ftie.effective_transaction_amount AS transaction_amount,
+        ftie.effective_transaction_amount/invl.quantity AS transaction_amount,
+        invl.quantity,
         ftie.transaction_type,
         ftie.external_account_no
 FROM
         finance_transaction_invoices_ext AS ftie
         LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id
-       LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
+       	LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
         LEFT JOIN po_lines AS pol ON ftie.po_line_id = pol.id
         LEFT JOIN po_purchase_orders AS PO ON po.id = pol.purchase_order_id
         LEFT JOIN folio_reporting.instance_ext AS iext ON iext.instance_id = pol.instance_id
         LEFT JOIN folio_reporting.po_lines_locations AS poll ON poll.pol_id = pol.id
         LEFT JOIN pol_holdings_id AS polholdid ON polholdid.pol_id = pol.id
-        --------LEFT JOIN folio_reporting.holdings_ext AS frh ON frh.holdings_id = polholdid.pol_holding_id  -- Will add after the Kiwi release
-        LEFT JOIN language_extract AS lang ON lang.instance_id = pol.instance_id::uuid
-        LEFT JOIN instance_subject_extract AS inssub ON inssub.instance_hrid = iext.instance_hrid
-        LEFT JOIN format_extract on pol.instance_id::uuid = format_extract.instance_id
+        LEFT JOIN folio_reporting.instance_languages AS lang ON lang.instance_id = pol.instance_id
+        LEFT JOIN folio_reporting.instance_subjects AS inssub ON inssub.instance_id = pol.instance_id
+        LEFT JOIN format_extract AS formatt ON pol.instance_id = formatt.instance_id
         LEFT JOIN fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
        
 WHERE
-		((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
-        AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
+        ((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
         AND inv.status LIKE 'Paid'
         AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
         AND ((ftie.fund_type_name = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
@@ -182,12 +150,17 @@ WHERE
         AND ((ftie.finance_ledger_name = (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) = ''))
         AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
         AND ((po.po_number = (SELECT po_number FROM parameters)) OR ((SELECT po_number FROM parameters) = ''))
-        AND ((format_extract.bib_format_display = (SELECT bib_format_display FROM parameters)) OR ((SELECT bib_format_display FROM parameters) = ''))
+        AND ((formatt.bib_format_display= (SELECT format_name FROM parameters)) OR ((SELECT format_name FROM parameters) = ''))
+        AND (inssub.subject_ordinality = 1 OR inssub.subject_ordinality IS NULL)
+        AND (lang.language_ordinality = 1 OR lang.language_ordinality IS NULL)
+        
 ORDER BY
         ftie.finance_ledger_name,
         ffyg.finance_group_name,
         fund_type_name,
         ftie.invoice_vendor_name,
         inv.vendor_invoice_no,
-        po.po_number 
+        po.po_number,
+        pol.po_line_number 
         ;
+
