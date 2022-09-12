@@ -20,16 +20,17 @@ SELECT
 	COALESCE (fb.initial_allocation,0) AS initial_allocation,
 	COALESCE (fb.allocation_to,0) AS increase_in_allocation,
 	COALESCE (fb.allocation_from,0) AS decrease_in_allocation,
-	COALESCE (fb.allocated,0) AS total_allocation,
+	COALESCE (fb.initial_allocation,0) + COALESCE (fb.allocation_to,0)- COALESCE (fb.allocation_from,0) AS Total_allocated,
 	COALESCE (fb.net_transfers,0) AS net_transfers,
-	COALESCE (fb.total_funding,0) AS total_funding,--This amount includes allocations and net transfers
+	COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0) AS total_funding,
 	COALESCE (fb.expenditures,0) AS expenditures,
 	COALESCE (fb.encumbered,0) AS encumbered,
 	COALESCE (fb.awaiting_payment,0) AS awaiting_payment,
-	COALESCE (fb.unavailable,0) AS unavailable,-- This is the total of expenditures, awaiting payments and encumbrances
-	COALESCE (fb.cash_balance,0) AS cash_balance, -- This balance excludes encumbrances and awaiting payment
-	COALESCE(fb.available,0) AS available_balance,-- This balance includes expenditures, awaiting payments and encumbrances
-	COALESCE (unavailable / NULLIF(total_funding,0)*100)::numeric(12,2)  AS perc_spent
+	COALESCE (fb.encumbered,0)+COALESCE (fb.awaiting_payment,0)+COALESCE (fb.expenditures,0) AS unavailable,
+	(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) - COALESCE (fb.expenditures,0) AS cash_balance,
+	(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) - COALESCE (fb.encumbered,0) - COALESCE (fb.awaiting_payment,0) - COALESCE (fb.expenditures,0) AS available_balance,
+	COALESCE ((COALESCE (fb.encumbered,0)+COALESCE (fb.awaiting_payment,0)+COALESCE (fb.expenditures,0)) / NULLIF((COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)),0)*100)::numeric(12,2)  AS perc_spent
+	
 FROM 
 	finance_funds AS ff
 	LEFT JOIN finance_budgets AS fb ON fb.fund_id = ff.id  
