@@ -1,0 +1,8 @@
+CR186
+Ceased or Cancelled Titles at the Item Level
+
+This query finds ceased or cancelled titles at the item level, for a specified owning library and LC class, and shows if there are holdings at the Annex.
+
+Both library name and LC class are required parameters.
+
+To use the results: export the output to Excel; delete the column "effective_shelving_order"; select all rows, and under the Data menu choose "Remove duplicates."
