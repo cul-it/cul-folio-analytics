@@ -1,6 +1,7 @@
 --This query provides the list of approved invoices within a date range along with vendor name, finance group name, 
 --vendor invoice number, fund details, purchase order details, language, instance subject, and bibliographic format.
---NOTE: To run correctly, this query MUST HAVE parameter entries for payment_start_date, payment_end_date, and fiscal_year_code 
+--NOTE: To run correctly, this query MUST HAVE parameter entries for payment_start_date, payment_end_date, and fiscal_year_code
+--In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1 
 
 WITH parameters AS (
 
@@ -87,7 +88,18 @@ FROM
 WHERE (ffy.code = (SELECT fiscal_year_code FROM parameters))
 ORDER BY ff.code
 
+),
+
+new_quantity AS 
+(SELECT 
+id AS invoice_line_id,
+	CASE WHEN quantity = 0
+       		THEN 1
+       		ELSE quantity
+    END AS fixed_quantity
+FROM invoice_lines 
 )
+
 -- MAIN QUERY
 SELECT distinct
         current_date AS current_date,           
@@ -123,13 +135,14 @@ SELECT distinct
         poll.pol_location_name,
         invl.description AS invoice_line_description,
         invl.comment AS invoice_line_comment,
-        ftie.effective_transaction_amount/invl.quantity AS transaction_amount,
-        invl.quantity,
+        ftie.effective_transaction_amount/fq.fixed_quantity AS transaction_amount,
+        fq.fixed_quantity AS quantity,
         ftie.transaction_type,
         ftie.external_account_no
 FROM
         finance_transaction_invoices_ext AS ftie
         LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id
+        LEFT JOIN new_quantity AS fq ON invl.id = fq.invoice_line_id
        	LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
         LEFT JOIN po_lines AS pol ON ftie.po_line_id = pol.id
         LEFT JOIN po_purchase_orders AS PO ON po.id = pol.purchase_order_id
@@ -163,4 +176,3 @@ ORDER BY
         po.po_number,
         pol.po_line_number 
         ;
-
