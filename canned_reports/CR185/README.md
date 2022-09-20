@@ -1,5 +1,5 @@
 CR 185
-Ceased or Cancelled Serials
+Ceased or Cancelled Titles
 
 This query finds ceased or cancelled titles for a specified owning library and LC class, and shows if there are holdings at the Annex.
 Results will include any title (of any holdings type) that has receipt status or holdings note that indicates the title is no longer received or is ceased or cancelled.
