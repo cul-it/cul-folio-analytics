@@ -132,7 +132,7 @@ SELECT distinct
         pol.title_or_package AS po_line_title_or_package,
         iext.title AS instance_title,
         iext.instance_hrid,
-        poll.pol_location_name,
+        poll.location_name,
         invl.description AS invoice_line_description,
         invl.comment AS invoice_line_comment,
         ftie.effective_transaction_amount/fq.fixed_quantity AS transaction_amount,
