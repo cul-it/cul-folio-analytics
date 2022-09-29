@@ -58,9 +58,7 @@ SELECT
     sm."content" AS ct1,
     substring(sm."content", 7, 2) AS "type_m"
     FROM srs_marctab sm 
-    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
-    where sr.state  = 'ACTUAL'
-    and (sm.field = '000' AND substring(sm."content", 7, 2) IN ('aa', 'am', 'cm', 'dm', 'em', 'tm'))
+    where (sm.field = '000' AND substring(sm."content", 7, 2) IN ('aa', 'am', 'cm', 'dm', 'em', 'tm'))
 ;
 
 CREATE INDEX ON local_hathi.h_mo_1 (instance_hrid);
@@ -69,6 +67,8 @@ CREATE INDEX ON local_hathi.h_mo_1 (field);
 CREATE INDEX ON local_hathi.h_mo_1 (sf);
 CREATE INDEX ON local_hathi.h_mo_1 (ct1);
 CREATE INDEX ON local_hathi.h_mo_1 ("type_m");
+
+VACUUM ANALYZE local_hathi.h_mo_1;
 
 
 ----------------selects records from previous table and filters on 008 language material------------
@@ -83,9 +83,7 @@ SELECT
     sm."content" AS ct2,
     substring(sm."content", 7, 1) AS "type_publ" 
     FROM srs_marctab  AS sm 
-    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
-    where sr.state  = 'ACTUAL'
-    and (sm.field = '008' AND substring(sm."content", 7, 1) IN ('q', 'r', 's', 't')))
+    where (sm.field = '008' AND substring(sm."content", 7, 1) IN ('q', 'r', 's', 't')))
     SELECT 
     h1.instance_hrid,
     h1.instance_id,
@@ -100,6 +98,8 @@ CREATE INDEX ON local_hathi.h_mo_1b (instance_id);
 CREATE INDEX ON local_hathi.h_mo_1b ("type_publ");
 CREATE INDEX ON local_hathi.h_mo_1b ("type_m");
 
+VACUUM ANALYZE local_hathi.h_mo_1b;
+
 --2--------filter locations-------------------------------
 DROP TABLE IF EXISTS local_hathi.h_mo_2; 
 CREATE TABLE local_hathi.h_mo_2 AS 
@@ -112,7 +112,7 @@ SELECT
     he.call_number,
     he.discovery_suppress 
     FROM  local_hathi.h_mo_1b hm
-    LEFT JOIN  folio_reporting.holdings_ext he ON hm.instance_id=he.instance_id
+    LEFT JOIN  folio_reporting.holdings_ext he ON hm.instance_id::uuid=he.instance_id::uuid
     WHERE he.permanent_location_name NOT LIKE 'serv,remo'
     AND he.permanent_location_name NOT LIKE 'Borrow Direct'
     AND he.permanent_location_name NOT ILIKE '%LTS%'
@@ -125,6 +125,8 @@ CREATE INDEX ON local_hathi.h_mo_2 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_2 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_2 (call_number);
 CREATE INDEX ON local_hathi.h_mo_2 (discovery_suppress);
+
+VACUUM ANALYZE local_hathi.h_mo_2;
 
 --3------------------------selects records with 245 $h[electronic resource] and filters from h_mono_select------------------------
 DROP TABLE IF EXISTS local_hathi.h_mo_3;   
@@ -141,10 +143,8 @@ SELECT
     he.call_number
     FROM
     srs_marctab sm
-    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
-    LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id = he.instance_id
-    WHERE sr.state  = 'ACTUAL'
-    AND ((sm.field = '245' AND sm.sf ='h' AND sm.CONTENT like '%[electronic resource]%')
+    LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id::uuid = he.instance_id::uuid
+    WHERE ((sm.field = '245' AND sm.sf ='h' AND sm.CONTENT like '%[electronic resource]%')
     OR (sm.field = '245' AND sm.sf ='h' AND sm.CONTENT like '%[microform]%'))
     AND he.permanent_location_name !~~ 'serv,remo'
     GROUP BY sm.instance_id, sm.instance_hrid, he.holdings_hrid, sm.CONTENT, sm.field, sm.sf, he.instance_id, 
@@ -158,7 +158,7 @@ SELECT
     hm.call_number,
     hm.discovery_suppress
     FROM local_hathi.h_mo_2 hm
-    LEFT JOIN twofortyfive t ON hm.instance_id = t.instance_id
+    LEFT JOIN twofortyfive t ON hm.instance_id::uuid = t.instance_id::uuid
     WHERE t.instance_id IS NULL
 ;
 CREATE INDEX ON local_hathi.h_mo_3 (instance_id);
@@ -169,6 +169,7 @@ CREATE INDEX ON local_hathi.h_mo_3 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_3 (call_number);
 CREATE INDEX ON local_hathi.h_mo_3 (discovery_suppress);
 
+VACUUM ANALYZE local_hathi.h_mo_3;
 --4---------------------selects records with 336 $aunmediated content and filters from h_mono_245_h_245_h----------------  
 DROP TABLE IF EXISTS local_hathi.h_mo_4;
 CREATE TABLE local_hathi.h_mo_4 AS
@@ -180,9 +181,7 @@ SELECT
     sm.content 
     FROM 
     srs_marctab sm
-    LEFT JOIN srs_records sr ON sm.srs_id = sr.id 
-    WHERE sr.state  = 'ACTUAL'
-    AND (sm.field = '336' AND sm.sf = 'a' AND sm.CONTENT = 'unmediated')
+    WHERE (sm.field = '336' AND sm.sf = 'a' AND sm.CONTENT = 'unmediated')
     GROUP BY sm.instance_id, sm.field, sm.sf, sm.CONTENT)
     SELECT 
     hm.instance_id,
@@ -204,6 +203,7 @@ CREATE INDEX ON local_hathi.h_mo_4 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_4 (call_number);
 CREATE INDEX ON local_hathi.h_mo_4 (discovery_suppress);
 
+VACUUM ANALYZE local_hathi.h_mo_4;
 --5--------------------selects records with 300 $amap or maps and filters from hathi_336------------------ 
 DROP TABLE IF EXISTS local_hathi.h_mo_5;
 CREATE TABLE local_hathi.h_mo_5 AS
@@ -220,10 +220,8 @@ WITH threehundred AS
     he.discovery_suppress 
     FROM
     srs_marctab sm
-    LEFT JOIN srs_records sr ON sm.srs_id = sr.id
-    LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id = he.instance_id
-    WHERE sr.state  = 'ACTUAL'
-    AND (sm.field = '300' AND sm.sf ='a' AND sm.CONTENT like '%map%') 
+    LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id::uuid = he.instance_id::uuid
+    WHERE (sm.field = '300' AND sm.sf ='a' AND sm.CONTENT like '%map%') 
     AND he.permanent_location_name !~~ 'serv,remo'
     GROUP BY sm.instance_hrid, sm.CONTENT, sm.field, sm.sf, he.instance_id, he.holdings_hrid,he.permanent_location_name, 
     he.call_number, he.discovery_suppress)
@@ -236,7 +234,7 @@ WITH threehundred AS
     hm.call_number,
     hm.discovery_suppress
     FROM local_hathi.h_mo_4 hm
-    left JOIN threehundred t ON hm.instance_id = t.instance_id
+    left JOIN threehundred t ON hm.instance_id::uuid = t.instance_id::uuid
     WHERE t.instance_id IS NULL
 ;
 CREATE INDEX ON local_hathi.h_mo_5 (instance_id);
@@ -246,6 +244,8 @@ CREATE INDEX ON local_hathi.h_mo_5 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_5 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_5 (call_number);
 CREATE INDEX ON local_hathi.h_mo_5 (discovery_suppress);
+
+VACUUM ANALYZE local_hathi.h_mo_5;
 --6-----------------------filters records by certain values in call number from hm_330-------------------
 DROP TABLE IF EXISTS local_hathi.h_mo_6;
 CREATE TABLE local_hathi.h_mo_6 AS
@@ -276,6 +276,8 @@ CREATE INDEX ON local_hathi.h_mo_6 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_6 (call_number);
 CREATE INDEX ON local_hathi.h_mo_6 (discovery_suppress);
 
+VACUUM ANALYZE local_hathi.h_mo_6;
+
 --7--------------------filters records for presents of oclc number------------------    
 DROP TABLE IF EXISTS local_hathi.h_mo_7;
 CREATE TABLE local_hathi.h_mo_7 AS
@@ -302,7 +304,7 @@ WITH oclc_no AS (
         WHEN oclcno.oclc_number2 LIKE '(OCoLC)%' THEN SUBSTRING(oclcno.oclc_number2, 8)
         ELSE oclcno.oclc_number2 END AS OCLC
     FROM local_hathi.h_mo_6 hm
-    INNER JOIN oclc_no AS oclcno ON hm.instance_id = oclcno.instance_id
+    INNER JOIN oclc_no AS oclcno ON hm.instance_id::uuid = oclcno.instance_id::uuid
 ;
 CREATE INDEX ON local_hathi.h_mo_7 (instance_id);
 CREATE INDEX ON local_hathi.h_mo_7 (instance_hrid);
@@ -311,6 +313,8 @@ CREATE INDEX ON local_hathi.h_mo_7 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mo_7 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_7 (call_number);
 CREATE INDEX ON local_hathi.h_mo_7 (discovery_suppress);
+
+VACUUM ANALYZE local_hathi.h_mo_7;
 ----------8 cleares statements ----------
 DROP TABLE IF EXISTS local_hathi.h_mo_8;
 CREATE TABLE local_hathi.h_mo_8 AS 
@@ -339,6 +343,8 @@ CREATE INDEX ON local_hathi.h_mo_8 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mo_8 (call_number);
 CREATE INDEX ON local_hathi.h_mo_8 (type_name);
 CREATE INDEX ON local_hathi.h_mo_8 (discovery_suppress);
+
+VACUUM ANALYZE local_hathi.h_mo_8;
 ---9-------assigns statuses and conditions-----------
 DROP TABLE IF EXISTS local_hathi.h_mo_8b;
 CREATE TABLE local_hathi.h_mo_8b AS 
@@ -377,11 +383,13 @@ CREATE INDEX ON local_hathi.h_mo_8b (chronology);
 CREATE INDEX ON local_hathi.h_mo_8b (status_name);
 CREATE INDEX ON local_hathi.h_mo_8b (discovery_suppress);
 CREATE INDEX ON local_hathi.h_mo_8b (damaged_status_name);
+
+VACUUM ANALYZE local_hathi.h_mo_8b;
 -------------------------------------------------------
-   DROP TABLE IF EXISTS local_hathi.h_mo_9;
-    CREATE TABLE local_hathi.h_mo_9 AS 
-    SELECT 
-    DISTINCT hm.item_id,
+DROP TABLE IF EXISTS local_hathi.h_mo_9;
+CREATE TABLE local_hathi.h_mo_9 AS 
+SELECT 
+ DISTINCT hm.item_id,
      hm."statement",
      hm.instance_hrid,
      hm.instance_id,
@@ -420,6 +428,8 @@ CREATE INDEX ON local_hathi.h_mo_9 (chronology);
 CREATE INDEX ON local_hathi.h_mo_9 (status_name);
 CREATE INDEX ON local_hathi.h_mo_9 (discovery_suppress);
 CREATE INDEX ON local_hathi.h_mo_9 (damaged_status_name);
+
+VACUUM ANALYZE local_hathi.h_mo_9;
 --9------------------------------selects value for government document from 008 --------------
 DROP TABLE IF EXISTS local_hathi.h_mo_final;
 CREATE TABLE local_hathi.h_mo_final AS
@@ -453,4 +463,5 @@ CREATE INDEX ON local_hathi.h_mo_final ("Status");
 CREATE INDEX ON local_hathi.h_mo_final ("Condition");
 CREATE INDEX ON local_hathi.h_mo_final (OCLC);
 
+VACUUM ANALYZE local_hathi.h_mo_final;
 
