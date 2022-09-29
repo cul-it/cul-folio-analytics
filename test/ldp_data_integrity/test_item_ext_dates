@@ -1,4 +1,4 @@
---This query pulls the created_date from the folio_reporting.item_ext table
+--This query pulls the created_date for items from the folio_reporting.item_ext table
 --It allows you to specify a date range so you can see when the created_date was last updated
 
 WITH parameters AS (
