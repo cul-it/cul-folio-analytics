@@ -147,3 +147,4 @@ GROUP BY
 
 ORDER BY  library_name, "year", month_number, day_number, laptop_type, loan_type
 ;
+
