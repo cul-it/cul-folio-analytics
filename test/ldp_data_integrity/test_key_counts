@@ -1,0 +1,55 @@
+--This is a set of queries that can be used one at a time to obtain key records counts on the LDP. 
+--Queries for the following counts are included: instances, holdings, items, srsmarctab instances, and srsrecord instances.
+--To use, remove the comment marks around the query you want to run, then restore them and repeat the procedure for 
+--to run subsequent queries.
+
+--instances
+/*
+SELECT 
+	COUNT (id) AS instances_total
+	FROM inventory_instances 
+;
+ 
+*/
+
+--holdings
+
+/*
+SELECT 
+	COUNT (id) AS holdings_total
+	FROM inventory_holdings 
+;
+
+*/
+
+--items
+/*
+SELECT 
+	COUNT (id) AS items_total
+	FROM inventory_items 
+;
+*/
+
+
+--srsmarctab instances
+
+/*
+SELECT
+	COUNT (DISTINCT instance_id) AS srs_marctab_instances	
+FROM srs_marctab
+;
+
+*/
+
+--srs record instances
+
+/*
+
+SELECT
+	COUNT (DISTINCT external_id) AS srs_record_instances	
+FROM srs_records
+;
+
+*/
+
+
