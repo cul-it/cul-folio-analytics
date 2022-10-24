@@ -60,8 +60,7 @@ GROUP BY
  
  --QUERY 2: RENEWALS ONLY
   
-  
- WITH parameters AS 
+  WITH parameters AS 
 (
 SELECT
 	'2021-07-01'::date AS begin_date,
@@ -126,19 +125,8 @@ ORDER BY
 	renews.loan_date
 ),
 
-renews3 AS 
-(
-SELECT
-	renews2.loan_id,
-	renews2.loan_date::date,
-	renews2.renewal_date::date,
-	renews2.fiscal_year_of_renewal,
-	renews2.renewal_count
-FROM
-	renews2
-),
 
-renews4 AS 
+renews3 AS 
 (
 SELECT
 	concat ((
@@ -152,10 +140,10 @@ SELECT
 		end_date
 	FROM
 		parameters)) AS date_range,
-	renews3.fiscal_year_of_renewal,
+	renews2.fiscal_year_of_renewal,
 	ll.library_name,
-	renews3.loan_date::date,
-	renews3.renewal_date::date,
+	--renews2.loan_date::date,
+	renews2.renewal_date::date,
 	li.patron_group_name,
 	li.material_type_name,
 	CASE
@@ -172,53 +160,43 @@ SELECT
 			WHEN li.loan_policy_name SIMILAR TO '(1|2)%day%' THEN 'Reserve'
 			ELSE 'Regular'
 		END AS collection_type,
-		sum (renews3.renewal_count) AS total_renewals
+		renews2.renewal_count
 	FROM
-		renews3
+		renews2
 	LEFT JOIN folio_reporting.loans_items AS li 
                 ON
-		renews3.loan_id = li.loan_id
+		renews2.loan_id = li.loan_id
 	LEFT JOIN folio_reporting.locations_libraries AS ll 
                 ON
 		li.item_effective_location_id_at_check_out = ll.location_id
-	GROUP BY
-		concat ((
-		SELECT
-			begin_date
-		FROM
-			parameters),
-		' - ',
-		(
-		SELECT
-			end_date
-		FROM
-			parameters)),
-		renews3.fiscal_year_of_renewal,
-		renews3.loan_date::date,
-		renews3.renewal_date::date,
-		library_name,
-		patron_group_name,
-		material_type_name,
-		collection_type
 )
 
 SELECT
-	renews4.date_range,
-	renews4.fiscal_year_of_renewal,
-	renews4.renewal_date::date,
-	renews4.library_name,
-	renews4.patron_group_name,
-	renews4.material_type_name,
-	renews4.collection_type,
-	sum (total_renewals) AS total_renewals
+	renews3.date_range,
+	renews3.fiscal_year_of_renewal,
+	--renews3.loan_date::date,
+	renews3.renewal_date::date,
+	renews3.library_name,
+	renews3.patron_group_name,
+	renews3.material_type_name,
+	renews3.collection_type,
+	sum (renews3.renewal_count) AS total_renewals
 FROM
-	renews4
+	renews3
 GROUP BY
-	renews4.date_range,
-	renews4.renewal_date::date,
-	renews4.fiscal_year_of_renewal,
-	renews4.library_name,
-	renews4.patron_group_name,
-	renews4.material_type_name,
-	renews4.collection_type
+	renews3.date_range,
+	renews3.fiscal_year_of_renewal,
+	--renews3.loan_date::date,
+	renews3.renewal_date::date,
+	renews3.library_name,
+	renews3.patron_group_name,
+	renews3.material_type_name,
+	renews3.collection_type
+ORDER BY
+	library_name,
+	patron_group_name,
+	material_type_name,
+	collection_type,
+	renewal_date::date 
 ;
+ 
