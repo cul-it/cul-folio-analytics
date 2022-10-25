@@ -5,3 +5,5 @@ This query finds the number of items withdrawn in the date range specified, as o
 
 As of 8-15-22, the count of withdrawn items comes from the administrative note on the instance record and is not linked to specific holdings records. 
 In this case, the the query lists all the holdings locations, and the total number of pieces withdrawn, without being able to specify from which locations the withdrawals took place. 
+
+The query lists title, holdings hrid, library name, location name, call number, holdings type, withdrawal date, and number of pieces withdrawn. 
