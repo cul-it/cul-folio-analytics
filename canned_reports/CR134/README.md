@@ -2,7 +2,7 @@
 <p>
   
 ## Brief description:
-This query provides the list of approved invoices within a date range along with vendor name, finance group name, vendor invoice number, fund details, purchase order details, language, instance subject, and bibliographic format
+This query provides the list of approved invoices within a date range along with vendor name, finance group name, expense class, fund type, vendor invoice number, fund details, purchase order details, language, instance subject, and bibliographic format
 <p>
   
 ## Main tables used:
@@ -18,6 +18,8 @@ finance_fiscal_years
   <br>
 finance_groups
   <br>
+ finance_expense_class
+ <br>
 inventory_instances
   <br>
 invoice_invoices
@@ -40,6 +42,8 @@ folio_reporting.finance_transaction_invoices
 folio_reporting.instance_ext
   <br>
 folio_reporting.po_lines_locations 
+<br>
+folio_reporting.instance_languages
 
 ## Filters/parameters:
 
@@ -49,6 +53,10 @@ payment_date_end_date
   <br>
 transaction_fund_code
   <br>
+order_type
+<br>
+fund_type
+<br>
 transaction_finance_group_name
   <br>
 transaction_ledger_name
@@ -56,5 +64,9 @@ transaction_ledger_name
 fiscal_year_code
   <br>
 po_number
+<br>
+format_name
+<br>
+expense_class
   
 
