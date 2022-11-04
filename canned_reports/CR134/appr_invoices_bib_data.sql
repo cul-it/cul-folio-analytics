@@ -1,7 +1,3 @@
---This query provides the list of approved invoices within a date range along with vendor name, finance group name, 
---vendor invoice number, fund details, purchase order details, language, instance subject, fund type, expense class and bibliographic format.
---In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1 
-
 WITH parameters AS (
 
     SELECT
@@ -39,11 +35,36 @@ instance_subject_extract as (
         subjects.ordinality AS subject_ordinality
 
         FROM
-        	inventory_instances AS instances
-        	CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'subjects'))
-        	WITH ORDINALITY AS subjects (data)
-        	WHERE subjects.ordinality = '1'
+        inventory_instances AS instances
+        CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'subjects'))
+        WITH ORDINALITY AS subjects (data)
+        WHERE subjects.ordinality = '1'
 ),
+
+locations as 
+(SELECT
+    pol.id AS pol_id,
+    json_extract_path_text(locations.data, 'quantity') AS pol_location_qty,
+    json_extract_path_text(locations.data, 'quantityElectronic') AS pol_loc_qty_elec,
+    json_extract_path_text(locations.data, 'quantityPhysical') AS pol_loc_qty_phys,      
+    CASE WHEN json_extract_path_text(locations.data, 'locationId') IS NOT NULL THEN json_extract_path_text(locations.data, 'locationId') 
+         ELSE ih.permanent_location_id
+    END AS pol_location_id,      
+    CASE WHEN il.name IS NOT NULL THEN il.name
+         ELSE il2.name
+    END AS pol_location_name,
+    CASE WHEN il.name IS NOT NULL THEN 'pol_location'
+         WHEN il2.name IS NOT NULL THEN 'pol_holding'
+         ELSE 'no_source'
+    END AS pol_location_source
+FROM
+    po_lines AS pol
+    CROSS JOIN json_array_elements(json_extract_path(data, 'locations')) AS locations (data)
+    LEFT JOIN inventory_holdings AS ih ON json_extract_path_text(locations.data, 'holdingId') = ih.id
+    LEFT JOIN inventory_locations AS il ON json_extract_path_text(locations.data, 'locationId') = il.id
+    LEFT JOIN inventory_locations AS il2 ON ih.permanent_location_id = il2.id
+),
+
 pol_holdings_id AS (
         SELECT
         pol.id AS pol_id,
@@ -105,38 +126,38 @@ ORDER BY ff.code
 ),
 
 new_quantity AS 
-	(SELECT 
-	id AS invoice_line_id,
+        (SELECT 
+        id AS invoice_line_id,
        CASE WHEN quantity = 0
                 THEN 1
                 ELSE quantity
-    			END AS fixed_quantity
-	FROM invoice_lines 
+                        END AS fixed_quantity
+        FROM invoice_lines 
 )
 
 -- MAIN QUERY
 SELECT distinct
         current_date AS current_date,           
        CASE WHEN 
-       			((SELECT
-			payment_date_start_date::varchar
-     	    		FROM
-        		parameters)= ''
-        	OR      (SELECT
-        		payment_date_end_date::varchar
-     	    		FROM
-        		parameters) ='')
-       		THEN 'Not Selected'
-       		ELSE
-       			(SELECT payment_date_start_date::varchar
-        		FROM parameters) || ' to '::varchar || 
-        		(SELECT payment_date_end_date::varchar
-				FROM parameters)
-			END AS payment_date_range,	
+                        ((SELECT
+                        payment_date_start_date::varchar
+                        FROM
+                parameters)= ''
+        OR      (SELECT
+                payment_date_end_date::varchar
+                        FROM
+                parameters) ='')
+                THEN 'Not Selected'
+                ELSE
+                        (SELECT payment_date_start_date::varchar
+                FROM parameters) || ' to '::varchar || 
+                (SELECT payment_date_end_date::varchar
+                                FROM parameters)
+                        END AS payment_date_range,       
        ftie.transaction_id AS transaction_id,
        iext.title AS instance_title,
        iext.instance_hrid,
-       STRING_AGG(poll.location_name,' | ') AS location_name,
+       STRING_AGG (distinct locations.pol_location_name,' | ') as location_name,
        po.order_type,
        pol.order_format,
        ftie.invoice_date::date,
@@ -166,7 +187,7 @@ FROM
         finance_transaction_invoices_ext AS ftie
         LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id
         LEFT JOIN new_quantity AS fq ON invl.id = fq.invoice_line_id
-       	LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
+       LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
         LEFT JOIN po_lines AS pol ON ftie.po_line_id = pol.id
         LEFT JOIN po_purchase_orders AS PO ON po.id = pol.purchase_order_id
         LEFT JOIN folio_reporting.instance_ext AS iext ON iext.instance_id = pol.instance_id
@@ -174,11 +195,12 @@ FROM
         LEFT JOIN instance_subject_extract AS inssub ON inssub.instance_hrid = iext.instance_hrid
         LEFT JOIN fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
         LEFT JOIN format_extract AS formatt ON pol.instance_id::UUID = formatt.instance_id
-        LEFT JOIN folio_reporting.po_lines_locations AS poll ON poll.pol_id = pol.id
+        left join locations on ftie.po_line_id = locations.pol_id
+        --LEFT JOIN folio_reporting.po_lines_locations AS poll ON poll.pol_id = pol.id
         LEFT JOIN finance_expense_classes AS fec ON fec.id = ftie.expense_class
 WHERE
-	((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
-	AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
+        ((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
+        AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
         AND inv.status LIKE 'Paid'
         AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
         AND ((ftie.fund_type_name = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
@@ -191,8 +213,9 @@ WHERE
         AND (lang.language_ordinality = '1' OR lang.language_ordinality ISNULL)
         AND ((formatt.bib_format_display= (SELECT format_name FROM parameters)) OR ((SELECT format_name FROM parameters) = ''))
         
+        
  GROUP BY
- 	   ftie.transaction_id,
+          ftie.transaction_id,
        iext.title,
        iext.instance_hrid,
        po.order_type,
