@@ -3,7 +3,6 @@
 --vendor invoice number, fund details, purchase order details, language, instance subject, fund type, expense class and bibliographic format.
 --In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1 
 WITH parameters AS (
-
     SELECT
         '' AS payment_date_start_date,--enter invoice payment start date and end date in YYYY-MM-DD format
         '' AS payment_date_end_date, -- Excludes the selected date
@@ -16,35 +15,29 @@ WITH parameters AS (
         ''::VARCHAR AS po_number,
         ''::VARCHAR AS format_name, -- Ex: Book, Serial, Textual Resource, etc.
         ''::VARCHAR AS expense_class-- Ex:Physical Res - one-time perpetual, One time Electronic Res - Perpetual etc.
-),
-       
+),   
 format_extract as (
         SELECT 
          sm.instance_id::uuid,
          substring(sm.content,7,2) AS bib_format_code,
          jl.bib_format_display
-     
         FROM
         srs_marctab as sm
         LEFT JOIN local.jl_bib_format_display_csv AS jl ON substring(sm.content,7,2) = jl.bib_format
         WHERE sm.field = '000' 
-
 ),
 instance_subject_extract as (
-
         SELECT
         instances.id AS instance_id,
         instances.hrid AS instance_hrid,
         subjects.data #>> '{}' AS subject,
         subjects.ordinality AS subject_ordinality
-
         FROM
         inventory_instances AS instances
         CROSS JOIN LATERAL json_array_elements(json_extract_path(data, 'subjects'))
         WITH ORDINALITY AS subjects (data)
         WHERE subjects.ordinality = '1'
 ),
-
 locations as 
 (SELECT
     pol.id AS pol_id,
@@ -68,7 +61,6 @@ FROM
     LEFT JOIN inventory_locations AS il ON json_extract_path_text(locations.data, 'locationId') = il.id
     LEFT JOIN inventory_locations AS il2 ON ih.permanent_location_id = il2.id
 ),
-
 pol_holdings_id AS (
         SELECT
         pol.id AS pol_id,
@@ -79,9 +71,7 @@ pol_holdings_id AS (
                po_lines AS pol
                CROSS JOIN json_array_elements(json_extract_path(data, 'locations')) AS locations (data)
 ),
-
   finance_transaction_invoices_ext AS (
-
         SELECT
         fti.transaction_id AS transaction_id,      
         fti.invoice_date::date,
@@ -101,17 +91,14 @@ pol_holdings_id AS (
                 fft.name AS fund_type_name,
                 CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >0.01 THEN fti.transaction_amount *-1 ELSE fti.transaction_amount END AS effective_transaction_amount,
                 ff.external_account_no AS external_account_no
-
 FROM
                 folio_reporting.finance_transaction_invoices AS fti
                 LEFT JOIN finance_funds AS ff ON ff.code = fti.effective_fund_code
                 LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fti.transaction_fiscal_year_id
                 LEFT JOIN finance_fund_types AS fft ON fft.id = ff.fund_type_id
-                LEFT JOIN finance_ledgers AS fl ON ff.ledger_id = fl.id
-                
+                LEFT JOIN finance_ledgers AS fl ON ff.ledger_id = fl.id               
 ),
 fund_fiscal_year_group AS (
-
 SELECT
     FGFFY.id AS group_fund_fiscal_year_id,
     FG.name AS finance_group_name,
@@ -128,7 +115,6 @@ WHERE ((ffy.code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal
 ORDER BY ff.code
 
 ),
-
 new_quantity AS 
         (SELECT 
         id AS invoice_line_id,
@@ -138,7 +124,6 @@ new_quantity AS
                         END AS fixed_quantity
         FROM invoice_lines 
 )
-
 -- MAIN QUERY
 SELECT distinct
         current_date AS current_date,           
@@ -159,7 +144,8 @@ SELECT distinct
                                 FROM parameters)
                         END AS payment_date_range,       
        ftie.transaction_id AS transaction_id,
-       iext.title AS instance_title,
+       --iext.title AS instance_title,
+       replace(replace (iext.title, chr(13), ''),chr(10),'') AS instance_title,--updated code to get rid of carriage returns
        iext.instance_hrid,
        STRING_AGG (distinct locations.pol_location_name,' | ') as location_name,
        po.order_type,
@@ -171,8 +157,10 @@ SELECT distinct
        ftie.transaction_type,
        ftie.invoice_vendor_name,
        inv.vendor_invoice_no,
-       invl.description AS invoice_line_description,
-       invl.comment AS invoice_line_comment,
+       --invl.description AS invoice_line_description,
+       replace(replace (invl.description, chr(13), ''),chr(10),'') AS invoice_line_description,--updated code to get rid of carriage returns
+       --invl.comment AS invoice_line_comment,
+       replace(replace (invl.comment, chr(13), ''),chr(10),'') AS invoice_line_comment,--updated code to get rid of carriage returns
        ftie.finance_ledger_name,
        ftie.fiscal_year_code AS transaction_fiscal_year_code,
        ffyg.finance_group_name,
@@ -184,7 +172,8 @@ SELECT distinct
        formatt.bib_format_display AS format_name,        
        inssub.subject AS instance_subject, -- This IS the subject that is first on the list.
        lang.language AS LANGUAGE, -- This IS the language that is first on the list.
-       pol.title_or_package AS po_line_title_or_package,
+       --pol.title_or_package AS po_line_title_or_package,
+       replace(replace (pol.title_or_package, chr(13), ''),chr(10),'') AS po_line_title_or_package,--updated code to get rid of carriage returns
        fq.fixed_quantity AS quantity,       
        ftie.external_account_no
 FROM
@@ -215,9 +204,7 @@ WHERE
         AND ((po.po_number = (SELECT po_number FROM parameters)) OR ((SELECT po_number FROM parameters) = ''))
         AND ((fec.name = (SELECT expense_class FROM parameters)) OR ((SELECT expense_class FROM parameters) = ''))
         AND (lang.language_ordinality = '1' OR lang.language_ordinality ISNULL)
-        AND ((formatt.bib_format_display= (SELECT format_name FROM parameters)) OR ((SELECT format_name FROM parameters) = ''))
-        
-        
+        AND ((formatt.bib_format_display= (SELECT format_name FROM parameters)) OR ((SELECT format_name FROM parameters) = ''))    
  GROUP BY
           ftie.transaction_id,
        iext.title,
@@ -246,10 +233,9 @@ WHERE
        lang.language, 
        pol.title_or_package,
        fq.fixed_quantity,       
-       ftie.external_account_no
-        
+       ftie.external_account_no     
 ORDER BY 
-        iext.title,
+        instance_title,
         ftie.finance_ledger_name,
         ffyg.finance_group_name,
         fund_type_name,
