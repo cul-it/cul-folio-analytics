@@ -67,7 +67,6 @@ CREATE INDEX ON local_hathi.h_mv_1 (sf);
 CREATE INDEX ON local_hathi.h_mv_1 (ct1);
 CREATE INDEX ON local_hathi.h_mv_1 ("type_m");
 
-VACUUM ANALYZE local_hathi.h_mv_1;
 
 ----------------selects records from previous table and filters on 008 language material------------
 DROP table IF EXISTS local_hathi.h_mv_1b;
@@ -98,8 +97,6 @@ CREATE INDEX ON local_hathi.h_mv_1b (instance_id);
 CREATE INDEX ON local_hathi.h_mv_1b ("type_publ");
 CREATE INDEX ON local_hathi.h_mv_1b ("type_m");
 
-VACUUM ANALYZE local_hathi.h_mv_1b;
-
 --2--------filters records based on locations-------------------------------
 DROP TABLE IF EXISTS local_hathi.h_mv_2; 
 CREATE TABLE local_hathi.h_mv_2 AS 
@@ -127,7 +124,7 @@ CREATE INDEX ON local_hathi.h_mv_2 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mv_2 (call_number);
 CREATE INDEX ON local_hathi.h_mv_2 (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_mv_2;
+
 
 --3------------------------selects/deselects records with 245 $h[electronic resource] and filters from h_mv_2------------------------
 DROP TABLE IF EXISTS local_hathi.h_mv_3;   
@@ -174,7 +171,6 @@ CREATE INDEX ON local_hathi.h_mv_3 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mv_3 (call_number);
 CREATE INDEX ON local_hathi.h_mv_3 (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_mv_3;
 
 --4---------------------selects/deselects records with 336 $atext content and filters from h_mv_3----------------  
 DROP TABLE IF EXISTS local_hathi.h_mv_4;
@@ -209,8 +205,6 @@ CREATE INDEX ON local_hathi.h_mv_4 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mv_4 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mv_4 (call_number);
 CREATE INDEX ON local_hathi.h_mv_4 (discovery_suppress);
-
-VACUUM ANALYZE local_hathi.h_mv_4;
 
 --5--------------------selects records with 300 $amap or maps and filters from h_mv_4------------------ 
 DROP TABLE IF EXISTS local_hathi.h_mv_5;
@@ -263,8 +257,6 @@ CREATE INDEX ON local_hathi.h_mv_5 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mv_5 (call_number);
 CREATE INDEX ON local_hathi.h_mv_5 (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_mv_5;
-
 --6-----------------------filters records by certain values in call number from h_mv_5-------------------
 DROP TABLE IF EXISTS local_hathi.h_mv_6;
 CREATE TABLE local_hathi.h_mv_6 AS
@@ -295,8 +287,6 @@ CREATE INDEX ON local_hathi.h_mv_6 (holdings_hrid);
 CREATE INDEX ON local_hathi.h_mv_6 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_mv_6 (call_number);
 CREATE INDEX ON local_hathi.h_mv_6 (discovery_suppress);
-
-VACUUM ANALYZE local_hathi.h_mv_6;
 
 --7--------------------filters records with oclc number------------------    
 DROP TABLE IF EXISTS local_hathi.h_mv_7;
@@ -338,7 +328,6 @@ CREATE INDEX ON local_hathi.h_mv_7 (id_type);
 CREATE INDEX ON local_hathi.h_mv_7 (oclc_number2);
 CREATE INDEX ON local_hathi.h_mv_7 (oclc_no);
 
-VACUUM ANALYZE local_hathi.h_mv_7;
 ----------8 clears holdings statements ----------
 drop table IF EXISTS local_hathi.h_mv_8 ;
 CREATE table local_hathi.h_mv_8 as
@@ -371,7 +360,6 @@ CREATE INDEX ON local_hathi.h_mv_8 (call_number);
 CREATE INDEX ON local_hathi.h_mv_8 (type_name)
 CREATE INDEX ON local_hathi.h_mv_8 (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_mv_8;
 ------------------------------------------
 DROP TABLE IF EXISTS local_hathi.h_mv_8b;
 CREATE TABLE local_hathi.h_mv_8b AS 
@@ -415,7 +403,6 @@ CREATE INDEX ON local_hathi.h_mv_8b (damaged_status_name);
 CREATE INDEX ON local_hathi.h_mv_8b (note);
 CREATE INDEX ON local_hathi.h_mv_8b (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_mv_8b;
 ---9-------assigns statuses and conditions-----------
 DROP TABLE IF EXISTS local_hathi.h_mv_9;
 CREATE TABLE local_hathi.h_mv_9 as
@@ -483,7 +470,7 @@ CREATE INDEX ON local_hathi.h_mv_9 (oclc_no);
 CREATE INDEX ON local_hathi.h_mv_9 (damaged_status_name);
 CREATE INDEX ON local_hathi.h_mv_9 (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_mv_9;
+
 --10------------------------------selects value for government document from 008 ---------
 -- total number of records as of 12/07/2021 is 928,334 --------------
 DROP TABLE IF EXISTS local_hathi.h_mv_final;
@@ -519,6 +506,3 @@ CREATE INDEX ON local_hathi.h_mv_final (Status);
 CREATE INDEX ON local_hathi.h_mv_final ("Condition");
 CREATE INDEX ON local_hathi.h_mv_final ("Enum/Chron")
 CREATE INDEX ON local_hathi.h_mv_final (GovDoc);
-
-VACUUM ANALYZE local_hathi.h_mv_final;
-
