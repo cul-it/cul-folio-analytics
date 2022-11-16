@@ -1,5 +1,6 @@
+--CR174 BD/ILL loans and renewals counts from CUL to other universities
 --QUERY 1
---BD/ILL loans and renewals counts from CUL to other universities
+
 
 WITH parameters AS (
     SELECT
@@ -54,8 +55,9 @@ ORDER BY
 
 ;
 
+
+--CR174 BD/ILL – count of items borrowed from other universities
 --QUERY 2
---BD/ILL – count of items borrowed from other universities
 
 WITH parameters AS (
     SELECT
