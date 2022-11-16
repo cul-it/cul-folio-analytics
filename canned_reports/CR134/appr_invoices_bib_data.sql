@@ -143,7 +143,7 @@ SELECT distinct
                 (SELECT payment_date_end_date::varchar
                                 FROM parameters)
                         END AS payment_date_range,       
-       ftie.transaction_id AS transaction_id,
+       --ftie.transaction_id AS transaction_id,
        --iext.title AS instance_title,
        replace(replace (iext.title, chr(13), ''),chr(10),'') AS instance_title,--updated code to get rid of carriage returns
        iext.instance_hrid,
