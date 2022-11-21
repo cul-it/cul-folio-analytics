@@ -5,7 +5,7 @@ WITH PARAMETERS AS
 (SELECT
        /* Choose a start and end date in the format "yyyy-mm-dd" */
        '2021-07-01'::date AS start_date,
-       '2025-07-01'::date AS end_date
+       '2022-07-01'::date AS end_date
 ),
 
 loans AS 
@@ -21,8 +21,10 @@ loans AS
             WHEN li.material_type_name = 'Laptop' THEN 'Laptop'
             WHEN li.material_type_name IS NULL AND li.loan_policy_name LIKE '3 hour%' THEN 'Equipment'
             WHEN li.material_type_name IS NULL AND li.loan_policy_name LIKE '2 hour%' THEN 'Reserve'
-            WHEN li.material_type_name ilike 'BD%' OR li.item_effective_location_name_at_check_out ILIKE 'Borr%' THEN 'BD from other institutions to CUL'
-        	WHEN li.material_type_name ilike 'ILL%' OR li.item_effective_location_name_at_check_out ILIKE 'Inter%' THEN 'ILL from other institutions to CUL'
+            WHEN li.material_type_name ilike 'BD%' OR li.item_effective_location_name_at_check_out ILIKE 'Borr%' THEN 'Borrow Direct'
+            WHEN li.material_type_name ilike 'ILL%' OR li.item_effective_location_name_at_check_out ILIKE 'Inter%' THEN 'Interlibrary Loan'            
+            --WHEN (li.material_type_name ilike 'BD%' or li.material_type_name ilike 'ILL%' or li.item_effective_location_name_at_check_out ILIKE 'Borr%'
+            --OR li.item_effective_location_name_at_check_out ILIKE 'Inter%') then 'ILLBD'
             WHEN li.item_effective_location_name_at_check_out ILIKE '%reserve%' THEN 'Reserve'                                                                        
             WHEN li.loan_policy_name LIKE '%hour%' THEN 'Reserve'
             WHEN li.loan_policy_name SIMILAR TO '(1|2)%day%' THEN 'Reserve'                  
@@ -141,8 +143,9 @@ renews3 AS
                 WHEN li.material_type_name = 'Laptop' THEN 'Laptop'
                 WHEN li.material_type_name IS NULL AND li.loan_policy_name LIKE '3 hour%' THEN 'Equipment'
                 WHEN li.material_type_name IS NULL AND li.loan_policy_name LIKE '2 hour%' THEN 'Reserve'
-                WHEN li.material_type_name ilike 'BD%' OR li.item_effective_location_name_at_check_out ILIKE 'Borr%' THEN 'BD from other institutions to CUL'
-        		WHEN li.material_type_name ilike 'ILL%' OR li.item_effective_location_name_at_check_out ILIKE 'Inter%' THEN 'ILL from other institutions to CUL'
+                WHEN li.material_type_name ilike 'BD%' OR li.item_effective_location_name_at_check_out ILIKE 'Borr%' THEN 'Borrow Direct'
+        WHEN li.material_type_name ilike 'ILL%' OR li.item_effective_location_name_at_check_out ILIKE 'Inter%' THEN 'Interlibrary Loan'
+                --WHEN (li.material_type_name ILIKE 'BD%' OR li.material_type_name ILIKE 'ILL*%') THEN 'ILLBD'
                 WHEN li.item_effective_location_name_at_check_out ILIKE '%reserve%' THEN 'Reserve'
                 WHEN li.loan_policy_name LIKE '%hour%' THEN 'Reserve'
                 WHEN li.loan_policy_name SIMILAR TO '(1|2)%day%' THEN 'Reserve'
@@ -189,17 +192,16 @@ ORDER BY
 )
 
 select 
-current_date,        	
-loans2.date_range,        
-        loans2.month_name_of_checkout,
-        loans2.calendar_year_of_checkout::VARCHAR,
-        loans2.fiscal_year_of_checkout,
-        CASE WHEN renews4.fiscal_year_of_renewal IS NULL THEN ' - ' ELSE renews4.fiscal_year_of_renewal END as fiscal_year_of_renewal,
-        loans2.library_name,       
-        loans2.patron_group_name,
-        loans2.material_type_name,
-        loans2.collection_type,
-        loans2.total_loans,
+        case when loans2.date_range is null then renews4.date_range else loans2.date_range end as date_range,        
+        case when loans2.month_name_of_checkout is null then renews4.month_name_of_renewal else loans2.month_name_of_checkout end as month_name,
+        case when loans2.month_num_of_checkout is null then renews4.month_num_of_renewal else loans2.month_num_of_checkout end as month_num,
+        case when loans2.calendar_year_of_checkout::VARCHAR is null then renews4.calendar_year_of_renewal::varchar else loans2.calendar_year_of_checkout::varchar end as calendar_year,
+        case when loans2.fiscal_year_of_checkout is null then renews4.fiscal_year_of_renewal else loans2.fiscal_year_of_checkout end as fiscal_year,
+        case when loans2.library_name is null then renews4.library_name else loans2.library_name end as library_name,       
+        case when loans2.patron_group_name is null then renews4.patron_group_name else loans2.patron_group_name end as patron_group_name,
+        case when loans2.material_type_name is null then renews4.material_type_name else loans2.material_type_name end as material_type_name,
+        case when loans2.collection_type is null then renews4.collection_type else loans2.collection_type end as collection_type,
+        case when loans2.total_loans is null then 0 else loans2.total_loans end as total_loans,
         CASE WHEN renews4.total_renewals IS NULL THEN 0 ELSE renews4.total_renewals END as total_renewals
         
 from loans2
@@ -209,9 +211,10 @@ from loans2
                 and loans2.material_type_name = renews4.material_type_name
                 and loans2.collection_type = renews4.collection_type
                 and loans2.fiscal_year_of_checkout = renews4.fiscal_year_of_renewal
+                and loans2.month_num_of_checkout = renews4.month_num_of_renewal
                 and loans2.month_name_of_checkout = renews4.month_name_of_renewal
                 and loans2.calendar_year_of_checkout = renews4.calendar_year_of_renewal
 
-order by loans2.fiscal_year_of_checkout, loans2.calendar_year_of_checkout, loans2.month_num_of_checkout, loans2.library_name, loans2.patron_group_name, loans2.material_type_name, loans2.collection_type
+order by fiscal_year, calendar_year, month_num, library_name, patron_group_name, material_type_name, collection_type
+; 
 
-;
