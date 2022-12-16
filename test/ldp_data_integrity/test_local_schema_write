@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS local.TEST_instance_count;
+
+CREATE TABLE local.TEST_instance_count AS
+
+SELECT 
+	COUNT (id) AS instances_total
+	FROM inventory_instances 
+;
