@@ -52,4 +52,15 @@ FROM srs_records
 
 */
 
+--loans
+
+/*
+
+SELECT
+	COUNT (DISTINCT loan_id) AS loans	
+FROM folio_reporting.loans_items
+;
+
+*/
+
 
