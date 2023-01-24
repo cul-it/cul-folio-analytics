@@ -1,25 +1,19 @@
+--CR157
 WITH parameters AS (
     SELECT
-        'FY2022' AS fiscal_year_code),
+        'FY2023' AS fiscal_year_code),
 expense_class AS    
-(SELECT 
-	ffy.code AS fiscal_year,       
-	fti.effective_fund_code,
+(SELECT       
+		fti.effective_fund_code,
         fti.effective_fund_name,
         fec.name AS expense_class_name,
         ffy.code AS expense_class_fiscal_year_code,
         sum(case when ft.transaction_type = 'Credit' THEN fti.transaction_amount*-1 ELSE fti.transaction_amount END) as amount_spent_in_expense_class
-
 FROM folio_reporting.finance_transaction_invoices AS fti 
-        LEFT JOIN finance_transactions AS ft 
-        ON fti.transaction_id = ft.id
-        
-        LEFT JOIN finance_expense_classes AS fec 
-        ON fti.transaction_expense_class_id = fec.id
-        
-        LEFT JOIN finance_fiscal_years AS ffy 
-        ON ffy.id = fti.transaction_fiscal_year_id   
-        WHERE ffy.code = (SELECT fiscal_year_code FROM parameters)
+        LEFT JOIN finance_transactions AS ft ON fti.transaction_id = ft.id 
+        LEFT JOIN finance_expense_classes AS fec ON fti.transaction_expense_class_id = fec.id
+        LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fti.transaction_fiscal_year_id   
+WHERE ffy.code = (SELECT fiscal_year_code FROM parameters)
 GROUP BY 
         fti.effective_fund_code,
         fti.effective_fund_name,
@@ -36,18 +30,18 @@ SELECT
         ff.code AS finance_funds_code,
         ff.name AS finance_funds_name,
         ff.description,
-        fb.total_funding,
-        fb.expenditures,
-        fb.encumbered,
-        fb.awaiting_payment,
-        (fb.total_funding - fb.available) as total_spent_encumbered_or_awaiting_payment,
-        fb.cash_balance,
-        fb.available AS available_balance,
+        COALESCE (fb.net_transfers,0) AS net_transfers,
+	(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) AS total_funding,
+	COALESCE (fb.expenditures,0) AS expenditures,
+	COALESCE (fb.encumbered,0) AS encumbered,
+	COALESCE (fb.awaiting_payment,0) AS awaiting_payment,
+	(COALESCE (fb.encumbered,0)+COALESCE (fb.awaiting_payment,0)+COALESCE (fb.expenditures,0)) AS unavailable,-- Total of amount Encumbered, Awaiting Payment and Expended
+	(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) - COALESCE (fb.expenditures,0) AS cash_balance,
+	(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) - COALESCE (fb.encumbered,0) - COALESCE (fb.awaiting_payment,0) - COALESCE (fb.expenditures,0) AS available_balance,
         ec.expense_class_name,
-        ec.amount_spent_in_expense_class,
-        --ec.expense_class_fiscal_year_code,
-        CASE 
-                WHEN fb.expenditures > 0                 
+        ec.amount_spent_in_expense_class, --This amount includes amount Expended and Awaiting Payment
+        CASE WHEN 
+        	fb.expenditures > 0                 
                 THEN ec.amount_spent_in_expense_class/fb.expenditures
                 ELSE 0 
                 END AS percent_of_fund_spent_on_expense_class_to_date
@@ -61,5 +55,6 @@ FROM
        LEFT JOIN expense_class AS ec ON ff.code = ec.effective_fund_code     
 WHERE 
 	ffy.code = (SELECT fiscal_year_code FROM parameters)
-ORDER BY team, finance_funds_code, finance_funds_name, expense_class_name
+ORDER BY 
+	team, finance_funds_code, finance_funds_name, expense_class_name
 ;
