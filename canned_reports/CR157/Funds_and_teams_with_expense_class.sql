@@ -4,7 +4,7 @@ WITH parameters AS (
         'FY2023' AS fiscal_year_code),
 expense_class AS    
 (SELECT       
-		fti.effective_fund_code,
+	fti.effective_fund_code,
         fti.effective_fund_name,
         fec.name AS expense_class_name,
         ffy.code AS expense_class_fiscal_year_code,
