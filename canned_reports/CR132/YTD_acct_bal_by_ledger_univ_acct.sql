@@ -1,12 +1,14 @@
+--CR132 01/19/2023
 --This report provides the year-to-date external account cash balance along with total_expenditures, initial allocation, and net allocation. The fiscal year can be selected in the WHERE clause. The fiscal year is currently set for FY2023.
 SELECT 
 	CURRENT_DATE,
 	fl.name AS finance_ledger_name,
-	ff.external_account_no,
-	SUM(COALESCE (fb.expenditures,0)) AS YTD_expenditures,
+	ff.external_account_no AS external_account,
+	SUM (COALESCE (fb.expenditures,0)) AS YTD_expenditures,
 	SUM (COALESCE (fb.initial_allocation,0)) AS initial_allocation,
-	SUM(COALESCE (fb.allocated,0)) AS total_allocation,
-	SUM(COALESCE (fb.cash_balance,0)) AS cash_balance -- This balance excludes encumbrances and awaiting payment
+	SUM (COALESCE (fb.initial_allocation,0) + COALESCE (fb.allocation_to,0)- COALESCE (fb.allocation_from,0)) AS total_allocated,
+	SUM (COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) AS total_funding,
+	SUM (COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0) - COALESCE (fb.expenditures,0)) AS cash_balance -- This balance excludes encumbrances and awaiting payment
 FROM 
 	finance_funds AS ff
 	LEFT JOIN finance_group_fund_fiscal_years AS fgffy ON fgffy.fund_id = ff.id 
@@ -20,4 +22,5 @@ GROUP BY
 	external_account_no,
 	fl.name
 ORDER BY 
-	finance_ledger_name;
+	finance_ledger_name,
+	external_account_no ASC;
