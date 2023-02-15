@@ -1,10 +1,9 @@
--- CR106: Missing items
-
+-- CR106: Missing or lost items
 
 WITH parameters AS (
     SELECT 
          -- Fill out owning library filter ----
-         'Adelson Library'::VARCHAR AS owning_library_name_filter -- Examples: Olin Library, Library Annex, etc. See list of libraries at https://confluence.cornell.edu/display/folioreporting/Locations
+         ''::VARCHAR AS owning_library_name_filter -- Examples: Olin Library, Library Annex, etc. See list of libraries at https://confluence.cornell.edu/display/folioreporting/Locations
         ),
 recs AS 
 (SELECT
@@ -56,9 +55,8 @@ FROM folio_reporting.instance_ext AS instext
         
 WHERE  (ll.library_name = (SELECT owning_library_name_filter FROM parameters)
         OR (SELECT owning_library_name_filter FROM parameters) = '')
-    AND itemext.status_name LIKE '%issing%'
-        --AND itemext.status_date >'2021/01/01'
-    AND srs.field = '300'
+    and itemext.status_name similar to '%(issing|ost)%'
+    AND (srs.field = '300' or srs.field is null)
     AND (he.discovery_suppress = 'False' OR he.discovery_suppress IS NULL)
 
 GROUP BY 
@@ -115,4 +113,5 @@ FROM recs
         
 ORDER BY permanent_location_name, effective_shelving_order
 ;
+
 
