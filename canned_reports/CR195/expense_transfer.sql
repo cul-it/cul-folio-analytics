@@ -3,7 +3,7 @@
 -- that can be transferred from unrestricted funds to restricted funds.
  
 WITH parameters AS (
- 
+
     SELECT
         '2022-07-01' AS payment_date_start_date,--enter invoice payment start date and end date in YYYY-MM-DD format
         '2023-07-01' AS payment_date_end_date, -- Excludes the selected date
@@ -17,56 +17,56 @@ WITH parameters AS (
         ''::VARCHAR AS format_name, -- Ex: Book, Serial, Textual Resource, etc.
         ''::VARCHAR AS expense_class-- Ex:Physical Res - one-time perpetual, One time Electronic Res - Perpetual etc.
 ),
-      
+       
 format_extract AS (
-    SELECT
+    SELECT 
          sm.instance_id::uuid,
          substring(sm.content,7,2) AS bib_format_code,
          jl.bib_format_display
-    
+     
     FROM
         srs_marctab AS sm
         LEFT JOIN local.jl_bib_format_display_csv AS jl ON substring(sm.content,7,2) = jl.bib_format
-        WHERE sm.field = '000'
+        WHERE sm.field = '000' 
 ),
- 
+
 subj1 AS (
     SELECT
         instances.id AS instance_id,
         instances.hrid AS instance_hrid,
         subjects.data #>> '{}' as primary_subject,
         subjects.ordinality AS subject_ordinality
- 
+
     FROM
         inventory_instances AS instances
-       
+        
     CROSS JOIN LATERAL json_array_elements(json_extract_path (data, 'subjects'))
-   
+    
     WITH ORDINALITY AS subjects (data)
-   
+    
     WHERE subjects.ordinality = '1'
 ),
- 
+
 pol_holdings_id AS (
     SELECT
         pol.id AS pol_id,
         json_extract_path_text(locations.data, 'locationId') AS pol_loc_id,
         json_extract_path_text(locations.data, 'holdingId') AS pol_holding_id
- 
+
     FROM
         po_lines AS pol
     CROSS JOIN json_array_elements(json_extract_path (data, 'locations')) AS locations (data)
 ),
- 
-locations as
+
+locations as 
 (SELECT
     pol.id AS pol_id,
     json_extract_path_text(locations.data, 'quantity') AS pol_location_qty,
     json_extract_path_text(locations.data, 'quantityElectronic') AS pol_loc_qty_elec,
-    json_extract_path_text(locations.data, 'quantityPhysical') AS pol_loc_qty_phys,     
-    CASE WHEN json_extract_path_text(locations.data, 'locationId') IS NOT NULL THEN json_extract_path_text(locations.data, 'locationId')
+    json_extract_path_text(locations.data, 'quantityPhysical') AS pol_loc_qty_phys,      
+    CASE WHEN json_extract_path_text(locations.data, 'locationId') IS NOT NULL THEN json_extract_path_text(locations.data, 'locationId') 
          ELSE ih.permanent_location_id
-    END AS pol_location_id,     
+    END AS pol_location_id,      
     CASE WHEN il.name IS NOT NULL THEN il.name
          ELSE il2.name
     END AS pol_location_name,
@@ -79,12 +79,12 @@ FROM
     CROSS JOIN json_array_elements(json_extract_path(data, 'locations')) AS locations (data)
     LEFT JOIN inventory_holdings AS ih ON json_extract_path_text(locations.data, 'holdingId') = ih.id
     LEFT JOIN inventory_locations AS il ON json_extract_path_text(locations.data, 'locationId') = il.id
-    LEFT JOIN inventory_locations AS il2 ON ih.permanent_location_id = il2.id  
+    LEFT JOIN inventory_locations AS il2 ON ih.permanent_location_id = il2.id   
 ),
- 
-finance_transaction_invoices_ext AS
+
+finance_transaction_invoices_ext AS 
         (SELECT
-        fti.transaction_id AS transaction_id,     
+        fti.transaction_id AS transaction_id,      
         fti.invoice_date::date,
         fti.invoice_payment_date::DATE AS invoice_payment_date,
         fti.transaction_fiscal_year_id,
@@ -101,10 +101,10 @@ finance_transaction_invoices_ext AS
         fti.effective_fund_id AS effective_fund_id,
         fti.effective_fund_code AS effective_fund_code,
         fft.name AS fund_type_name,
-        CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >0.01 THEN fti.transaction_amount *-1
+        CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >0.01 THEN fti.transaction_amount *-1 
          ELSE fti.transaction_amount END AS effective_transaction_amount,
         ff.external_account_no AS external_account_no
-                              
+                               
 FROM
         folio_reporting.finance_transaction_invoices AS fti
         LEFT JOIN finance_funds AS ff ON ff.code = fti.effective_fund_code
@@ -112,9 +112,9 @@ FROM
         LEFT JOIN finance_fund_types AS fft ON fft.id = ff.fund_type_id
         LEFT JOIN finance_ledgers AS fl ON ff.ledger_id = fl.id               
 ),
- 
+
 fund_fiscal_year_group AS (
- 
+
 SELECT
     FGFFY.id AS group_fund_fiscal_year_id,
     FG.name AS finance_group_name,
@@ -125,84 +125,87 @@ SELECT
     fgffy.fiscal_year_id AS fund_fiscal_year_id,
     ffy.code AS fiscal_year_code
 FROM
-    finance_groups AS FG
+    finance_groups AS FG 
     LEFT JOIN finance_group_fund_fiscal_years AS FGFFY ON fg.id = fgffy.group_id
     LEFT JOIN finance_fiscal_years AS ffy ON ffy. id = fgffy.fiscal_year_id
     LEFT JOIN finance_funds AS FF ON FF.id = fgffy.fund_id
 WHERE ((ffy.code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
 ORDER BY ff.code
 ),
- 
-new_quantity AS
-        (SELECT
+
+new_quantity AS 
+        (SELECT 
         id AS invoice_line_id,
        CASE WHEN quantity = 0
                 THEN 1
                 ELSE quantity
                         END AS fixed_quantity
-        FROM invoice_lines
+        FROM invoice_lines 
 ),
- 
-main AS
+
+main AS 
 (SELECT DISTINCT
-    current_date AS current_date,          
-    CASE WHEN
+    current_date AS current_date,           
+    CASE WHEN 
         ((SELECT
                         payment_date_start_date::varchar
           FROM
         parameters)= ''
-       
-        OR
+        
+        OR 
          (SELECT
                 payment_date_end_date::varchar
             FROM
                 parameters) ='')
-               
+                
         THEN 'Not Selected'
-        ELSE
+       ELSE
                 (SELECT payment_date_start_date::varchar
-                FROM parameters) || ' to '::varchar ||
+                FROM parameters) || ' to '::varchar || 
          (SELECT payment_date_end_date::varchar
                                 FROM parameters)
-                        END AS payment_date_range,      
+                        END AS payment_date_range,       
        ftie.fiscal_year_code AS transaction_fiscal_year_code,
        po.order_type,
        pol.order_format,
-       lang.language,      
-       replace (replace (iext.title, chr(13), ''),chr(10),'') AS instance_title,   
+       replace (replace (iext.title, chr(13), ''),chr(10),'') AS instance_title,
        iext.instance_hrid,
+       ffyg.finance_group_name,
        ffyg.fund_name,
+       ftie.effective_fund_code,
+        ' ' AS transfer_to_fund,
+       CASE WHEN ftie.invoice_line_total::decimal(12,2) > 0 THEN ABS(ftie.transaction_amount::decimal(12,2)/ftie.invoice_line_total::decimal(12,2) *100)::decimal(3,0) 
+                ELSE 0 END AS perc_spent,
+       fq.fixed_quantity AS quantity,
+       ftie.transaction_type,
+       ftie.effective_transaction_amount,
        ftie.fund_type_name,
        ffyg.fund_description,
-       ffyg.finance_group_name,
-       ftie.effective_fund_code,
-       ftie.transaction_type,      
-       CASE WHEN ftie.transaction_type = 'Credit' AND ftie.transaction_amount >=0.01 THEN ftie.transaction_amount *-1
-                ELSE ftie.transaction_amount END AS transaction_amount,
-       fq.fixed_quantity AS quantity,
-       ftie.effective_transaction_amount/fq.fixed_quantity AS transaction_amount_per_qty,
-       ftie.effective_transaction_amount,
-       CASE WHEN ftie.invoice_line_total::decimal(12,2) > 0 THEN ABS(ftie.transaction_amount::decimal(12,2)/ftie.invoice_line_total::decimal(12,2) *100)::decimal(3,0)
-                ELSE 0 END AS perc_spent,
-        ' ' AS transfer_to_fund,
-       subj1.primary_subject,
-       formatt.bib_format_display AS format_name,        
+       subj1.primary_subject,       
+       lang.language, 
+       formatt.bib_format_display AS format_name,
        STRING_AGG (DISTINCT locations.pol_location_name,' | ') AS location_name,
+       po.po_number,
+       pol.po_line_number,
+       replace (replace (pol.title_or_package, chr(13), ''),chr(10),'') AS po_line_title_or_package,
        ftie.invoice_vendor_name,
        inv.vendor_invoice_no,
        invl.invoice_line_number,
        inv.folio_invoice_no,
        replace (replace (invl.description, chr(13), ''),chr(10),'') AS invoice_line_description,
        replace (replace (invl.comment, chr(13), ''),chr(10),'') AS invoice_line_comment,
-       po.po_number,
-       pol.po_line_number,
-       replace (replace (pol.title_or_package, chr(13), ''),chr(10),'') AS po_line_title_or_package,
        ftie.invoice_date::date,
        inv.status AS invoice_status,
        inv.payment_date::DATE AS invoice_payment_date,
-       ftie.finance_ledger_name,      
-       fec.name AS expense_class,      
-       ftie.external_account_no
+       ftie.finance_ledger_name,       
+       fec.name AS expense_class,       
+       ftie.external_account_no,
+       
+       CASE WHEN ftie.transaction_type = 'Credit' AND ftie.transaction_amount >=0.01 THEN ftie.transaction_amount *-1 
+                ELSE ftie.transaction_amount END AS transaction_amount,
+       
+       ftie.effective_transaction_amount/fq.fixed_quantity AS transaction_amount_per_qty
+               
 FROM
         finance_transaction_invoices_ext AS ftie
         LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id
@@ -225,17 +228,17 @@ WHERE
         AND ((ftie.fund_type_name = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
         AND ((ffyg.finance_group_name = (SELECT transaction_finance_group_name FROM parameters)) OR ((SELECT transaction_finance_group_name FROM parameters) = ''))
         AND ((ftie.finance_ledger_name = (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) = ''))
-        AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
+        AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = '')) 
         AND ((po.order_type = (SELECT order_type_filter FROM parameters)) OR ((SELECT order_type_filter FROM parameters) = ''))
         AND ((po.po_number = (SELECT po_number FROM parameters)) OR ((SELECT po_number FROM parameters) = ''))
         AND ((fec.name = (SELECT expense_class FROM parameters)) OR ((SELECT expense_class FROM parameters) = ''))
         AND (lang.language_ordinality = '1' OR lang.language_ordinality ISNULL)
         AND ((formatt.bib_format_display= (SELECT format_name FROM parameters)) OR ((SELECT format_name FROM parameters) = ''))
-       
+        
  GROUP BY
        iext.title,
        iext.instance_hrid,
-       po.order_type,
+      po.order_type,
        pol.order_format,
        ftie.invoice_date::DATE,
        inv.payment_date::DATE,
@@ -255,12 +258,12 @@ WHERE
        ftie.effective_fund_code,
        ftie.fund_type_name,
        po.po_number,
-       pol.po_line_number,     
-       formatt.bib_format_display,       
+       pol.po_line_number,      
+       formatt.bib_format_display,        
        subj1.primary_subject,
-       lang.language,
+       lang.language, 
        pol.title_or_package,
-       fq.fixed_quantity,      
+       fq.fixed_quantity,       
        ftie.external_account_no,
        inv.status,
        replace(replace (invl.description, chr(13), ''),chr(10),''),
@@ -271,69 +274,100 @@ WHERE
        ftie.transaction_amount,
        ftie.invoice_line_total,
        ffyg.fund_name,
-       ffyg.fund_description      
+       ffyg.fund_description       
 )
- 
-SELECT
-        main.*,
-        STRING_AGG (ins.subject, ' | ') AS all_subjects
-       
-        FROM main
+
+SELECT 
+        to_char (current_date::date,'mm/dd/yyyy') as todays_date,
+        --main.payment_date_range,       
+       main.transaction_fiscal_year_code as fiscal_year,
+       main.order_type,
+       main.order_format,
+       main.instance_title,
+       main.instance_hrid,
+       main.finance_group_name,
+       main.fund_name,
+       main.effective_fund_code,
+       main.transfer_to_fund,
+       main.perc_spent,
+       main.quantity,
+       main.transaction_type,
+       main.effective_transaction_amount,
+       main.fund_type_name,
+       main.fund_description,
+       main.primary_subject,
+       STRING_AGG (ins.subject, ' | ') AS all_subjects,
+       main.language, 
+       main.format_name,
+       main.location_name,
+       main.po_number,
+       main.po_line_number,
+       main.po_line_title_or_package,
+       main.invoice_vendor_name,
+       main.vendor_invoice_no,
+       main.invoice_line_number,
+       main.folio_invoice_no,
+       main.invoice_line_description,
+       main.invoice_line_comment,
+       main.invoice_date::date,
+       main.invoice_status,
+       main.invoice_payment_date,
+       main.finance_ledger_name,       
+       main.expense_class,       
+       main.external_account_no
+                
+        FROM main 
                 LEFT JOIN folio_reporting.instance_subjects AS ins
                 ON main.instance_hrid = ins.instance_hrid
-               
- GROUP BY
-    ins.instance_id,
-    ins.instance_hrid,
-    main.current_date,
-    main.payment_date_range,
-    main.transfer_to_fund,
-    main.location_name,
+                
+        GROUP BY 
+           to_char (current_date::date,'mm/dd/yyyy'),
+           --main.payment_date_range,    
+       main.transaction_fiscal_year_code,
+       main.order_type,
+       main.order_format,
+       main.instance_title,
+       main.instance_hrid,
+       main.finance_group_name,
+       main.fund_name,
+       main.effective_fund_code,
+       main.transfer_to_fund,
+       main.perc_spent,
+       main.quantity,
+       main.transaction_type,
+       main.effective_transaction_amount,
+       main.fund_type_name,
+       main.fund_description,
+       main.primary_subject,
+       --STRING_AGG (ins.subject, ' | ') AS all_subjects,
+       main.language, 
+       main.format_name,
+       main.location_name,
+       main.po_number,
+       main.po_line_number,
+       main.po_line_title_or_package,
+       main.invoice_vendor_name,
+       main.vendor_invoice_no,
+       main.invoice_line_number,
+       main.folio_invoice_no,
+       main.invoice_line_description,
+       main.invoice_line_comment,
+       main.invoice_date::date,
+       main.invoice_status,
+       main.invoice_payment_date,
+       main.finance_ledger_name,       
+       main.expense_class,       
+       main.external_account_no
+       
+ ORDER BY 
     main.instance_title,
-    main.instance_hrid,
-    main.order_type,
-    main.order_format,
-    main.invoice_date::DATE,
-    main.invoice_payment_date::DATE,
-    main.transaction_amount_per_qty,
-    main.effective_transaction_amount,
-    main.transaction_type,
-    main.invoice_vendor_name,
-    main.vendor_invoice_no,
-    main.invoice_line_number,
-    main.folio_invoice_no,
-    main.invoice_line_description,
-    main.finance_ledger_name,
-    main.transaction_fiscal_year_code,
-    main.finance_group_name,
-    main.expense_class,
-    main.effective_fund_code,
-    main.fund_type_name,
-    main.po_number,
-    main.po_line_number,     
-    main.format_name,       
-    main.primary_subject,
-    main.language,
-    main.quantity,      
-    main.external_account_no,
-    main.invoice_status,
-    main.invoice_line_comment,
-    main.po_line_title_or_package,
-    main.instance_title,
-    main.transaction_type,
-    main.transaction_amount,
-    main.perc_spent,
-    main.fund_name,
-    main.fund_description
-      
- ORDER BY
-    main.instance_title,
-    main.finance_ledger_name,
+        main.finance_ledger_name,
     main.finance_group_name,
     main.fund_type_name,
     main.invoice_vendor_name,
     main.vendor_invoice_no,
     main.invoice_line_number,
     main.po_number,
-    main.po_line_number 
+    main.po_line_number  
 ;
+
