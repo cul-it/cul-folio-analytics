@@ -1,3 +1,4 @@
+--CR176
 /* External list of barcodes has to be inmported into local schema. In this query, the list is local.cammie_barcodes, which will need to be replaced.*/ 
 
 WITH instances AS 
