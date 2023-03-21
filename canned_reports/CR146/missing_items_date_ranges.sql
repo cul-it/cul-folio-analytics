@@ -66,7 +66,7 @@ FROM folio_reporting.instance_ext AS instext
         LEFT JOIN folio_reporting.item_notes AS itemnotes
         ON itemext.item_id = itemnotes.item_id      
         LEFT JOIN srs_marctab AS srs 
-        ON instext.instance_id = srs.instance_id
+        ON instext.instance_id::UUID = srs.instance_id::UUID
         
 WHERE  (ll.library_name = (SELECT owning_library_name_filter FROM parameters)
         OR (SELECT owning_library_name_filter FROM parameters) = '')
