@@ -1,3 +1,6 @@
+--CR109
+--Standing Order Purchase Orders
+
 WITH parameters AS (
     SELECT
            current_date - integer '2' AS start_date -- get all orders created XX days from today
@@ -6,8 +9,8 @@ SELECT
     poi.po_number AS po_number,
     poi.po_line_number,
     poi.vendor_code AS vendor_code,
-    poi.po_wf_status,
-    poi.created_date AS po_created_date,
+    poi.po_workflow_status,
+    poi.created_date::DATE AS po_created_date,
     m.instance_hrid,
     m.field,
     string_agg('$'::varchar || m.sf || m.content, '') AS series
@@ -27,5 +30,5 @@ GROUP BY
     poi.po_line_number,
     poi.vendor_code,
     poi.created_date,
-    poi.po_wf_status
+    poi.po_workflow_status
 ;
