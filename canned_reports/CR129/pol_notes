@@ -1,3 +1,6 @@
+--CR129
+--Purchase Order Line Notes
+
 WITH parameters AS (
     SELECT
            current_date - integer '2' AS start_date -- get all orders created XX days from today
@@ -9,8 +12,8 @@ json_extract_path_text(pl.data, 'receivingNote') AS receiving_note,
     poi.po_number AS po_number,
     poi.po_line_number,
     poi.vendor_code AS vendor_code,
-    poi.po_wf_status,
-    poi.created_date AS po_created_date
+    poi.po_workflow_status,
+    poi.created_date::DATE AS po_created_date
 FROM po_lines pl 
     LEFT JOIN folio_reporting.po_instance poi ON  pl.po_line_number = poi.po_line_number
 LEFT JOIN 
@@ -23,7 +26,7 @@ GROUP BY
     poi.po_line_number,
     poi.vendor_code,
     poi.created_date,
-    poi.po_wf_status,
+    poi.po_workflow_status,
     pl.po_line_number,
     pl.description,
    json_extract_path_text(pl.data, 'receivingNote');
