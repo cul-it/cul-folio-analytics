@@ -48,7 +48,7 @@ orders AS
         ilfd.invoice_line_total
 
 FROM po_lines
-        LEFT JOIN local.po_instance 
+        LEFT JOIN folio_reporting.po_instance 
         ON po_lines.po_line_number = po_instance.po_line_number
         
         LEFT JOIN folio_reporting.instance_subjects AS "is" 
