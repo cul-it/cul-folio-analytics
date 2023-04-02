@@ -90,7 +90,7 @@ FROM inventory_instances AS ii
         INNER JOIN folio_reporting.locations_libraries AS ll 
         ON he.permanent_location_id = ll.location_id 
 
-        INNER JOIN local_core.instance_administrative_notes AS ian
+        INNER JOIN folio_reporting.instance_administrative_notes AS ian
         ON ii.id = ian.instance_id
 
 WHERE 
