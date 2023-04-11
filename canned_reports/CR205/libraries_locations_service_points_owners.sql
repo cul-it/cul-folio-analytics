@@ -2,79 +2,42 @@
 --libraries_locations_service_points_owners
 
 
-WITH parameters AS 
-(
-SELECT
-	'45'::varchar AS age_of_bill,
-	-- enter minimum number of days old (required). For all open fines, enter zero.
-'%%'::varchar AS feefine_owner
-	-- enter an owning library (optional). For all libraries, leave blank.
+WITH fine_owner AS 
+(SELECT 
+ffo.id AS owner_id,
+ffo.OWNER AS fee_fine_owner,
+JSON_EXTRACT_PATH_TEXT (JSON_ARRAY_ELEMENTS (JSON_EXTRACT_PATH (ffo.data, 'servicePointOwner')),'label') AS service_point_name,
+JSON_EXTRACT_PATH_TEXT (JSON_ARRAY_ELEMENTS (JSON_EXTRACT_PATH (ffo.data, 'servicePointOwner')),'value') AS service_point_id
+FROM feesfines_owners AS ffo
 )
+
 SELECT
-	concat ((
-	SELECT
-		age_of_bill
-	FROM
-		parameters)::varchar,
-	' days and older') AS fine_group,
-	to_char (current_date::date,
-	'mm/dd/yyyy') AS todays_date,
-	ffo.owner AS fee_fine_owner,
-	uu.personal__last_name AS patron_last_name,
-	uu.personal__first_name AS patron_first_name,
-	uu.external_system_id,
-	uu.username AS netid,
-	ug.GROUP AS patron_group,
-	CASE
-		WHEN uu.active = 'True' THEN 'Active'
-		ELSE 'Expired'
-	END AS patron_status,
-	ffa.id AS fee_fine_id,
-	current_date::date - ffa.metadata__created_date::date AS age_of_fine,
-	to_char (ffa.metadata__created_date::timestamp,
-	'mm/dd/yyyy hh:mi am') AS fine_create_date,
-	ffa.fee_fine_type,
-	ffa.amount AS original_amount,
-	ffa.remaining AS amount_remaining,
-	ffa.title,
-	ffa.call_number,
-	ffa.barcode,
-	ffa.material_type,
-	to_char (ffa.due_date::timestamp,
-	'mm/dd/yyyy hh:mi am') AS due_date,
-	to_char (ffa.returned_date::timestamp,
-	'mm/dd/yyyy hh:mi am') AS return_date,
-	ffa.status__name AS fee_fine_status
-FROM
-	feesfines_accounts AS ffa
-LEFT JOIN user_users AS uu 
-ON
-	ffa.user_id = uu.id
-LEFT JOIN feesfines_owners AS ffo 
-ON
-	ffa.owner_id = ffo.id
-LEFT JOIN user_groups AS ug 
-ON
-	uu.patron_group = ug.id
-WHERE
-	ffa.metadata__created_date <= current_date::date - (
-	SELECT
-		age_of_bill
-	FROM
-		parameters)::integer
-	AND ffa.status__name = 'Open'
-	AND (ffo.OWNER ILIKE (
-	SELECT
-		feefine_owner
-	FROM
-		parameters)
-	OR (
-	SELECT
-		feefine_owner
-	FROM
-		parameters) = '')
-ORDER BY
-	uu.personal__last_name,
-	uu.personal__first_name,
-	ffa.metadata__created_date
+to_char (current_date::date,'mm/dd/yyyy') AS todays_date,
+invlib.name AS library_name,
+invloc.name AS location_name,
+invsp.name AS service_point_name,
+invlib.code AS library_code,
+invloc.code AS location_code,
+invsp.code AS service_point_code,
+CASE 
+WHEN invloc IS NULL THEN ' - ' 
+WHEN invloc.is_active = 'True' THEN 'Active' 
+ELSE 'Inactive' END AS location_status,
+CASE WHEN invsp.pickup_location = 'True' THEN 'Yes' else 'No' END AS pickup_service_point,
+fine_owner.fee_fine_owner
+
+FROM inventory_libraries AS invlib
+FULL OUTER JOIN inventory_locations AS invloc 
+ON invlib.id = invloc.library_id 
+
+FULL OUTER JOIN inventory_service_points AS invsp 
+ON invloc.primary_service_point = invsp.id
+
+FULL OUTER JOIN fine_owner 
+ON invsp.id = fine_owner.service_point_id
+
+
+ORDER BY library_name,
+location_name,
+service_point_name
 ;
