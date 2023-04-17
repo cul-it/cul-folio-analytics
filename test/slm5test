@@ -1,0 +1,43 @@
+--purchase order lines with no expense class
+
+/*
+This query gets fund and expense class from the po_lines table instead of the 
+finance_transactions_purchase_orders derived table. When you create a PO, you can 
+attach the fund and select an expense class. When you query POs from transactions, 
+POs without transactions will not show, so expense classes created at the 
+po_line level may not show. Fiscal year cannot be included because fiscal year 
+is tied to transactions.
+*/
+
+SELECT
+    current_date,
+	pl.po_line_number,
+	pl.metadata__created_date::DATE AS po_created_date,
+	json_extract_path_text(dist.data, 'fundId') AS po_lines_fund_id,
+	ff.code,
+	ff.name,
+	json_extract_path_text(dist.data, 'expenseClassId') AS po_lines_expense_class_id,
+	fec.name AS expense_class_name,
+	ppo.order_type,
+	pl.order_format,
+	pl.title_or_package
+
+FROM
+    po_lines AS pl
+   	CROSS JOIN json_array_elements(json_extract_path(data, 'fundDistribution')) AS dist(data)
+	LEFT JOIN finance_funds AS ff ON json_extract_path_text(dist.data, 'fundId') = ff.id
+	LEFT JOIN finance_expense_classes AS fec ON json_extract_path_text(dist.data, 'expenseClassId') = fec.id
+	LEFT JOIN po_purchase_orders AS ppo ON ppo.id = pl.purchase_order_id 
+
+WHERE
+	--shows NULL value in expense class
+	fec.id IS NULL
+	--removes shipping fund
+	--AND ff.code != '999'
+	--can be used to filter down to specific fund without expense class
+	--AND ff.code != '522'
+
+ORDER BY
+	pl.po_line_number,
+	ff.code
+;
