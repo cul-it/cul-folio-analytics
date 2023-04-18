@@ -1,4 +1,5 @@
---CR207   
+--CR207 
+
 --po_lines_no_expense_class
 --To get a listing of purchase order lines with no expense class selected when the PO was created
 --Includes fund code, purchase order line #,workflow status, order type, order format and Title
