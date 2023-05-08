@@ -1,3 +1,5 @@
+--CR208
+--identifying_DVDs
 -- This query finds DVDs in the specified library
 
 WITH parameters AS (
@@ -50,7 +52,7 @@ AND (sm2.field = '007' AND substring (sm2.CONTENT,1,2) = 'vd')
 AND (sm3.field = '008' AND substring (sm3.CONTENT, 34,1) = 'v')
 AND ((sm4.field = '300') OR sm4.field IS NULL)
 AND (he.discovery_suppress = 'False' OR he.discovery_suppress IS NULL)
-(ll.library_name = (SELECT owning_library_name_filter FROM parameters) OR (SELECT owning_library_name_filter FROM parameters) = '')
+AND (ll.library_name = (SELECT owning_library_name_filter FROM parameters) OR (SELECT owning_library_name_filter FROM parameters) = '')
 
 GROUP BY 
 sm.instance_hrid,
