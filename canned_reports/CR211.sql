@@ -1,5 +1,5 @@
 --CR211
---Locations with item counts for permanent location and temporary locations
+--Locations_with_item_counts_for_permanent_and_temporary_locations
 --Query writer: Joanne LEary (jl41)
 --Query reviewer: Vandana Shah (vp25)
 --Date posted: 5/16/2023
