@@ -1,5 +1,5 @@
 --CR212
---Number of holdings records in permanent and temporary locations 
+--Number_of_holdings_records_in_permanent_and_temporary_locations 
 --Query writer: Joanne Leary (jl41)
 --Query reviewer: Vandana Shah (vp25)
 --Date posted: 5/16/2023
