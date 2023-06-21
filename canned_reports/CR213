@@ -1,0 +1,51 @@
+--CR213
+--Query writer: Nancy Bolduc (nb299)
+--Query reviewer: Joanne Leary (jl41), Sharon Beltaine (slm5)
+--Date posted: 6/21/2023
+--This query finds current encumbrances by fund and fiscal year. It also shows titles and locations.
+--NOTE: As of 6/21/23, Fully Paid orders may still have a current encumbrance; this is a system issue to be fixed.
+
+WITH parameters AS (
+    SELECT
+        'FY2023'::VARCHAR AS fiscal_year_code,
+        ''::VARCHAR AS fund_code
+)
+SELECT DISTINCT
+	fy.code AS fiscal_year_code,
+ 	ff.code AS transaction_from_fund_code,
+    	ft.amount::numeric AS current_encumbrance_transaction_amount,
+    	ft.currency AS transaction_currency,
+    	ft.encumbrance__status AS encumbrance_status,
+    	oo.name AS po_vendor_name,
+    	pol.po_line_number AS pol_number,
+    	ft.metadata__created_date::DATE AS encumbrance_created_date,
+    	pol.title_or_package AS title,
+    	poi.pol_location_name,
+	poi.pol_instance_hrid,
+    	pol.payment_status, --note that Fully Paid orders may still have an encumbrance; this is a SYSTEM issue to be fixed
+    	json_extract_path_text(pol.data, 'description') AS pol_description,
+    	po.order_type AS po_order_type,
+    	ft. encumbrance__amount_awaiting_payment::numeric AS transaction_encumbrance_amount_awaiting_payment,
+    	ft. encumbrance__amount_expended::numeric AS transaction_encumbrance_amount_expended,
+    	ft. encumbrance__initial_amount_encumbered::numeric AS transaction_encumbrance_initial_amount,
+    	ft.encumbrance__order_status AS encumbrance_order_status,
+    	ft.encumbrance__order_type AS transaction_encumbrance_order_type,
+    	ft.encumbrance__re_encumber AS encumbrance_re_encumber,
+	    ft.encumbrance__subscription AS transaction_encumbrance_subscription 
+FROM
+    	finance_transactions AS ft
+    	LEFT JOIN po_lines AS pol ON json_extract_path_text(ft.data, 'encumbrance', 'sourcePoLineId') = pol.id
+    	LEFT JOIN po_purchase_orders AS po ON json_extract_path_text(ft.data, 'encumbrance', 'sourcePurchaseOrderId') = po.id
+    	LEFT JOIN finance_funds AS ff ON ft.from_fund_id = ff.id
+    	LEFT JOIN finance_budgets AS fb ON ft.from_fund_id = fb.fund_id AND ft.fiscal_year_id = fb.fiscal_year_id
+    	LEFT JOIN organization_organizations AS oo ON po.vendor = oo.id
+    	LEFT JOIN finance_fiscal_years AS fY ON fy.id = ft.fiscal_year_id 
+        LEFT JOIN local_core.po_instance AS poi ON ft.encumbrance__source_po_line_id::uuid = poi.po_line_id::uuid        
+
+WHERE
+    	ft.transaction_type = 'Encumbrance'
+    	AND ft.amount >0.01
+    	AND FT.encumbrance__status = 'Unreleased'
+	AND ((fy.code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
+	AND ((ff.code = (SELECT fund_code FROM parameters)) OR ((SELECT fund_code FROM parameters) = ''))
+	;
