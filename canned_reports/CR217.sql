@@ -1,5 +1,5 @@
 --CR217
---Ematerials Counts
+--Ematerial Counts
 --Query writer: Vandana Shah (vp25)
 --Query reviewers: Joanne Leary (jl41), Linda Miller (lm15)
 --Date posted: 6/26/23
