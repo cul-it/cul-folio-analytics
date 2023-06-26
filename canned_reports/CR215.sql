@@ -86,7 +86,7 @@ mg.folio_format_type,
 mg.folio_format_type_adc_groups, 
 mg.folio_format_type_acrl_nces_groups,
 mg.unpurchased,
-mg.micro_by_007,
+mg.micro_by_007
 
 
 FROM merge1 AS mg
