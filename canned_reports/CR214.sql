@@ -1,7 +1,7 @@
 --CR214
 --Physical Item Counts
 --Query writer: Vandana Shah (vp25)
---Query reviewer: Joanne Leary (jl41)
+--Query reviewers: Joanne Leary (jl41), Linda Miller (lm15)
 --Date posted: 6/26/23
 /*This query provides counts of physical items (excluding microforms), by format type and holdings library and location. It does not include microform counts. This query is primarily used to report on annual counts. */
 --NOTE: Some microforms as well as unpurchased materials get included in the results; these are flagged and should be filtered out from final counts. 
