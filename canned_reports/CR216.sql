@@ -3,7 +3,7 @@
 --Query writer: Vandana Shah (vp25)
 --Query reviewers: Joanne Leary (jl41), Linda Miller (lm15)
 --Date posted: 6/26/23
---This query provides counts of microforms), by format type. This query is primarily used to report on annual counts. 
+--This query provides counts of microforms, by format type. 
 
 WITH marc_formats AS
 	(SELECT 
