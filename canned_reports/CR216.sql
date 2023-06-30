@@ -43,6 +43,7 @@ AND trim(concat (he.call_number_prefix,' ',he.call_number,' ',he.call_number_suf
 
         
   SELECT COUNT (DISTINCT cc.instance_id),
+	current_date AS todays_date,
   	mfg.leader0607description,
  	mfg.folio_format_type,
 	mfg.folio_format_type_adc_groups, 
