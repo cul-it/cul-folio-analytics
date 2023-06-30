@@ -103,6 +103,7 @@ format_final AS
 )
 
 SELECT
+current_date AS today_date,
 format_final.leader0607description,
 format_final.ematerial_type_by_948,
 format_final.ematerial_type_by_stat_code,
