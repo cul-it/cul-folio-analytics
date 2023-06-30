@@ -192,6 +192,7 @@ ORDER BY
 )
 
 select 
+       Current_date AS todays_date,
         case when loans2.date_range is null then renews4.date_range else loans2.date_range end as date_range,        
         case when loans2.month_name_of_checkout is null then renews4.month_name_of_renewal else loans2.month_name_of_checkout end as month_name,
         case when loans2.month_num_of_checkout is null then renews4.month_num_of_renewal else loans2.month_num_of_checkout end as month_num,
