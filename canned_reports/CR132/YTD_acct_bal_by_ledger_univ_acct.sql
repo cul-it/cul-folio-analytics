@@ -1,5 +1,6 @@
 --CR132 01/19/2023
---This report provides the year-to-date external account cash balance along with total_expenditures, initial allocation, and net allocation. The fiscal year can be selected in the WHERE clause. The fiscal year is currently set for FY2023.
+--Automation last updated 2023-07-24
+--This report provides the year-to-date external account cash balance along with total_expenditures, initial allocation, and net allocation. The fiscal year can be selected in the WHERE clause. The fiscal year is currently set for FY2024.
 SELECT 
 	CURRENT_DATE,
 	fl.name AS finance_ledger_name,
@@ -17,7 +18,7 @@ FROM
 	LEFT JOIN finance_ledgers AS fl ON fl.id = ff.ledger_id 
 WHERE 
 	ff.fund_status LIKE 'Active'
-	AND ffy.code LIKE 'FY2023'
+	AND ffy.code LIKE 'FY2024'
 GROUP BY 
 	external_account_no,
 	fl.name
