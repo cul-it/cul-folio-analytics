@@ -1,11 +1,10 @@
 --1----selects pull of records based on ldr and filters certain locations-----------
-DROP TABLE IF EXISTS local_hathi.h_s_1; 
-CREATE TABLE local_hathi.h_s_1 AS
+DROP TABLE IF EXISTS local_automation.h_s_1; 
+CREATE TABLE local_automation.h_s_1 AS
 SELECT
 DISTINCT sm.instance_hrid,
     sm.instance_id,
     sm.field,
-    sm.sf,
     sm.content,
     substring(sm.content, 7, 2) AS bib_type,
     he.permanent_location_name,
@@ -13,21 +12,20 @@ DISTINCT sm.instance_hrid,
     he.discovery_suppress 
     FROM srs_marctab sm 
     LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id = he.instance_id::uuid
-    AND (sm.field = '000' AND substring(sm.content, 7, 2) IN ('as'))
+    WHERE (sm.field = '000' AND substring(sm.content, 7, 2) IN ('as'))
     AND he.permanent_location_name !~~ 'serv,remo'
     AND he.permanent_location_name !~~ 'Borrow Direct'
     AND he.permanent_location_name !~~* '%LTS%'
 ;
-CREATE INDEX ON local_hathi.h_s_1 (instance_hrid);
-CREATE INDEX ON local_hathi.h_s_1 (instance_id);
-CREATE INDEX ON local_hathi.h_s_1 (field);
-CREATE INDEX ON local_hathi.h_s_1 (sf);
-CREATE INDEX ON local_hathi.h_s_1 (bib_type);
-CREATE INDEX ON local_hathi.h_s_1 (permanent_location_name);
-CREATE INDEX ON local_hathi.h_s_1 (call_number);
-CREATE INDEX ON local_hathi.h_s_1 (discovery_suppress);
+CREATE INDEX ON local_automation.h_s_1 (instance_hrid);
+CREATE INDEX ON local_automation.h_s_1 (instance_id);
+CREATE INDEX ON local_automation.h_s_1 (field);
+CREATE INDEX ON local_automation.h_s_1 (bib_type);
+CREATE INDEX ON local_automation.h_s_1 (permanent_location_name);
+CREATE INDEX ON local_automation.h_s_1 (call_number);
+CREATE INDEX ON local_automation.h_s_1 (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_s_1;
+--VACUUM ANALYZE local_automation.h_s_1;
 
 --2------------selects/deselects records with 945 (monoseries standing orders) and filters it from h_s_1 table-------------------------------------
 DROP TABLE IF EXISTS local_hathi.h_s_2;
@@ -53,8 +51,6 @@ CREATE INDEX ON local_hathi.h_s_2(instance_hrid);
 CREATE INDEX ON local_hathi.h_s_2(instance_id);
 CREATE INDEX ON local_hathi.h_s_2(permanent_location_name);
 CREATE INDEX ON local_hathi.h_s_2(call_number);
-
-VACUUM ANALYZE local_hathi.h_s_2;
 
 --3------------------------selects/deselects records with 245 $h[electronic resource] and filters from h_s_2 tabe------------------------
 DROP TABLE IF EXISTS local_hathi.h_s_3;   
@@ -91,8 +87,6 @@ CREATE INDEX ON local_hathi.h_s_3 (instance_hrid);
 CREATE INDEX ON local_hathi.h_s_3 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_s_3 (call_number);
 
-VACUUM ANALYZE local_hathi.h_s_3;
-
 --4---------------------selects/deselects records with 336 $aunmediated content and filters from h_s_3----------------  
 DROP TABLE IF EXISTS local_hathi.h_s_4;
 CREATE TABLE local_hathi.h_s_4 AS
@@ -120,8 +114,6 @@ CREATE INDEX ON local_hathi.h_s_4 (instance_id);
 CREATE INDEX ON local_hathi.h_s_4 (instance_hrid);
 CREATE INDEX ON local_hathi.h_s_4 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_s_4 (call_number);
-
-VACUUM ANALYZE local_hathi.h_s_4;
 
 --5--------------------selects/deselects records with 300 $amap or maps and filters from h_s_4------------------ 
 DROP TABLE IF EXISTS local_hathi.h_s_5;
@@ -160,7 +152,6 @@ CREATE INDEX ON local_hathi.h_s_5 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_s_5 (call_number);
 CREATE INDEX ON local_hathi.h_s_5 (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_s_5;
 --6-----------------------filters suppressed holding records with the note "decision - no"-----------
 DROP TABLE IF EXISTS local_hathi.h_s_6;
 CREATE TABLE local_hathi.h_s_6 AS
@@ -193,8 +184,6 @@ CREATE INDEX ON local_hathi.h_s_6 (permanent_location_name);
 CREATE INDEX ON local_hathi.h_s_6 (call_number);
 CREATE INDEX ON local_hathi.h_s_6 (discovery_suppress);
 
-VACUUM ANALYZE local_hathi.h_s_6;
-
 --7-----------------------filters records by certain values in call number from h_s_6-------------------
 DROP TABLE IF EXISTS local_hathi.h_s_7;
 CREATE TABLE local_hathi.h_s_7 AS
@@ -215,8 +204,6 @@ CREATE INDEX ON local_hathi.h_s_7 (instance_hrid);
 CREATE INDEX ON local_hathi.h_s_7 (instance_id);
 CREATE INDEX ON local_hathi.h_s_7 (call_number);
 CREATE INDEX ON local_hathi.h_s_7 (permanent_location_name);
-
-VACUUM ANALYZE local_hathi.h_s_7;
 
 --8--------------------filters records for presents of oclc number------------------    
 DROP TABLE IF EXISTS local_hathi.h_s_8;
@@ -252,7 +239,6 @@ CREATE INDEX ON local_hathi.h_s_8 (id_type);
 CREATE INDEX ON local_hathi.h_s_8 (oclc_number2);
 CREATE INDEX ON local_hathi.h_s_8 (oclc_no);
 
-VACUUM ANALYZE local_hathi.h_s_8;
 --9------------------------------selects issn number and value for government document from 008 --------------
 DROP TABLE IF EXISTS local_hathi.h_s_final;
 CREATE TABLE local_hathi.h_s_final AS
@@ -298,4 +284,3 @@ CREATE INDEX ON local_hathi.h_s_final (instance_hrid);
 CREATE INDEX ON local_hathi.h_s_final (issn_no);
 CREATE INDEX ON local_hathi.h_s_final (gov_doc);
 
-VACUUM ANALYZE local_hathi.h_s_final;
