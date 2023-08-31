@@ -1,6 +1,8 @@
 --CR132 01/19/2023
 --Automation last updated 2023-07-24
---This report provides the year-to-date external account cash balance along with total_expenditures, initial allocation, and net allocation. The fiscal year can be selected in the WHERE clause. The fiscal year is currently set for FY2024.
+--This report provides the year-to-date external account cash balance along with total_expenditures, initial allocation, and net allocation. 
+--The fiscal year can be selected in the WHERE clause. The fiscal year is currently set for FY2024.
+
 SELECT 
 	CURRENT_DATE,
 	fl.name AS finance_ledger_name,
