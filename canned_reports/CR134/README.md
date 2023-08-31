@@ -2,7 +2,7 @@
 <p>
   
 ## Brief description:
-This query provides the list of approved invoices within a date range along with vendor name, finance group name, expense class, fund type, vendor invoice number, fund details, purchase order details, language, instance subject, and bibliographic format
+This query provides the list of approved invoices within a date range along with vendor name, finance group name, vendor invoice number, fund details, purchase order details, language, instance subject, LC classification, LC class, LC class number, and bibliographic format. 
 <p>
   
 ## Main tables used:
