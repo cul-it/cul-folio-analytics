@@ -1,5 +1,6 @@
 --AHR 120
 --vet_special_collections
+-- 9-25-23: changed library name criteria to "ilike" and added wildcards (lines 48 and 53) to accommodate the change in library names that happened on 9/23/23
 
 SELECT 
        TO_CHAR (current_date::date,'mm/dd/yyyy') AS todays_date,
@@ -44,12 +45,12 @@ FROM inventory_instances AS ii
        ON he.holdings_id = hn.holdings_id
 
 WHERE 
-       (ll.library_name = 'Veterinary Library' 
+       (ll.library_name ilike '%Veterinary Library%' 
        AND hn.note ILIKE '%perman%shelved%')
        
        OR
        
-       (ll.library_name = 'Veterinary Library'
+       (ll.library_name ilike '%Veterinary Library%'
        AND he.permanent_location_name !='Vet')
 
 GROUP BY
@@ -69,9 +70,11 @@ GROUP BY
        ie.permanent_loan_type_name,
        ie.status_name,
        TO_CHAR (ie.status_date::date,'mm/dd/yyyy'),
-       ii.hrid,
+      ii.hrid,
        he.holdings_hrid,
        ie.item_hrid,
        invitems.effective_shelving_order
 
 ORDER BY holdings_location_name, item_location_name, invitems.effective_shelving_order COLLATE "C", holdings_copy_number, title, holdings_hrid  ;
+
+
