@@ -4,8 +4,8 @@ WITH parameters AS (
     
                  /* For invoice payment date range, enter the start date and end date in YYYY-MM-DD format */
     
-                '2022-07-01'AS start_date,
-                '2023-07-01'AS end_date,
+                ''AS start_date,
+                ''AS end_date,
         
                  /* For Fiscal Year, enter the fiscal year in the following format: 'FY2023' */
                         
