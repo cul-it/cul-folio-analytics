@@ -3,7 +3,6 @@
 
 WITH PARAMETERS AS (
 SELECT
-	/* Choose a start and end date for the requests period */
 	(:start_date)::date AS start_date,
 	(:end_date)::date AS end_date)
    ,
