@@ -4,8 +4,8 @@
 WITH PARAMETERS AS (
 SELECT
 	/* Choose a start and end date for the requests period */
-	'2021-07-01'::date AS start_date,
-	'2022-07-01'::date AS end_date)
+	?::date AS start_date,
+	?::date AS end_date)
    ,
    
 users AS 
