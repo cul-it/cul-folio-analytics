@@ -2,7 +2,7 @@
 --Unique Title (Instance) Counts
 --Query writer: Vandana Shah (vp25)
 --Query reviewers: Joanne Leary (jl41), Linda Miller (lm15)
---Date posted: 6/26/23
+--Date posted: 6/26/23, updated on 9/30/23 to reflect location changes in FOLIO.
 /*This query provides counts of unique titles (instances) of physical items (excluding microforms), by format type. It does not include microform counts. This query is primarily used to report on annual counts. */
 --NOTE: Some microforms as well as unpurchased materials get included in the results; these are flagged and should be filtered out from final counts. 
 
@@ -59,13 +59,13 @@ WHERE sm.field LIKE '899'
 * from the following locations as they: no longer exist; are not yet received/cataloged; are not owned by the Library; etc.
 * Also excludes microforms and items not yet cataloged via call number and/or title.*/
 
-
+WHERE 
+   (he.permanent_location_name NOT ILIKE ALL(ARRAY['serv,remo','Borrow Direct', 'CCSS', 'cons,opt', 'LTS Review Shelves', 'Engineering',
+'Engr,wpe', 'Law Technical Services', 'LTS E-Resources & Serials', 'Mann Hortorium', 'Mann Hortorium Reference', 'Mann Technical Services',
+'Interlibrary Loan – Olin', 'Phys Sci', 'Agricultural Engineering', 'Bindery Circulation', 'Biochem Reading Room', 'Engineering Reference',
+'Entomology', 'Fine Arts Course Reserve', 'Food Science', 'Nestle Library Permanent Reserve', 'Nestle Library Reserve', 'JGSM Permanent Reserve',
+'Mann Permanent Reserve', 'Iron Mountain', 'RMC Technical Services', 'Vet Permanent Reserve', 'Vet Reference', 'No Library', 'x-test','z-test location'])) 
    	
- WHERE  (he.permanent_location_name NOT ILIKE ALL(ARRAY['serv,remo', '%LTS%','Agricultural Engineering','Bindery Circulation',
-'Biochem Reading Room', 'Borrow Direct', 'CISER', 'cons,opt', 'Engineering', 'Engineering Reference', 'Engr,wpe',
-'Entomology', 'Food Science', 'Law Technical Services', 'LTS Review Shelves', 'LTS E-Resources & Serials','Mann Gateway',
-'Mann Hortorium', 'Mann Hortorium Reference', 'Mann Technical Services', 'Iron Mountain', 'Interlibrary Loan%', 'Phys Sci',
-'RMC Technical Services', 'No Library','x-test', 'z-test location' ]))
 
 --exclude the following materials as they are not available for discovery or are micro-materials
 AND he.call_number NOT ILIKE ALL(ARRAY['on order%', 'in process%', 'Available for the library to purchase', 
