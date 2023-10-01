@@ -131,7 +131,7 @@ combined AS
 	LEFT JOIN folio_reporting.locations_libraries AS ll ON hh.permanent_location_id = ll.location_id  
 	LEFT JOIN folio_reporting.locations_libraries AS lz ON ite.permanent_location_id = lz.location_id  
    	LEFT JOIN local_core.vs_folio_physical_material_formats AS fmg ON fmg.leader0607 = fm.leader0607
-    LEFT JOIN local_core.lm_adc_loc_translation AS adc2 ON 	hh.holdings_permanent_location_name=adc2.permanent_location_name)
+    	LEFT JOIN local_core.lm_adc_location_translation_table_9_2023 AS adc2 ON hh.holdings_permanent_location_name=adc2.permanent_location_name)
     
     
    SELECT 
