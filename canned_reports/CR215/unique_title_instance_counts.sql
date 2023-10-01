@@ -55,13 +55,13 @@ WHERE sm.field LIKE '899'
    	LEFT JOIN folio_reporting.instance_ext AS ie ON he.instance_id = ie.instance_id 
    	LEFT JOIN local_core.vs_folio_physical_material_formats AS fmg ON mf.leader0607=fmg.leader0607
      	 
- /*Excludes serv,remo which are all e-materials and are counted in a separate query. Also excludes materials 
+ /*Excludes serv,remo and Mann Gateway which are all e-materials and are counted in a separate query. Also excludes materials 
 * from the following locations as they: no longer exist; are not yet received/cataloged; are not owned by the Library; etc.
 * Also excludes microforms and items not yet cataloged via call number and/or title.*/
 
 WHERE 
    (he.permanent_location_name NOT ILIKE ALL(ARRAY['serv,remo','Borrow Direct', 'CCSS', 'cons,opt', 'LTS Review Shelves', 'Engineering',
-'Engr,wpe', 'Law Technical Services', 'LTS E-Resources & Serials', 'Mann Hortorium', 'Mann Hortorium Reference', 'Mann Technical Services',
+'Engr,wpe', 'Law Technical Services', 'LTS E-Resources & Serials', 'Mann Gateway', 'Mann Hortorium', 'Mann Hortorium Reference', 'Mann Technical Services',
 'Interlibrary Loan – Olin', 'Phys Sci', 'Agricultural Engineering', 'Bindery Circulation', 'Biochem Reading Room', 'Engineering Reference',
 'Entomology', 'Fine Arts Course Reserve', 'Food Science', 'Nestle Library Permanent Reserve', 'Nestle Library Reserve', 'JGSM Permanent Reserve',
 'Mann Permanent Reserve', 'Iron Mountain', 'RMC Technical Services', 'Vet Permanent Reserve', 'Vet Reference', 'No Library', 'x-test','z-test location'])) 
