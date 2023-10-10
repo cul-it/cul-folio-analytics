@@ -9,7 +9,7 @@ WITH parameters AS (
         
                  /* For Fiscal Year, enter the fiscal year in the following format: 'FY2023' */
                         
-                 ''::VARCHAR AS fiscal_year_filter,
+                 (:fiscal_year)::VARCHAR AS fiscal_year_filter,
         
         /* Enter a fund group name: 'Central', 'Humanities', 'Area Studies', 'Rare & Distinctive', 'Law', 'Sciences', etc. 
          * see complete list at https://confluence.cornell.edu/display/folioreporting/Fund+Groups */
