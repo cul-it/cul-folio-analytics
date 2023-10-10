@@ -10,7 +10,7 @@
       "outputs": [
         {
           "host": "FOLIO_REPORTS",
-          "filename": "Collections Development/fund_expenditures_by_po_line_invoice_payments_FY2023.xlsx"
+          "filename": "Collection Development/fund_expenditures_by_po_line_invoice_payments_FY2023.xlsx"
         }
       ],
       "email_notifications": [
@@ -39,7 +39,7 @@
       "outputs": [
         {
           "host": "FOLIO_REPORTS",
-          "filename": "Collections Development/fund_expenditures_by_po_line_invoice_payments_FY2024.xlsx"
+          "filename": "Collection Development/fund_expenditures_by_po_line_invoice_payments_FY2024.xlsx"
         }
       ],
       "email_notifications": [
