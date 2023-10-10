@@ -1,5 +1,10 @@
 [
  {
+  "id": "CR101",
+  "path": "canned_reports/CR101",
+  "frequency": "DAILY"
+ },
+ {
   "id": "CR193",
   "path": "canned_reports/CR193",
   "frequency": "DAILY"
