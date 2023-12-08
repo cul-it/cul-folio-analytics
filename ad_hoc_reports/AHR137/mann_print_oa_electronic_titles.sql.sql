@@ -1,3 +1,5 @@
+-- AHR137 mann_print_oa_electronic_titles
+
 -- 10-23-23: this query finds Mann items in call numbers A - E for possible transfer to the Annex; 
 -- also to be used for record cleanup
 -- 10-24-23: added receipt status. Get last issue received and date received (for issues rec'd after 7-1-21).
