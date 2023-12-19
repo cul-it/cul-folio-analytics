@@ -12,7 +12,9 @@
 --9-12-23: created a Case When statement to assign the correct finance group name to those 2CUL funds that merged into Area Studies in FY2024
 --9-13-23: reviewed by Jean Pajerek, Vandana Shah, Ann Crowley, and Sharon Beltaine
 --9-14-23: corrected the WHERE expression for finance_expense_class to work with wildcard and Null entries (line 246). Ditto other Where statements for parameters with wildcards or null entries.
---         Added fund name to ftie subquery and to main query.
+--Added fund name to ftie subquery and to main query.
+--12-19-23: Added fund 2352 to the CASE WHEN statements that select the correct finance group for funds that were merged into Area Studies from 2CUL in FY2024 
+--based on invoice payment date.
 
 WITH parameters AS (
     SELECT
@@ -200,8 +202,10 @@ SELECT distinct
        ftie.finance_ledger_name,
        ftie.fiscal_year_code AS transaction_fiscal_year_code,
        CASE -- selects the correct finance group for funds that were merged into Area Studies from 2CUL in FY2024, based on invoice payment date
-          WHEN ftie.effective_fund_code in ('2616','2310','2342','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
-          WHEN ftie.effective_fund_code in ('2616','2310','2342','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
+          WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') 
+             AND inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
+          WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') 
+             AND inv.payment_date::date <'2023-07-01' then '2CUL'
           ELSE ffyg.finance_group_name END AS finance_group_name,
        fec.name AS expense_class,
        ftie.effective_fund_code,
@@ -240,9 +244,12 @@ WHERE
         AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
         AND ((ftie.fund_type_name = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
         AND ((CASE
-                 WHEN ftie.effective_fund_code in ('2616','2310','2342','2410','2411','2440','p2350','p2450','p2452','p2658') AND inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
-                 WHEN ftie.effective_fund_code in ('2616','2310','2342','2410','2411','2440','p2350','p2450','p2452','p2658') AND inv.payment_date::date <'2023-07-01' THEN '2CUL'
-                 ELSE ffyg.finance_group_name end) = (select transaction_finance_group_name from parameters) or (SELECT transaction_finance_group_name FROM parameters) = '')
+                 WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') 
+                    AND inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
+                 WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') 
+                    AND inv.payment_date::date <'2023-07-01' THEN '2CUL'
+                 ELSE ffyg.finance_group_name end) = (select transaction_finance_group_name from parameters) 
+                    OR (SELECT transaction_finance_group_name FROM parameters) = '')
         AND ((ftie.finance_ledger_name ilike (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) ilike '%%'))
         AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
         AND ((po.order_type = (SELECT order_type_filter FROM parameters)) OR ((SELECT order_type_filter FROM parameters) = ''))
