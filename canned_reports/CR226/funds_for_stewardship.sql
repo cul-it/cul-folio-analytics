@@ -72,6 +72,7 @@ publication_extract AS ( -- gets publication date, place, and publisher from the
        WHERE publication.ordinality = 1
 ),
 
+--primary contributor update
 contrib as 
 (SELECT
     instance.id AS instance_id,
