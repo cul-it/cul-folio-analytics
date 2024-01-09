@@ -1,4 +1,5 @@
--- CR195 - Expense transfer. This query is a customization of CR-134 (paid invoices with bib data) for the purpose of identifying expenditures 
+-- CR195 - Expense transfer
+-- This query is a customization of CR-134 (paid invoices with bib data) for the purpose of identifying expenditures 
 -- that can be transferred from unrestricted funds to restricted funds.
 -- 7-19-23: updated query to account for changes in subject extraction
 -- 12-27-23: updated query for 2CUL funds that were switched into Area Studies fund group in FY2024; added fund 2352
