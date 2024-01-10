@@ -1,6 +1,7 @@
 -- CR229
 -- inventory_by_call_number_range_with_links_to_online_access
 -- 1-9-24: this is a generalized version of the query that finds Mann items in a specified call number range for possible transfer to the Annex and record cleanup
+-- written by Joanne Leary, tested and reviewed by Sharon Markus
 -- Finds instance and holdings-level information: 
 -- 		total items per holdings record
 -- 		total circs per holdings since 2015 and years circulated
