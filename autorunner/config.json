@@ -13,5 +13,10 @@
   "id": "CR214",
   "path": "canned_reports/CR214",
   "frequency": "DAILY"
+ },
+ {
+  "id": "CR215",
+  "path": "canned_reports/CR215",
+  "frequency": "DAILY"
  }
 ]
