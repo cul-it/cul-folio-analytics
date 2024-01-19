@@ -19,14 +19,15 @@
   "path": "canned_reports/CR215",
   "frequency": "DAILY"
  },
-  {
+ {
   "id": "CR216",
-  "path": "canned_reports/CR215",
+  "path": "canned_reports/CR216",
   "frequency": "DAILY"
  },
  {
   "id": "CR217",
-  "path": "canned_reports/CR215",
+  "path": "canned_reports/CR217",
   "frequency": "DAILY"
  }
 ]
+
