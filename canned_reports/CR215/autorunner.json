@@ -3,8 +3,7 @@
   "reports": [
     {
       "database": "LDP",
-      "sql_file": "unique_title_instance_counts.sql"
-      },
+      "sql_file": "unique_title_instance_counts.sql",
       "outputs": [
         {
           "host": "FOLIO_REPORTS",
