@@ -3,8 +3,7 @@
   "reports": [
     {
       "database": "LDP",
-      "sql_file": "ematerial_counts.sql"
-      },
+      "sql_file": "ematerial_counts.sql",
       "outputs": [
         {
           "host": "FOLIO_REPORTS",
@@ -32,3 +31,4 @@
     }
   ]
 }
+
