@@ -3,8 +3,7 @@
   "reports": [
     {
       "database": "LDP",
-      "sql_file": "physical_item_counts.sql"
-      },
+      "sql_file": "physical_item_counts.sql",
       "outputs": [
         {
           "host": "FOLIO_REPORTS",
