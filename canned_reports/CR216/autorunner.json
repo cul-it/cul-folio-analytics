@@ -3,8 +3,7 @@
   "reports": [
     {
       "database": "LDP",
-      "sql_file": "microform_counts.sql"
-      },
+      "sql_file": "microform_counts.sql",
       "outputs": [
         {
           "host": "FOLIO_REPORTS",
