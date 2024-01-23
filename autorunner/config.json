@@ -9,25 +9,5 @@
   "path": "canned_reports/CR193",
   "frequency": "DAILY"
  }
-# {
-#  "id": "CR214",
-#  "path": "canned_reports/CR214",
-#  "frequency": "DAILY"
-# },
-# {
-#  "id": "CR215",
-#  "path": "canned_reports/CR215",
-#  "frequency": "DAILY"
-# },
-# {
-#  "id": "CR216",
-#  "path": "canned_reports/CR216",
-# "frequency": "DAILY"
-# },
-# {
-#  "id": "CR217",
-#  "path": "canned_reports/CR217",
-#  "frequency": "DAILY"
- }
 ]
 
