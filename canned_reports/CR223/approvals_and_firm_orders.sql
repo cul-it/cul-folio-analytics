@@ -1,4 +1,5 @@
--- Approvals and firm orders
+-- CR223
+-- approvals_and_firm_orders
 
 -- This query finds all orders (not just approvals) showing the "bill to" and "ship to" locations in the purchase order or invoice. 
 -- It also includes the purchase order location, workflow status, order type, order format, vendor name, fund, and fiscal year. 
