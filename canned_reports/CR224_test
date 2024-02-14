@@ -1,3 +1,7 @@
+--CR224
+--approval_plan_titles_by_vendor_and_statistical_code
+--This query uses the source of acquisition statistical code of "Approval/Blanket Order" to identify titles associated with approval plans.  
+--It also shows approval plan titles associated with vendors using the vendor code from the MARC record 980 subfield "v" if it is available. 
 --Getting vendor name out of this fields before vendor instance statistical code was implemented 
 ---in "vendor_prestat_code"
 --980 $v:Aux, Harrass, Worldwide, Erasmus
