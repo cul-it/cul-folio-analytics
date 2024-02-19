@@ -26,7 +26,7 @@ SELECT
     invv.voucher_number,
     invvl.external_account_number,
     invv.export_to_accounting AS export_to_accounting,
-    SUM(invvl.amount) AS total_amount
+    invvl.amount
 FROM 
     folio_invoice.voucher_lines__t AS invvl 
     LEFT JOIN folio_derived.invoice_voucher_lines_fund_distributions AS invvlfd ON invvlfd.invoice_voucher_line_id = invvl.id
@@ -46,7 +46,8 @@ GROUP BY
     org.name,
     invvl.external_account_number,
     invv.voucher_number,
-    invv.export_to_accounting
+    invv.export_to_accounting,
+    invvl.amount
 ORDER BY vendor_name
 ;
 
