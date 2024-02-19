@@ -1,6 +1,6 @@
 -- MCR114
 -- daily_appr_inv_vendor.sql
--- written by Nancy Bolduc, revised by Sharon Markus, reviewed and tested by 
+-- written by Nancy Bolduc, revised for Metadb by Sharon Markus, reviewed and tested by 
 -- Last updated 2/19/24
 
 -- This query provides the list of invoices paid by vendor along with voucher lines details.
