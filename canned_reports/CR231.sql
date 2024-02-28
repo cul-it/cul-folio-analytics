@@ -1,5 +1,7 @@
 --CR231
--- This query displays the calendar settings for a given service point and semester. Service points using a "Universal" calendar (ILL, Borrow Direct, the Annex, contactless pickup and remote delivery SP's, and sometimes other units) will not have a year or semester value, so leave those filters blank; or enter "Universal" in the semester filter.
+--Calendar settings by service point and semester
+
+-- This query displays the calendar settings for a given service point and semester. Service points using a "Universal" calendar. (ILL, Borrow Direct, the Annex, contactless pickup and remote delivery SP's, and sometimes other units) will not have a year or semester value, so leave those filters blank; or enter "Universal" in the semester filter.
 -- NOTE: Exception dates will repeat for every normal-hours weekday entry (usually seven weekdays times the number of exception calendars for that semester)
 
 --Query writer: Joanne Leary
