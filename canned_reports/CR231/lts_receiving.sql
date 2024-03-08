@@ -1,7 +1,6 @@
 WITH receiving AS (
 SELECT
    pp.received_date::DATE,
-   ppo.bill_to AS bill_to_id,
    ppo.order_type,
    pp.format,
    pp.caption AS issues_received,
@@ -9,7 +8,7 @@ SELECT
    ppo.po_number,
    ppo.po_number_prefix,
    pl.order_format,
-   ppo.ship_to,
+   poi.ship_to,
    poi.bill_to
 FROM po_pieces pp
 LEFT JOIN po_lines pl ON pp.po_line_id = pl.id
@@ -18,12 +17,11 @@ LEFT JOIN folio_reporting.po_instance poi ON ppo.id::uuid=poi.po_number_id::uuid
 where ppo.order_type = 'Ongoing'
 and pp.format = 'Physical'
 and pp.receiving_status = 'Received'
-AND pp.received_date > '2021-07-01'
-AND poi.bill_to NOT iLIKE '%law%'
+AND pp.received_date >= '2021-07-01'
+AND poi.bill_to NOT IN ('Law Technical Services')
 )
 SELECT
    rc.received_date,
-   rc.bill_to_id,
    rc.bill_to,
    rc.order_type,
    rc.format,
@@ -34,5 +32,4 @@ SELECT
    rc.order_format,
    rc.ship_to
    FROM receiving AS rc
-  WHERE rc.bill_to not IN ('Law Technical Services')
 ;
