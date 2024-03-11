@@ -1,6 +1,6 @@
 -- MCR113
 -- daily_appr_inv_exported.sql
--- written by Nancy Bolduc, revised for Metadb by Sharon Markus, reviewed and tested by 
+-- written by Nancy Bolduc, revised for Metadb by Sharon Markus, reviewed and tested by Ann Crowley
 -- Last updated 2/19/24
 
 -- This query provides the total amount of voucher_lines per account number 
