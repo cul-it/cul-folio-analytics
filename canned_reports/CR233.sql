@@ -1,7 +1,7 @@
 --CR233
 --ADC Location Translation Table
 
---This query creates the location translation table that is used for Annual Data COllection (ADC) queries.
+--This query creates the location translation table that is used for Annual Data Collection (ADC) queries.
 --Query writer: Joanne Leary
 
 SELECT
