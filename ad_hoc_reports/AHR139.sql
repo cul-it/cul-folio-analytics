@@ -1,4 +1,4 @@
---AHR138
+--AHR139
 --Asia collection with UMI Dissertation Services in descriptive fields
 
 -- This query gets bibliographic detail and circ and browse counts for Kroch Asia Collections and Asia Annex (Jeff Peterson request. It also finds a subset of asia materials that are dissertation copies and identifies Ann Arbor, UMI dissertation services notes. 
