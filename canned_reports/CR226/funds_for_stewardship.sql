@@ -1,4 +1,5 @@
---CR226 funds_for_stewardship
+--CR226 funds_for_stewardship 
+--created: 12-20-23
 --This query was modified from CR134 to accommodate alumni affairs needs for information on stewarded funds. 
 --It provides the list of approved invoices within a date range along with primary contributor name, 
 --publisher name, publication date, publication place, vendor name, LC classification, LC class, LC class number, 
