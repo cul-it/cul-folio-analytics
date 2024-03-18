@@ -1,3 +1,8 @@
+--CR232
+--inst_updated_date
+--last updated
+
+    
 SELECT
     sr.instance_hrid,
     sr.field,
