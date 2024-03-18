@@ -1,3 +1,13 @@
+--CR231
+--lts_receiving
+--Created by Natalya Pikulik
+--Used in LTS Aquisition Statistic Dhasboard, LTS Receiving Story
+--This report gets serials received by LTS personal, on which day it was recived, 
+--with bill_to location "Law Technical Services not included", 
+--item format as "Physical, receivng status as "received", 
+--po_number,po_number prefix, order_format, ship_to location
+
+
 WITH receiving AS (
 SELECT
    pp.received_date::DATE,
