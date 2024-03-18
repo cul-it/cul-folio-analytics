@@ -1,7 +1,7 @@
 --CR231
 --lts_receiving
 --Created by Natalya Pikulik
---Used in LTS Aquisition Statistic Dashboard, LTS Receiving Story
+--Used in LTS Acquisition Statistic Dashboard, LTS Receiving Story
 --This report gets serials received by LTS personal, on which day it was received, 
 --with bill_to location "Law Technical Services not included", 
 --item format as "Physical, receiving status as "received", 
