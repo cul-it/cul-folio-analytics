@@ -1,3 +1,12 @@
+--MCR232
+--inst_updated_date
+--created 3-8-24
+--query written by Natalya Pikulik
+--This query pulls the updated_by_userid and the updated_date field data from 
+--the inventory instance record JSONB data array. This data is then joined 
+--to the MARC 245/a field to get the instance title and instance HRID. Please
+--use the LIMIT shown or take it out, depending on your need.
+
 SELECT
   sr.instance_hrid,
   sr.field,
