@@ -2,7 +2,8 @@
 --daily_appr_inv_control
 --written by Nancy Bolduc, revised for metadb by Sharon Markus and Ann Crowley
 
-/* This query provides the total amount of voucher_lines per external account number along with the approval dates. It ncludes manuals and transactions sent to accounting. The invoice status is hardcoed as 'Paid'.*/
+/* This query provides the total amount of voucher_lines per external account number along with the approval dates. 
+It includes manuals and transactions sent to accounting. The invoice status is hardcoded as 'Paid'.*/
 
 /* Change the lines below to filter or leave blank to return all results. Add details in '' for a specific filter.*/
 WITH parameters AS (
