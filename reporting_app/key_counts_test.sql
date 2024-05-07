@@ -1,4 +1,5 @@
 --key_counts_test.sql
+
 SELECT  
 		to_char (now()::timestamp,'mm/dd/yyyy hh:mi am') as date_time,	
 		'ldp_cornell' AS DATABASE, 	
