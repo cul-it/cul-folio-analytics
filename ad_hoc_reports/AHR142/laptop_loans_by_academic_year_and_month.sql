@@ -3,8 +3,8 @@
 --This query finds laptop loans by library and Academic Year, and breaks it down by month, type of loan (hourly or extended loan) and type of laptop (Dell or Mac).
 -- The academic year runs from August 1 through May 31. The query compares the most recent two years; Nestle library is excluded.
 --Query writer: Joanne Leary (jl41)
---Query reviewer: Vandana SHah (vp25)
---Date posted: 4/16/23
+--Query reviewer: Vandana Shah (vp25)
+--Date posted: 4/16/24
 
 WITH items AS (
 SELECT 
