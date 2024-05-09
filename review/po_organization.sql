@@ -116,25 +116,25 @@ COMMENT ON COLUMN po_organization.contact_first_name IS 'Contact First name for 
 
 COMMENT ON COLUMN po_organization.contact_last_name IS  'Contact Last name for the organization';
 
-COMMENT ON COLUMN po_organization.notes IS  'Notes about the organization';
+COMMENT ON COLUMN po_organization.notes IS  'Notes for this contact';
 
-COMMENT ON COLUMN po_organization.address_line_1 IS  'First address line of the organization';
+COMMENT ON COLUMN po_organization.address_line_1 IS  'First line of this address';
 
-COMMENT ON COLUMN po_organization.address_line_2 IS  'Second address line of the organization';
+COMMENT ON COLUMN po_organization.address_line_2 IS  'Second line of this address';
 
-COMMENT ON COLUMN po_organization.city IS  'City in which the organization is located';
+COMMENT ON COLUMN po_organization.city IS  'City for this address';
 
-COMMENT ON COLUMN po_organization.state_region IS  'State or Region in which the organization is located';
+COMMENT ON COLUMN po_organization.state_region IS  'State or Region for this address';
 
-COMMENT ON COLUMN po_organization.country IS  'Country in which the organization is located';
+COMMENT ON COLUMN po_organization.country IS  'Country for this address';
 
-COMMENT ON COLUMN po_organization.zip_code IS  'Zip Code in which the organization is located';
+COMMENT ON COLUMN po_organization.zip_code IS  'Zip Code for this address';
 
-COMMENT ON COLUMN po_organization.is_primary IS  'True if this is the primary organization.';
+COMMENT ON COLUMN po_organization.is_primary IS  'Used to set this address as primary for the organization.';
 
-COMMENT ON COLUMN po_organization.email_address IS  'Email address for the organization';
+COMMENT ON COLUMN po_organization.email_address IS  'Email address for the contact';
 
-COMMENT ON COLUMN po_organization.phone_number IS  'Phone number for the organization';
+COMMENT ON COLUMN po_organization.phone_number IS  'Phone number for the contact';
 
 COMMENT ON COLUMN po_organization.url IS  'URL of the organization';
 
