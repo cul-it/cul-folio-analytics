@@ -7,7 +7,7 @@
 
 DROP TABLE IF EXISTS po_instance;
 
-CREATE TABLE z_slm5.po_instance AS
+CREATE TABLE po_instance AS
 
 SELECT DISTINCT
 	purchase_order__t.manual_po::BOOLEAN,
