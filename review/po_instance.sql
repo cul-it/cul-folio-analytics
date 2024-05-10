@@ -1,3 +1,5 @@
+--NOTE: Need to verify whether or not to point to derived table po_lines_locations instead of extracting holdings id and locations id from JSON again
+
 -- metadb:table po_instance
 
 -- Create a derived table for inventory instances associated with purchase order lines. 
