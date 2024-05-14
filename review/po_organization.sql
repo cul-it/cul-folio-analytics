@@ -90,7 +90,7 @@ SELECT distinct
 
 FROM folio_organizations.organizations__t AS oo 
 	LEFT JOIN recs2 
-	ON oo.id = recs2.org_id
+	ON oo.id::UUID = recs2.org_id::UUID
 	
 	INNER JOIN folio_orders.purchase_order__t AS ppo -- join the organization_id to the vendor id in the po_purchase_orders table
 	ON oo.id::UUID = ppo.vendor::UUID
