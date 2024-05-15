@@ -16,7 +16,7 @@
 -- To get cumulative language items that include Voyager data going back to FY2000, use FY 2000 in the 
 -- fiscal year filter and change the COALESCE statment for fiscal year in the 
 -- WHERE clause on line 156 to  '>=' instead of '='
--- The results of this query are combined with the results of CR242 cjkt_language_by_fiscal_year to provide
+-- The results of this query are combined with the results of CR241 cjkt_language_by_fiscal_year to provide
 -- the CEAL Stats and the All Items reports needed by Asia Studies. The language field is changed to "non-CJKT" in the final reports to 
 -- show items within a given fiscal year (for CEAL) or acquired from a given fiscal year forward (for All Items) that have CJKT subjects, 
 -- but are not in CJKT languages. 
