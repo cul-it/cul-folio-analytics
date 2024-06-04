@@ -1,11 +1,12 @@
 --MCR216
---Ematerial Title (Instance Counts)
+--Unique Microform Title (Instance Counts)
 --LDP Query writer: Vandana Shah (vp25)
 --Query ported to Metadb by: Linda Miller (lm15)
 --Ported query reviewed by: Joanne Leary (jl41), Vandana Shah (vp25)
 --Date posted: 6/4/24
 
---This query provides counts of ematerials by format type. Formats are taken from 948 field, and if missing then taken from the stat code, and if both these fields are missing, formats are taken from the MARC format code. Titles with multiple codes are assigned based on the priority listed in the CASE clause.
+--This query provides counts of microform titles, by format type. Note that, because of how we filter for microforms, it also includes any motion picture films with '%film%' in their call numbers. 
+
 --This query is primarily used to get counts for annual CUL reporting.
 
 WITH marc_formats AS
