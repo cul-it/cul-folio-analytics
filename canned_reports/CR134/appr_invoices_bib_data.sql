@@ -15,6 +15,8 @@
 --Added fund name to ftie subquery and to main query.
 --12-19-23: Added fund 2352 to the CASE WHEN statements that select the correct finance group for funds that were merged into Area Studies from 2CUL in FY2024 
 --based on invoice payment date.
+--06-06-24 Added invoice_line_number to SELECT to distinguish invoice line payments that would otherwise be combined by DISTINCT as identical, 
+--which was reducing expenditure totals compared to the total expenditures shown in the ledger.
 
 WITH parameters AS (
     SELECT
@@ -191,6 +193,7 @@ SELECT distinct
        po.order_type,
        pol.order_format,
        ftie.invoice_date::date,
+       invl.invoice_line_number,
        inv.payment_date::DATE as invoice_payment_date,
        ftie.effective_transaction_amount/fq.fixed_quantity AS transaction_amount_per_qty,
        ftie.effective_transaction_amount,
@@ -265,6 +268,7 @@ GROUP BY
        po.order_type,
        pol.order_format,
        ftie.invoice_date::DATE,
+       invl.invoice_line_number,
        inv.payment_date::DATE,
        ftie.effective_transaction_amount/fq.fixed_quantity,
        ftie.effective_transaction_amount,
@@ -298,8 +302,4 @@ ORDER BY
         po.po_number,
         pol.po_line_number
 ;
-
-
-
-
 
