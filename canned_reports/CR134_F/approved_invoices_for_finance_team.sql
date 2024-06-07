@@ -2,9 +2,6 @@
 --This query provides the list of approved invoices within a date range along with ledger name, external account no, vendor name, 
 --vendor invoice no, invoice line description, invoice date, invoice payment date, order format, format name, purchase order line no,fund code, transaction type, transaction amount.
 --In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1 
---06-06-24 Added invoice_line_number to SELECT to distinguish invoice line payments that would otherwise be combined by DISTINCT as identical, 
---which was reducing expenditure totals compared to the total expenditures shown in the ledger.
-
 
 WITH parameters AS (
     SELECT
@@ -99,7 +96,6 @@ SELECT distinct
                         END AS payment_date_range,       
        pol.order_format,
        ftie.invoice_date::date,
-       invl.invoice_line_number,
        inv.payment_date::DATE as invoice_payment_date,
        ftie.effective_transaction_amount,
        ftie.transaction_type,
@@ -117,7 +113,7 @@ FROM
         finance_transaction_invoices_ext AS ftie
         LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id
         LEFT JOIN new_quantity AS fq ON invl.id = fq.invoice_line_id
-       LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
+        LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
         LEFT JOIN po_lines AS pol ON ftie.po_line_id = pol.id
         LEFT JOIN po_purchase_orders AS PO ON po.id = pol.purchase_order_id
         LEFT JOIN folio_reporting.instance_ext AS iext ON iext.instance_id = pol.instance_id
@@ -136,7 +132,6 @@ GROUP BY
        ftie.transaction_id,
        pol.order_format,
        ftie.invoice_date::DATE,
-       invl.invoice_line_number,
        inv.payment_date::DATE,
        ftie.effective_transaction_amount,
        ftie.transaction_type,
