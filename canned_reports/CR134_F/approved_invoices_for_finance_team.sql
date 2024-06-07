@@ -1,7 +1,11 @@
---CR134 Approved Invoices for FBO 
+--CR134_F Approved Invoices for FBO 
 --This query provides the list of approved invoices within a date range along with ledger name, external account no, vendor name, 
 --vendor invoice no, invoice line description, invoice date, invoice payment date, order format, format name, purchase order line no,fund code, transaction type, transaction amount.
 --In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1 
+--06-06-24 Added invoice_line_number to SELECT to distinguish invoice line payments that would otherwise be combined by DISTINCT as identical, 
+--which was reducing expenditure totals compared to the total expenditures shown in the ledger.
+
+
 WITH parameters AS (
     SELECT
         '' AS payment_date_start_date,--enter invoice payment start date and end date in YYYY-MM-DD format
@@ -95,6 +99,7 @@ SELECT distinct
                         END AS payment_date_range,       
        pol.order_format,
        ftie.invoice_date::date,
+       invl.invoice_line_number,
        inv.payment_date::DATE as invoice_payment_date,
        ftie.effective_transaction_amount,
        ftie.transaction_type,
@@ -126,10 +131,12 @@ WHERE
         AND ((ftie.finance_ledger_name = (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) = ''))
         AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = '')) 
         AND ((formatt.bib_format_display= (SELECT format_name FROM parameters)) OR ((SELECT format_name FROM parameters) = ''))    
- GROUP BY
-        ftie.transaction_id,
+ 
+GROUP BY
+       ftie.transaction_id,
        pol.order_format,
        ftie.invoice_date::DATE,
+       invl.invoice_line_number,
        inv.payment_date::DATE,
        ftie.effective_transaction_amount,
        ftie.transaction_type,
@@ -142,7 +149,8 @@ WHERE
        pol.po_line_number,      
        formatt.bib_format_display,        
        fq.fixed_quantity,       
-       ftie.external_account_no     
+       ftie.external_account_no  
+    
 ORDER BY 
         ftie.finance_ledger_name,
         ftie.effective_fund_code,
