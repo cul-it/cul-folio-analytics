@@ -1,0 +1,20 @@
+MCR183
+
+This query counts laptop circs and renewals by library, date, loan type, and laptop type (Mac or PC).  Also
+counts how many laptops were used on any given day.  Please note that until the end of the academic year 
+in 2022, Mann laptop loans were made through LibCal as well as FOLIO, and this report includes only 
+FOLIO counts. As of the end of the FY22 academic year, all Mann laptop loans are in FOLIO. 
+(see notes from annual data collection for more info.)
+
+ Changes from LDP query: 
+
+Replaced examples of libraries as some libraries don't have laptops.
+Added to the query description that it also includes renewal counts, and indicates how many different laptops were used on any given day.
+
+Updated to use Joanne Leary's new derived loans_renewals_dates table. Renewal counts still need to be summed.
+Had to move the loan material type up as renewals can be repeated and material type is not.
+
+This SQL will need to be updated as the new derived table is now temporarily in the local_shared schema until it is approved by the Reporting SIG. 
+Two additional field name changes:  instance_hrid instead of hrid. and item_effective... instead of effective...
+added distinct to count
+Added "other" as a possibility of laptop type
