@@ -1,10 +1,19 @@
 --CR204
 --missing_lost_claimed_returned
 
-WITH parameters AS (
-SELECT 
-''::VARCHAR AS owning_library_name_filter, -- Examples: Olin Library, Library Annex, etc. or leave blank for all libraries. See list of libraries at https://confluence.cornell.edu/display/folioreporting/Locations
-''::VARCHAR as item_status_filter -- enter one of: Missing, Aged to lost, Lost and paid, Declared lost, Claimed returned, Unavailable; or leave blank to get all statuses
+WITH parameters AS 
+(SELECT 
+'%%'::VARCHAR AS owning_library_name_filter -- Examples: Olin Library, Library Annex, etc. or leave blank for all libraries. See list of libraries at https://confluence.cornell.edu/display/folioreporting/Locations
+),
+
+field_300 AS 
+(SELECT 
+sm.instance_hrid,
+string_agg (DISTINCT sm.content,' | ') AS pagination_size
+
+FROM srs_marctab AS sm
+WHERE sm.field = '300'
+GROUP BY sm.instance_hrid 
 ),
 
 recs AS 
@@ -21,7 +30,7 @@ CASE WHEN ii.last_check_in__date_time IS NULL THEN NULL
 ELSE TO_CHAR (ii.last_check_in__date_time::TIMESTAMP, 'mm/dd/yyyy hh:mi am') END AS last_folio_check_in,
 MAX (TO_CHAR (cta.discharge_date::TIMESTAMP,'mm/dd/yyyy hh:mi am')) AS last_voyager_check_in,
 isp.name AS last_folio_check_in_service_point,
-STRING_AGG (DISTINCT srs."content",' | ') AS pagination_size,
+field_300.pagination_size,
 STRING_AGG (DISTINCT itemnotes.note,' | ') AS item_note,
 itemext.material_type_name,
 he.type_name,
@@ -55,12 +64,10 @@ ON ii.last_check_in__service_point_id = isp.id
 LEFT JOIN folio_reporting.item_notes AS itemnotes
 ON itemext.item_id = itemnotes.item_id
 
-LEFT JOIN srs_marctab AS srs 
-ON instext.instance_hrid = srs.instance_hrid
+LEFT JOIN field_300 --srs_marctab AS srs 
+ON instext.instance_hrid = field_300.instance_hrid
 
-WHERE (ll.library_name = (SELECT owning_library_name_filter FROM parameters) OR (SELECT owning_library_name_filter FROM parameters) = '')
-AND itemext.status_name SIMILAR TO '%(issing|ost|laim|navail)%'
-AND (srs.field = '300' OR srs.field IS NULL)
+WHERE itemext.status_name SIMILAR TO '%(issing|ost|laim|navail)%'
 
 GROUP BY 
 ll.library_name,
@@ -75,6 +82,7 @@ ii.copy_number,
 ii.barcode,
 instext.discovery_suppress,
 he.discovery_suppress,
+field_300.pagination_size,
 instext.instance_hrid,
 he.holdings_hrid,
 itemext.item_hrid,
@@ -156,10 +164,11 @@ ON cta.discharge_location = location.location_id
 LEFT JOIN loan2 
 ON recs.item_hrid = loan2.item_hrid
 
-WHERE recs.status_name = (SELECT item_status_filter FROM parameters) OR (SELECT item_status_filter FROM parameters) = '' 
+WHERE (recs.library_name ilike (SELECT owning_library_name_filter FROM parameters) OR (SELECT owning_library_name_filter FROM parameters) = '')
 
 ORDER BY library_name, permanent_location_name, effective_shelving_order COLLATE "C"
 ;
+
 
 
 
