@@ -1,10 +1,11 @@
 -- Lists title, patron group and department (where available) for items borrowed from other universities on Borrow Direct and Interlibrary Loan. Parameters include date range for the loans. 
-
+-- 6-7-24: updated to incorporate circ snapshot data
+ 
 WITH parameters AS (
     SELECT
         /* Choose a start and end date for the loans period */
-        '2021-07-01'::date AS start_date,
-        '2022-06-30'::date AS end_date
+        '2023-07-01'::date AS start_date,
+        '2024-06-30'::date AS end_date
         )
 SELECT 
        TO_CHAR (current_date::DATE,'mm/dd/yyyy') AS todays_date,
@@ -21,9 +22,9 @@ SELECT
        li.loan_policy_name,
        he.permanent_location_name,
        li.patron_group_name,
-       udu.department_name,
-       udu.department_code
-
+       coalesce (udu.department_name, cs.custom_fields__department) as department_name,
+       coalesce (udu.department_code, cs.department_code) as department_code
+ 
 FROM folio_reporting.loans_items AS li 
        LEFT JOIN folio_reporting.holdings_ext AS he 
        ON li.holdings_record_id = he.holdings_id
@@ -36,13 +37,16 @@ FROM folio_reporting.loans_items AS li
        
        LEFT JOIN folio_reporting.users_departments_unpacked AS udu 
        ON li.user_id = udu.user_id
-
-	WHERE
-		li.loan_date >= (SELECT start_date FROM parameters)
-    	AND li.loan_date < (SELECT end_date FROM parameters)
-       	AND (li.material_type_name like 'BD%' OR li.material_type_name like 'ILL%')
-       	AND (li.current_item_permanent_location_name LIKE 'Borr%' OR li.current_item_permanent_location_name LIKE 'Int%')
-       	AND (udu.department_ordinality = 1 OR udu.department_ordinality IS NULL)
+       
+       left join local_core.circ_snapshot4 cs 
+       on li.loan_id = cs.loan_id
+ 
+        WHERE
+                li.loan_date >= (SELECT start_date FROM parameters)
+        AND li.loan_date < (SELECT end_date FROM parameters)
+       AND (li.material_type_name like 'BD%' OR li.material_type_name like 'ILL%')
+       AND (li.current_item_permanent_location_name LIKE 'Borr%' OR li.current_item_permanent_location_name LIKE 'Int%')
+       AND (udu.department_ordinality = 1 OR udu.department_ordinality IS NULL)
        
 ORDER BY title, loan_date
 ;
