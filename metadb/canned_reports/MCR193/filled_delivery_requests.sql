@@ -37,7 +37,8 @@ SELECT DISTINCT
     date_part ('month',folio_derived.requests_items.request_date ::DATE) >'6' 
         THEN concat ('FY ', date_part ('year',folio_derived.requests_items.request_date::DATE) + 1) 
         ELSE concat ('FY ', date_part ('year',folio_derived.requests_items.request_date::DATE))
-        END as fiscal_year_of_request
+        END as fiscal_year_of_request,
+     count (distinct requests_items.request_id) AS number_of_requests
                 
     
      
