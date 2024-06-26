@@ -1,1 +1,15 @@
 MCR217
+Ematerial Title (instance) Counts
+
+This query provides counts of ematerials, by format type. Formats are taken from 948 field, and if missing then taken
+from the stat code, and if both these fields are missing, formats are taken from the MARC format code. Titles with 
+multiple codes are assiged based on the priority listed in the CASE clause.
+This query is primarily used to get counts for annual CUL reporting; figures are also posted on a Tableau dashboard.
+(This query has never removed titles on order.)
+
+Changes from LDP query:
+This query was re-written to: link by location code instead of location name; directly remove PDA/DDA not yet purchased; 
+run faster; make filtering more consistent/inclusive;  assign formats to e-resources with multiple format codes; prioritize 
+counting databases and journals over books (when the reverse was true earlier); reassign a few codes to different formats; 
+and add agg functions to the 948 and 899 subqueries. A few of these changes resulted in a significant decrease to the 
+number of databases, and a small increase in the number of  electronic serial titles. 
