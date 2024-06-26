@@ -108,6 +108,7 @@ GROUP BY
 )
 
 SELECT
+	TO_CHAR (CURRENT_DATE::date,'mm/dd/yyyy') AS todays_date,	
 	loc1.library_name,
 	loc1.effective_location_name,
 	loc1.title,
