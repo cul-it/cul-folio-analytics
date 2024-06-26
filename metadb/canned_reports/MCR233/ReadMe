@@ -1,2 +1,29 @@
 MCR233
 adc_location_translation_table.sql
+
+CR233 and MCR233 is used to help update the lm_adc_location_translation_table.  It pulls location code, location name, 
+and shelving location names data from FOLIO’s inventory_locations and inventory_libraries tables, and corresponding 
+data from the lm_adc_location_translation table. In Excel, one can then ensure the translation table data matches that 
+from the FOLIO tables. Any needed updates can be made to the translation table, either through manual updates, or 
+through reloading the translation table using data from this pull (see https://confluence.cornell.edu/x/yXSZGQ for info 
+on uploading files). Any updates should also be made to CORE’s list of locations on Confluence:  
+https://confluence.cornell.edu/x/yXSZGQ . These updates are Assessment & Planning’s (A&P’s) responsibility;  A&P checks 
+locations quarterly. 
+
+The query indicates which fields are to be retained for the translation table.
+The lm_adc_location_translation_table will not be renamed with the date when updated to avoid having to update the 
+table name in queries. Instead the update date is included in the table itself. Only the latest version of the table 
+will be in shared schemas.
+
+What to look for in the Excel output:
+--are there location_create or location_updated dates after the last translation table check?
+--are there any blanks in the ADC location translation fields?
+--compare the location codes (in fields E and F), location names (G and H), and shelving location names (K and L)
+   to see if they are the same. You can use the Excel EXACT function, e.g., "=EXACT(E2,F2)." If exact, 
+   it will output "TRUE", if not "FALSE." Do the FALSES show blanks or textual differences?*
+--on 3/4/24, there were 200 locations.
+
+
+*We have decided not to add an accent to Nestle's name as it doesn't seem to work to import it to FOLIO even
+if you follow these instructions: To add accent for Nestle: Insert; Symbols (on right); Symbol; scroll to letter 
+needed (character code 00E9); click on the letter; click on insert; click on close.
