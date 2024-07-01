@@ -1,7 +1,6 @@
 -- MCR404
 -- update_circsnapshot4_metadb.sql
 -- Last updated: 7/1/24
--- Written by Joanne Leary. Reviewed and tested by Sharon Markus.
 -- The update_circ_snapshot4_metadb.sql query
 -- runs the following code on Metadb, which uses the INSERT function to get the new checkouts 
 -- and add them to the sm_local_shared.circsnapshot4 table daily automatically. 
@@ -10,7 +9,7 @@
  
 -- 6-27-24: This query creates the "insert into" portion of the circ_snapshot4 query
 
-INSERT INTO local_core.sm_circ_snapshot4
+INSERT INTO local_shared.sm_circ_snapshot4
 
 -- 1. In order to get to the department code in the departments__t table, we need to extract the department ID from the jsonb array in the users__ table
 
@@ -61,10 +60,9 @@ FROM
 WHERE
    loan__t.id NOT IN 
 	   (SELECT cs4.loan_id::UUID
-	   FROM local_core.sm_circ_snapshot4 as cs4
+	   FROM local_shared.sm_circ_snapshot4 as cs4
 	   )
    AND loan__t.user_id is not null 
    AND users__.__current = true
    ;
    
-  
