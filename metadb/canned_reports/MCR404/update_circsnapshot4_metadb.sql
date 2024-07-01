@@ -3,7 +3,7 @@
 -- Last updated: 7/1/24
 -- The update_circ_snapshot4_metadb.sql query
 -- runs the following code on Metadb, which uses the INSERT function to get the new checkouts 
--- and add them to the sm_local_shared.circsnapshot4 table daily automatically. 
+-- and add them to the local_shared.sm_circsnapshot4 table daily automatically. 
 -- The sm_local_shared.circsnapshot4 table is used in circulation queries to generate reports 
 -- that need certain demographic data that is removed everyday from circulation data in the FOLIO system.
  
