@@ -1,4 +1,4 @@
--- MCR
+-- MCR404
 -- update_circsnapshot4_metadb.sql
 -- Last updated: 7/1/24
 -- Written by Joanne Leary. Reviewed and tested by Sharon Markus.
