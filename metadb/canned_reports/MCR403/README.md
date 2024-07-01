@@ -1,6 +1,7 @@
 MCR403 Readme
+<p>
 create_circsnapshot4_metadb.sql
-
+</p>
 The first step in the process is to create the circsnapshot4_metadb.sql table on Metadb, which is where data updates 
 will be appended and stored. Run the create_circsnapshot4_metadb.sql query to create the circsnapshot4 table in the 
 local_shared schema on Metadb. 
