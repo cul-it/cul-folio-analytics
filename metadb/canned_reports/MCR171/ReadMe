@@ -1,0 +1,9 @@
+MCR171 Borrow Direct and ILL loans to Cornell patrons - selectors report. 
+
+Finds the items borrowed through ILL and BD, shows the patron group and dept when available, and shows the number of days on loan.
+Lists title, patron group and department (where available) for items borrowed from other universities on Borrow Direct and Interlibrary Loan. Parameters include date range for the loans. 
+
+6-24-24: replaced item location criteria to holdings location criteria
+	
+IMP: added a join to local_shared.circ_snapshot4 table (in anticipation of having it in Matadb)
+7-3-24: updated query to point to sm_circ_snaphot4 (updated table name) in local_shared directory
