@@ -1,0 +1,14 @@
+#MCR202
+##This query finds purchase requests by fund code, location, library or fiscal year AND shows requester information, number of days FROM request DATE to receipt DATE, AND number of loans for that title (cannot get circulatiON informatiON at item level)
+
+#Changes from the LDP query:
++Updated query to point to po_instance table in folio_reporting schema
++Changed the requester condition to exclude variations of "na"
++Changed class number to TRIM the TRAILING dot AND cast result AS NUMERIC
++Added invoice_line_number, invoice_status, quantity AND invoice_payment_date to final subquery
++Changed total paid to remove the "sum" ON main.invoice_line_total (was erroneously increasing the paid amount)
++Got rid of "NUMERIC" casting ON lc_class_number (was making query fail when there were errors in call number formatting)
++Added library name AND location name to the final query (left out by mistake)
++Added fiscal year filter
++Added the derivations for po_instance AND instance_subjects AS subqueries, because those derived tables are currently incorrect in Metadb (AS of 7-15-24)
+
