@@ -6,10 +6,10 @@ This query provides the list of approved invoices within a date range along with
 <p>
   
 ## Updates:
---6-28-23: updated instance_subject_extract subquery to work with Orchid release
---8-26-23: added LC Class and LC Classification from the 050$a field and added it to parameters
---8-29-23: added LC class number and updated the source table for formats to vs_folio_physical_material_formats;
---added wildcards to format name, expense class name and transaction ledger name and changed the Where statements to "ilike"
+<br>--6-28-23: updated instance_subject_extract subquery to work with Orchid release
+<br>--8-26-23: added LC Class and LC Classification from the 050$a field and added it to parameters
+<br>--8-29-23: added LC class number and updated the source table for formats to vs_folio_physical_material_formats;
+<br>--added wildcards to format name, expense class name and transaction ledger name and changed the Where statements to "ilike"
 --8-30-23: reviewed by Jean Pajerek
 --9-11-23: changed instance_subject_extract subquery to point to folio_reporting.instance_subjects; removed pol_holdings_id subquery (not needed)
 --9-12-23: created a Case When statement to assign the correct finance group name to those 2CUL funds that merged into Area Studies in FY2024
