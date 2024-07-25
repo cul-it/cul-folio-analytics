@@ -1,0 +1,6 @@
+MCR175
+Split fund payments showing all finance groups
+
+-- The derived table invoice_lines_fund_distributions can be used to get count of the invoice line ids and the count of the fund distribution ids
+-- The purchase order line instance id can be linked directly to the inventory_instances table (no need to extract it separately)
+
