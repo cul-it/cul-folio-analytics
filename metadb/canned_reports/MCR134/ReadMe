@@ -1,28 +1,23 @@
---CR134 
---Approved Invoices with bib data
---This query provides the list of approved invoices within a date range along with vendor name, finance group name,
---vendor invoice number, fund details, purchase order details, language, instance subject, fund type, expense class
---LC classification, LC class, LC class number, and bibliographic format.
---In cases WHERE the quantity was incorrectly entered as zero, this query replaces zero with 1
---6-28-23: updated instance_subject_extract subquery to work with Orchid release
---8-26-23: added LC Class and LC Classification from the 050$a field and added it to parameters
---8-29-23: added LC class number and updated the source table for formats to vs_folio_physical_material_formats;
---added wildcards to format name, expense class name and transaction ledger name and changed the Where statements to "ilike"
---8-30-23: reviewed by Jean Pajerek
---9-11-23: changed instance_subject_extract subquery to point to folio_reporting.instance_subjects; removed pol_holdings_id subquery (not needed)
---9-12-23: created a Case When statement to assign the correct finance group name to those 2CUL funds that merged into Area Studies in FY2024
---9-13-23: reviewed by Jean Pajerek, Vandana Shah, Ann Crowley, and Sharon Beltaine
---9-14-23: corrected the WHERE expression for finance_expense_class to work with wildcard and Null entries (line 246). Ditto other Where statements for parameters with wildcards or null entries.
---Added fund name to ftie subquery and to main query.
---12-19-23: Added fund 2352 to the CASE WHEN statements that SELECT the correct finance group for funds that were merged into Area Studies from 2CUL in FY2024 
---based on invoice payment date.
---03-04-24: Changed json extract for all locations to get them from folio_derived.po_lines_locations since it will ran before other tables that use json extract
--- 6-14-24: in locations subquery, added "distinct" and changed to an inner join to po_line__t table
-	-- corrected fund code list in Case When statement to include fund 2352
-	-- commented out all the filters in the Where clause at the end
-	-- updated subjects subquery to use the corrected code for the instance_subjects derived table
-	-- updated the instance_languages Where clause condition to (lang.language_ordinality = 1 OR lang.instance_hrid ISNULL)
-	-- added "Approved" to the invoice status criteria
--- 6-17-24: added invoice status (inv.status AS invoice_status) to SELECT clause in order to make it display in the query results
-	-- removed the "or-is-blank" component from all the WHERE clause statements
--- 7-17-24: updated fund sort for Course Reserves (7311, 7342, 7370, p7358) - changed to Interdisciplinary finance group for FY2025 
+# Approved invoices with bib data  
+<p>
+  
+## Brief description:
+This query provides the list of approved invoices within a date range along with vendor name, finance group name, vendor invoice number, fund details, purchase order details, language, instance subject, LC classification, LC class, LC class number, and bibliographic format. 
+<p>
+  
+## Updates:
+<br>--6-28-23: updated instance_subject_extract subquery to work with Orchid release
+<br>--8-26-23: added LC Class and LC Classification from the 050$a field and added it to parameters
+<br>--8-29-23: added LC class number and updated the source table for formats to vs_folio_physical_material_formats;
+<br>--added wildcards to format name, expense class name and transaction ledger name and changed the Where statements to "ilike"
+<br>--8-30-23: reviewed by Jean Pajerek
+<br>--9-11-23: changed instance_subject_extract subquery to point to folio_reporting.instance_subjects; removed pol_holdings_id subquery (not needed)
+<br>--9-12-23: created a Case When statement to assign the correct finance group name to those 2CUL funds that merged into Area Studies in FY2024
+<br>--9-13-23: reviewed by Jean Pajerek, Vandana Shah, Ann Crowley, and Sharon Beltaine
+<br>--9-14-23: corrected the WHERE expression for finance_expense_class to work with wildcard and Null entries (line 246). Ditto other Where statements for parameters with wildcards or null entries.
+<br>--Added fund name to ftie subquery and to main query.
+<br>--12-19-23: Added fund 2352 to the CASE WHEN statements that select the correct finance group for funds that were merged into Area Studies from 2CUL in FY2024 based on invoice payment date.
+<br>--06-06-24 Added invoice_line_number to SELECT to distinguish invoice line payments that would otherwise be combined by DISTINCT as identical, which was reducing expenditure totals compared to the total expenditures shown in the ledger.
+<br>-- 6-14-24: in locations subquery, added "distinct" 
+<br>-- 7-25-24: updated fund code sort for Course Reserve funds, which were changed to "Interdisciplinary" starting with FY2025
+<br>
