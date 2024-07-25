@@ -1,7 +1,14 @@
---CR157
+-- CR157 (LDP) - revised 7-23-24
+-- added team filter to parameters and updated Where clauses
+-- deleted the fiscal_year_code Where statement from expense class subquery; reference to parameter values are all at the end of the query
+-- updated the "order by" clause to include fiscal year
+
 WITH parameters AS (
     SELECT
-        'FY2023' AS fiscal_year_code),
+        '' AS fiscal_year_code,
+        '' as team_filter
+        ),
+        
 expense_class AS    
 (SELECT       
 	fti.effective_fund_code,
@@ -9,17 +16,21 @@ expense_class AS
         fec.name AS expense_class_name,
         ffy.code AS expense_class_fiscal_year_code,
         sum(case when ft.transaction_type = 'Credit' THEN fti.transaction_amount*-1 ELSE fti.transaction_amount END) as amount_spent_in_expense_class
-FROM folio_reporting.finance_transaction_invoices AS fti 
-        LEFT JOIN finance_transactions AS ft ON fti.transaction_id = ft.id 
-        LEFT JOIN finance_expense_classes AS fec ON fti.transaction_expense_class_id = fec.id
-        LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fti.transaction_fiscal_year_id   
-WHERE ffy.code = (SELECT fiscal_year_code FROM parameters)
-GROUP BY 
-        fti.effective_fund_code,
-        fti.effective_fund_name,
-        fec.name,
-        ffy.code
+        
+	FROM folio_reporting.finance_transaction_invoices AS fti 
+	        LEFT JOIN finance_transactions AS ft ON fti.transaction_id = ft.id 
+	        LEFT JOIN finance_expense_classes AS fec ON fti.transaction_expense_class_id = fec.id
+	        LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fti.transaction_fiscal_year_id
+	        
+	WHERE ((ffy.code = (SELECT fiscal_year_code FROM parameters) or (select fiscal_year_code from parameters) = ''))
+	
+	GROUP BY 
+	        fti.effective_fund_code,
+	        fti.effective_fund_name,
+	        fec.name,
+	        ffy.code
 )
+
 SELECT 
         to_char(current_date::DATE - 1,'mm/dd/yyyy') AS as_of_yesterdays_date,
         fgffy.fiscal_year_id,
@@ -31,13 +42,13 @@ SELECT
         ff.name AS finance_funds_name,
         ff.description,
         COALESCE (fb.net_transfers,0) AS net_transfers,
-	(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) AS total_funding,
-	COALESCE (fb.expenditures,0) AS expenditures,
-	COALESCE (fb.encumbered,0) AS encumbered,
-	COALESCE (fb.awaiting_payment,0) AS awaiting_payment,
-	(COALESCE (fb.encumbered,0)+COALESCE (fb.awaiting_payment,0)+COALESCE (fb.expenditures,0)) AS unavailable,-- Total of amount Encumbered, Awaiting Payment and Expended
-	(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) - COALESCE (fb.expenditures,0) AS cash_balance,
-	(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) - COALESCE (fb.encumbered,0) - COALESCE (fb.awaiting_payment,0) - COALESCE (fb.expenditures,0) AS available_balance,
+		(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) AS total_funding,
+		COALESCE (fb.expenditures,0) AS expenditures,
+		COALESCE (fb.encumbered,0) AS encumbered,
+		COALESCE (fb.awaiting_payment,0) AS awaiting_payment,
+		(COALESCE (fb.encumbered,0)+COALESCE (fb.awaiting_payment,0)+COALESCE (fb.expenditures,0)) AS unavailable,-- Total of amount Encumbered, Awaiting Payment and Expended
+		(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) - COALESCE (fb.expenditures,0) AS cash_balance,
+		(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)-COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) - COALESCE (fb.encumbered,0) - COALESCE (fb.awaiting_payment,0) - COALESCE (fb.expenditures,0) AS available_balance,
         ec.expense_class_name,
         ec.amount_spent_in_expense_class, --This amount includes amount Expended and Awaiting Payment
         CASE WHEN 
@@ -54,7 +65,9 @@ FROM
        LEFT JOIN finance_fund_types AS fft ON ff.fund_type_id = fft.id
        LEFT JOIN expense_class AS ec ON ff.code = ec.effective_fund_code     
 WHERE 
-	ffy.code = (SELECT fiscal_year_code FROM parameters)
+	((ffy.code = (SELECT fiscal_year_code FROM parameters) OR (select fiscal_year_code from parameters) = ''))
+	AND ((fg.name = (select team_filter from parameters) OR (select team_filter from parameters) =''))
+	
 ORDER BY 
-	team, finance_funds_code, finance_funds_name, expense_class_name
+	fiscal_year, team, finance_funds_code, finance_funds_name, expense_class_name
 ;
