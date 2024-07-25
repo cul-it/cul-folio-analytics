@@ -1,5 +1,5 @@
 --CR134 
--- Approved Invoices with bib data
+--Approved Invoices with bib data
 --This query provides the list of approved invoices within a date range along with vendor name, finance group name,
 --vendor invoice number, fund details, purchase order details, language, instance subject, fund type, expense class
 --LC classification, LC class, LC class number, and bibliographic format.
