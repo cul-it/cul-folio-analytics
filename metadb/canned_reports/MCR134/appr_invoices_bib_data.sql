@@ -8,13 +8,6 @@
 --LC classification, LC class, LC class number, and bibliographic format.
 --In cases WHERE the quantity was incorrectly entered as zero, this query replaces zero with 1.
 
--- INSTRUCTIONS: this query finds all transactions meeting the criteria entered in the parameters section below. 
-	-- To find transactions meeting specific parameters, enter the values desired inside the green single quote marks
-	-- In the WHERE clause (near the bottom of the query) remove the double-dashes at the beginning of the lines corresponding to the filters that were filled in. 
-		-- For example, if you filled in a fiscal year and a fund code in the parameters section, remove the double-dashes from 
-		-- "-- AND ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)" and from "-- AND ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)"
-	-- To get all data (all fiscal years, ledgers, funds, etc.) leave the parameters blank (as-is)
-
 WITH parameters AS (
     SELECT
         '' AS payment_date_start_date,--enter invoice payment start date and end date in YYYY-MM-DD format
@@ -65,20 +58,6 @@ instance_subject_extract AS ( -- gets the primary subject from the instance_subj
 	WHERE s.ordinality = 1
 ),
 
-/*locations AS ( -- gets the location name using the folio_orders.po_line__ TABLE
-    SELECT distinct
-        pol.id AS pol_id,   
-        pll.pol_loc_qty,
-        pll.pol_loc_qty_elec,
-        pll.pol_loc_qty_phys,
-        pll.pol_location_id,
-        pll.pol_location_name,
-        pll.pol_location_source
-    FROM
-    folio_orders.po_line__t AS pol
-    INNER JOIN folio_derived.po_lines_locations AS pll ON pol.id = pll.pol_id
-),*/
-
 finance_transaction_invoices_ext AS ( -- gets details of the finance transactions and converts Credits to negative values
     SELECT
         fti.transaction_id AS transaction_id,    
@@ -111,7 +90,7 @@ finance_transaction_invoices_ext AS ( -- gets details of the finance transaction
     LEFT JOIN folio_finance.ledger__t AS fl ON ff.ledger_id = fl.id
 ),
 
-fund_fiscal_year_group AS ( -- associates the fund with the finance group and fiscal YEAR
+fund_fiscal_year_group AS ( -- associates the fund with the finance group and fiscal year
     SELECT
        FGFFY.id AS group_fund_fiscal_year_id,
        FG.name AS finance_group_name,
@@ -138,7 +117,7 @@ SELECT
      FROM folio_invoice.invoice_lines__t
 )
 
-SELECT 
+SELECT 	-- combines all the information from above subqueries and refers to the values entered in the parameters
   DISTINCT current_date AS current_date,         
      CASE WHEN
         ((SELECT payment_date_start_date::varchar
@@ -151,9 +130,9 @@ SELECT
          (SELECT payment_date_end_date::varchar
           FROM parameters)
           END AS payment_date_range,     
-    replace(replace (iext.title, chr(13), ''),chr(10),'') AS instance_title,--updated code to get rid of carriage returns
+    replace(replace (iext.title, chr(13), ''),chr(10),'') AS instance_title,
     iext.instance_hrid,
-    string_agg (distinct po_lines_locations.pol_location_name,' | ') as location_name,--STRING_AGG (distinct locations.pol_location_name,' | ') as location_name,
+    string_agg (distinct po_lines_locations.pol_location_name,' | ') as location_name,
     po.order_type,
     pol.order_format,
     ftie.invoice_date::date,
@@ -165,11 +144,11 @@ SELECT
     inv.vendor_invoice_no,
     invl.invoice_line_number,
     inv.status as invoice_status,
-    replace(replace (invl.description, chr(13), ''),chr(10),'') AS invoice_line_description,--updated code to get rid of carriage returns
-    replace(replace (invl.comment, chr(13), ''),chr(10),'') AS invoice_line_comment,--updated code to get rid of carriage returns
+    replace(replace (invl.description, chr(13), ''),chr(10),'') AS invoice_line_description,
+    replace(replace (invl.comment, chr(13), ''),chr(10),'') AS invoice_line_comment,
     ftie.finance_ledger_name,
     ftie.fiscal_year_code AS transaction_fiscal_year_code,
-    CASE -- selects the correct finance group for funds that were merged into Area Studies from 2CUL in FY2024, based on invoice payment date
+    CASE -- selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
         WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
         WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
         WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
@@ -182,12 +161,12 @@ SELECT
     po.po_number,
     pol.po_line_number,    
     formatt.bib_format_display AS format_name,      
-    inssub.subjects AS instance_subject, -- This IS the subject that is first on the list.
-    lang.instance_language AS LANGUAGE, -- old "language" This IS the language that is first on the list.
+    inssub.subjects AS instance_subject, 
+    lang.instance_language AS LANGUAGE, 
     string_agg (distinct field050.lc_classification,' | ') as lc_classification,
     string_agg (distinct field050.lc_class,' | ') as lc_class,
     string_agg (distinct field050.lc_class_number,' | ') as lc_class_number,
-    replace(replace (pol.title_or_package, chr(13), ''),chr(10),'') AS po_line_title_or_package,--updated code to get rid of carriage returns
+    replace(replace (pol.title_or_package, chr(13), ''),chr(10),'') AS po_line_title_or_package,
     fq.fixed_quantity AS quantity,     
     ftie.external_account_no
 FROM
@@ -205,30 +184,31 @@ FROM
     LEFT JOIN format_extract AS formatt ON pol.instance_id::UUID = formatt.instance_id
     LEFT JOIN folio_derived.po_lines_locations on ftie.po_line_id::UUID = po_lines_locations.pol_id::UUID --locations on ftie.po_line_id ::uuid = locations.pol_id::uuid
     LEFT JOIN folio_finance.expense_class__t AS fec ON fec.id = ftie.expense_class
-    
+ 
 WHERE
+        ((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
+        AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
+        AND inv.status in ('Paid','Approved')
+        AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
+        AND ((ftie.fund_type_name = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
+        AND ((CASE
+                 WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') 
+                    AND inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
+                 WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') 
+                    AND inv.payment_date::date <'2023-07-01' THEN '2CUL'
+                 WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
+        		 WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date <'2024-07-01' THEN 'Course Reserves'
+                 ELSE ffyg.finance_group_name end) = (select transaction_finance_group_name from parameters) 
+                    OR (SELECT transaction_finance_group_name FROM parameters) = '')
+        AND ((ftie.finance_ledger_name ilike (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) ilike '%%'))
+        AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
+        AND ((po.order_type = (SELECT order_type_filter FROM parameters)) OR ((SELECT order_type_filter FROM parameters) = ''))
+        AND ((po.po_number = (SELECT po_number FROM parameters)) OR ((SELECT po_number FROM parameters) = ''))
+        AND ((fec.name ilike (SELECT expense_class FROM parameters) or (SELECT expense_class FROM parameters) ilike '%%' or (SELECT expense_class FROM parameters) is null))
+        AND (lang.language_ordinality = 1 OR lang.language_ordinality ISNULL)
+        AND ((formatt.bib_format_display ilike (SELECT format_name FROM parameters) OR (SELECT format_name FROM parameters) ilike '%%' or (SELECT format_name FROM parameters) is null))
+        AND ((field050.lc_class ilike (SELECT lc_class_filter FROM parameters) OR (SELECT lc_class_filter FROM parameters) ='' or (SELECT lc_class_filter FROM parameters) is null))
 
-	inv.status in ('Paid','Approved')
-	AND (lang.language_ordinality = 1 OR lang.language_ordinality ISNULL)
-	
-        --AND inv.payment_date::DATE >= (SELECT payment_date_start_date FROM parameters)::DATE
-        --AND inv.payment_date::DATE <= (SELECT payment_date_end_date FROM parameters)::DATE           
-        --AND ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)
-        --AND ftie.fund_type_name = (SELECT fund_type FROM parameters)
-        --AND CASE
-            --WHEN ftie.effective_fund_code in ('2616','2310','2342', '2352','2410','2411','2440','p2350','p2450','p2452','p2658') AND inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
-            --WHEN ftie.effective_fund_code in ('2616','2310','2342', '2352','2410','2411','2440','p2350','p2450','p2452','p2658') AND inv.payment_date::date <'2023-07-01' THEN '2CUL'
-            --WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
-        	--WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date <'2024-07-01' THEN 'Course Reserves'
-		--ELSE ffyg.finance_group_name end) = (SELECT transaction_finance_group_name from parameters)
-        --AND ftie.finance_ledger_name ilike (SELECT transaction_ledger_name FROM parameters)
-        --AND ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)
-        --AND po.order_type = (SELECT order_type_filter FROM parameters)
-        --AND po.po_number = (SELECT po_number FROM parameters)
-        --AND fec.name ilike (SELECT expense_class FROM parameters)            
-        --AND formatt.bib_format_display ilike (SELECT format_name FROM parameters)
-        --AND field050.lc_class ilike (SELECT lc_class_filter FROM parameters)
-	
 GROUP BY
        ftie.transaction_id,
        iext.title,
