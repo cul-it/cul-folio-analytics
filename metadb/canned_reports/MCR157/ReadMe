@@ -1,3 +1,4 @@
 -- MCR157 - funds and teams with expense class 
+--This query provides a detailed current date report of funds and teams with amounts spent, encumbered, and remaining.
 -- added team filter parameter and updated Where statements at the end
 -- deleted the Where statement from expense_class parameter, because it was slowing down the query tremendously
