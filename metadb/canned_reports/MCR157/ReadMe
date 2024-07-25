@@ -1,0 +1,3 @@
+-- MCR157 - funds and teams with expense class 
+-- added team filter parameter and updated Where statements at the end
+-- deleted the Where statement from expense_class parameter, because it was slowing down the query tremendously
