@@ -1,10 +1,6 @@
--- CR195 - Expense transfer
--- This query is a customization of CR-134 (paid invoices with bib data) for the purpose of identifying expenditures 
--- that can be transferred from unrestricted funds to restricted funds.
--- 7-19-23: updated query to account for changes in subject extraction
--- 12-27-23: updated query for 2CUL funds that were switched into Area Studies fund group in FY2024; added fund 2352
--- 1-5-24: changed the subject extracts to use the instance_subjects derived table; aggregated subjects in main query rather than the subquery
--- written by Joanne Leary; reviewed and tested by Sharon Markus
+-- CR195
+-- Expense transfer
+-- 7-29-24: updated the fund sorting statement for Course Reserve funds folded into Interdisciplinary
 
 WITH parameters AS (
 
@@ -169,11 +165,13 @@ main as
        REPLACE (REPLACE (iext.title, chr(13), ''),chr(10),'') AS instance_title,
        iext.instance_hrid,
        
-       CASE -- selects the correct finance group for funds that were merged into Area Studies from 2CUL in FY2024, based on invoice payment date
-          WHEN ftie.effective_fund_code IN ('2616','2310','2342','2410','2411','2440','p2350','p2450','p2452','p2658','2352') AND inv.payment_date::DATE >='2023-07-01' THEN 'Area Studies'
-          WHEN ftie.effective_fund_code IN ('2616','2310','2342','2410','2411','2440','p2350','p2450','p2452','p2658','2352') AND inv.payment_date::DATE <'2023-07-01' THEN '2CUL'
-          ELSE ffyg.finance_group_name END AS finance_group_name,
-      
+       CASE -- selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
+	        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
+	        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
+	        WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
+	        WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date <'2024-07-01' THEN 'Course Reserves'
+	        ELSE ffyg.finance_group_name END AS finance_group_name,
+
        ftie.fund_name,
        ftie.effective_fund_code,
         ' ' AS transfer_to_fund,
@@ -238,10 +236,14 @@ WHERE
         AND inv.status LIKE 'Paid'
         AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
         AND ((ftie.fund_type_name = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
-        AND ((CASE
-                 WHEN ftie.effective_fund_code IN ('2616','2310','2342','2410','2411','2440','p2350','p2450','p2452','p2658','2352') AND inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
-                 WHEN ftie.effective_fund_code IN ('2616','2310','2342','2410','2411','2440','p2350','p2450','p2452','p2658','2352') AND inv.payment_date::date <'2023-07-01' THEN '2CUL'
-                 ELSE ffyg.finance_group_name END) = (SELECT transaction_finance_group_name FROM parameters) OR (SELECT transaction_finance_group_name FROM parameters) = '')
+        
+        and ((CASE -- selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
+	        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
+	        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
+	        WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
+	        WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date <'2024-07-01' THEN 'Course Reserves'
+	        ELSE ffyg.finance_group_name end) = (SELECT transaction_finance_group_name FROM parameters) OR (SELECT transaction_finance_group_name FROM parameters) = '')
+                 
         AND ((ftie.finance_ledger_name ILIKE (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) ILIKE '%%'))
         AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
         AND ((po.order_type = (SELECT order_type_filter FROM parameters)) OR ((SELECT order_type_filter FROM parameters) = ''))
@@ -350,6 +352,7 @@ SELECT -- (this is to select fields from the preceding subquery and order them a
     main.po_number,
     main.po_line_number	
 ;
+
 
 
 
