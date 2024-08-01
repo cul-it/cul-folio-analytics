@@ -3,7 +3,7 @@
 --This query was requested by Adam Chandler to help acquisitions staff with finding the contact information for vendors.
 --Note from Joanne Leary: 
 --90%+ of the “organizations” do not have contact information in Folio, and the “po_organizations” derived table is totally wrong, because it matches on the wrong id’s. (I have noted this on the “known problems” spreadsheet.) This query finds whatever information is available, and shows blanks when there is no contact information available. Contact information includes the organization’s name, the “alias” (a mysterious code that we see in a lot of instance records), the contact’s name, phone #, email, physical mailing address and website. Very few entries have complete information. Most entries have none at all.
---Query writer: Joanne LEary (jl41)
+--Query writer: Joanne Leary (jl41)
 --Query reviewer: Vandana Shah(vp25)
 --Date posted: 4/16/24
 
