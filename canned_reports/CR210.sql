@@ -3,9 +3,9 @@
 --Query writer: Joanne Leary (jl41)
 --Query reviewer: Vandana Shah (vp25)
 --Date posted: 5/16/2023
---This query is specififcally for selectors and it shows Missing and Lost items with different fields included that are useful in making replacement decisions. 
+--This query is specifically for selectors and it shows Missing and Lost items with different fields included that are useful in making replacement decisions. 
 --It is more extensive than the 'lost and missing' circulation query. This query takes about 7 minutes to run.
---NOTE: library naem and item status are required filters. DO NOT LEAVE BLANK. 
+--NOTE: library name and item status are required filters. DO NOT LEAVE BLANK. 
 
 
 
