@@ -6,18 +6,6 @@
 --The most_recent_patron_group field determines what patron group an item 
 --was assigned to most recently, which is important for assignments to the 
 --Borrow Direct and Interlibrary Loan patron groups, which change frequently
---8-3-24: updated query to put the contributors and most recent patron group subqueries at the end (so they use the previously found records in "recs" to get the data, which greatly speeds up the query)
-	-- fixed the Where statements that refers to parameters (parentheses got screwed up); added wildcards to the Library name filter
-	-- added item_status_date
-	-- shortened the "size" sort and "in process" exclusions to use just the holdings call number components
-	-- added the item notes (aggregated) to the "recs" query
-	-- added the permanent, temporary and effective locations for the holdings and item call numbers to help explain the strange results appearing on the list
-	-- added a statement at the end to fix the carriage returns in call numbers (separate field, "fixed call number")
---8-9-24: updated query to remove some filters
-    --commented out material type name in WHERE filter 
-    --commented out mode_of_issuance_name in WHERE filter
-    --replaced he.permanent_location_name with itemext.permanent_location_name in the 
-       --WHERE statement for the owning library name parameter filter
 
 WITH parameters AS (
     SELECT 
