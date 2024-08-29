@@ -1,2 +1,12 @@
 MCR172
 ILL/BD Items lent to other libraries (CUL is the lender)
+
+This query provides a list of items owned by CUL which have been loaned to other universities on BD and ILL.
+Query writer: Joanne Leary (jl41)
+Posted on: 6/24/24; revised 8-28-24
+ 8-28-24: added date of publication and year of publication (extracted from the date of publication)
+	-- added loan_date_range; removed loan_date to prevent duplicate results due to double checkouts during processing
+	-- included loan_year (extracted from loan_date)  
+	-- added LC class AND LC class number; inserted CASE WHEN statement to get LC class FROM Library of Congress classification call numbers only
+	-- added item__t table to get the effective_shelving_order and sorted by effective shelving order
+	-- added enumeration, chronology and copy number to effective call number
