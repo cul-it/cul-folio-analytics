@@ -4,7 +4,7 @@
 --This query was written and converted to metadb by Sharon Markus and Joanne Leary
 --This query counts instances, holdings, items, loans, srs marctab instances, 
 --srs marctab records with "001" fields, srs marctab records with "999" fields 
---that include "i" subfields, and srs record instances on the LDP Production database. 
+--that include "i" subfields, and srs record instances on the Metadb database. 
 --If srs_marctab_001 and 999i counts are equal and within about 1,000 records of the count 
 --for SOURCE=MARC in the FOLIO Inventory application, then srs_marctab counts are acceptable.
 
