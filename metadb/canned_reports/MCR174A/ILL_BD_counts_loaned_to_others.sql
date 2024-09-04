@@ -1,13 +1,12 @@
 --MCR174A (QUERY 1) 
 --BD/ILL loans and renewals counts of items loaned BY CUL to others (CUL is LENDER)
---Query writer: Joanne Leary (jl41)
---Date posted: 6/24/24
+
 
 WITH parameters AS (
     SELECT 
         /* Choose a start and end date for the loans period */ 
-        '2023-07-01'::date AS start_date,
-        '2024-07-01'::date AS end_date
+        '2021-07-01'::date AS start_date,
+        '2026-07-01'::date AS end_date
         ),
 
 loans AS 
@@ -18,13 +17,14 @@ loans AS
         WHEN date_part ('month',loans_items.loan_date ::DATE) > 6 
         THEN concat ('FY ', date_part ('year',loans_items.loan_date::DATE) + 1) 
         ELSE concat ('FY ', date_part ('year',loans_items.loan_date::DATE))
-        END AS fiscal_year_of_loan
+        END AS fiscal_year_of_loan,
+        date_part ('year', loans_items.loan_date::DATE) AS year_of_loan
      
  FROM folio_derived.loans_items 
 	 LEFT JOIN local_shared.loans_renewal_dates AS lrd 
 	 ON loans_items.loan_id::UUID = lrd.loan_id::UUID
         
- GROUP BY loans_items.loan_id,loans_items.loan_date
+ GROUP BY loans_items.loan_id,loans_items.loan_date, year_of_loan
 )
 
 SELECT
@@ -32,6 +32,7 @@ SELECT
        loans_items.patron_group_name,
        locations_libraries.library_name,  
        loans.fiscal_year_of_loan,
+       loans.year_of_loan,
        COUNT (loans.loan_id) AS number_of_checkouts, 
        SUM (loans.renew_count) AS number_of_renewals, 
        COUNT (loans.loan_id) + SUM (loans.renew_count) AS total_charges_and_renewals 
@@ -54,7 +55,8 @@ GROUP BY
     TO_CHAR (CURRENT_DATE::DATE,'mm/dd/yyyy'),
     locations_libraries.library_name,
     loans_items.patron_group_name,
-    loans.fiscal_year_of_loan
+    loans.fiscal_year_of_loan,
+    loans.year_of_loan
 
         
 ORDER BY
