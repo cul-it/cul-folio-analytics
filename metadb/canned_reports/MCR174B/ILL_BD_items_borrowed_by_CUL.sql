@@ -26,8 +26,8 @@ SELECT
         (li.material_type_name ilike 'BD%' OR li.item_effective_location_name_at_check_out ILIKE 'Borr%') THEN 'Borrow Direct'
         WHEN (li.material_type_name ilike 'ILL*%' OR li.item_effective_location_name_at_check_out ILIKE 'Inter%') then 'Interlibrary Loan'
 		ELSE 'Not BDILL'
-		END AS BDILL_type
-		
+		END AS BDILL_type,
+		date_part ('year', li.loan_date::DATE) AS year_of_loan
 		
 FROM folio_derived.loans_items AS li
         LEFT JOIN folio_derived.locations_libraries AS ll 
@@ -44,6 +44,7 @@ GROUP BY
         li.item_effective_location_name_at_check_out,
         li.patron_group_name,
         fiscal_year_of_loan,
+        year_of_loan,
         BDILL_type
         
 ORDER BY
