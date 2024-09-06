@@ -24,7 +24,7 @@ SELECT
 FROM 
 	INVOICE_VOUCHER_LINES AS invvl 
 	LEFT JOIN folio_reporting.invoice_voucher_lines_fund_distributions AS invvlfd ON invvlfd.invoice_voucher_line_id = invvl.id
-	LEFT JOIN INVOICE_lines AS invl ON invl.id = invvlfd.fund_distribution_invl_id
+	LEFT JOIN INVOICE_lines AS invl ON invl.id::uuid = invvlfd.fund_distribution_invl_id
 	LEFT JOIN invoice_vouchers AS invv ON invv.id = invvl.voucher_id
 	LEFT JOIN invoice_invoices AS inv ON inv.id = invv.invoice_id
 	LEFT JOIN po_lines AS pol ON pol.id = invl.po_line_id
