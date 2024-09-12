@@ -1,5 +1,5 @@
 --CR219
---shelf list inventory
+--shelf_list_inventory
 --last updated: 8/12/24
 --written by Sharon Markus and Joanne Leary
 --This query finds shelf list inventory information by library location. 
@@ -9,14 +9,14 @@
 
 WITH parameters AS (
     SELECT 
-         -- Fill out -owning library filter ----
-         '%%'::varchar AS owning_library_name_filter, -- Examples: Olin Library, Library Annex, etc.
-         'Uris'::varchar as location_name_filter--add permanent location name
+         -- Fill out filter ----
+         --'%%'::varchar AS owning_library_name_filter, -- Examples: Olin Library, Library Annex, etc.
+         ''::varchar as location_name_filter --item_ext.effective_location_name
 ),
  		
-recs as 
-(select
-		ll.library_name,           
+recs AS 
+(SELECT
+	ll.library_name,           
         he.permanent_location_name as holdings_perm_loc_name,
         he.temporary_location_name as holdings_temp_loc_name,
         itemext.permanent_location_name as item_perm_loc_name,
@@ -27,7 +27,7 @@ recs as
         itemext.item_id,
         itemext.item_hrid,
         
-		--show size as +++, ++, or + with call number, copy number, enumeration, and chronology
+--show size as +++, ++, or + with call number, copy number, enumeration, and chronology
 
         CASE WHEN concat (he.call_number_prefix,' ',he.call_number,' ',he.call_number_suffix) LIKE '%+++%' THEN '+++'
              WHEN concat (he.call_number_prefix,' ',he.call_number,' ',he.call_number_suffix) LIKE '%++%' THEN '++'
@@ -52,7 +52,7 @@ FROM folio_reporting.instance_ext AS instext
      LEFT JOIN folio_reporting.item_notes AS itemnotes ON itemext.item_id = itemnotes.item_id
 
 WHERE  
-	--itemext.barcode like '31924%54900240' --this is an example of a record that drops with previous contributor syntax (NOTE: this is a serial, so will drop out if using the "Book" format condition)
+--itemext.barcode like 'barcode' --use to test a specific barcode
     ((ll.library_name ILIKE (SELECT owning_library_name_filter FROM parameters)) OR ((SELECT owning_library_name_filter FROM parameters) = ''))
     --AND ((he.permanent_location_name = (SELECT location_name_filter FROM parameters)) OR ((SELECT location_name_filter FROM parameters) = ''))
     AND ((itemext.effective_location_name = (SELECT location_name_filter FROM parameters)) OR ((SELECT location_name_filter FROM parameters) = ''))
@@ -88,7 +88,7 @@ GROUP BY
         itemext.item_id,
         itemext.item_hrid,
         
-		--show size as +++, ++, or + with call number, copy number, enumeration, and chronology
+--show size as +++, ++, or + with call number, copy number, enumeration, and chronology
 
         CASE WHEN concat (he.call_number_prefix,' ',he.call_number,' ',he.call_number_suffix) LIKE '%+++%' THEN '+++'
              WHEN concat (he.call_number_prefix,' ',he.call_number,' ',he.call_number_suffix) LIKE '%++%' THEN '++'
@@ -132,8 +132,8 @@ recent_patron_group AS
  ),
 
 recs2 as 
-(SELECT distinct
-		recs.library_name,           
+(SELECT DISTINCT
+	recs.library_name,           
         recs.holdings_perm_loc_name,
         recs.holdings_temp_loc_name,
         recs.item_perm_loc_name,
@@ -158,20 +158,20 @@ recs2 as
 
 FROM
     recs
-    left join inventory_instances AS instance
+    LEFT JOIN inventory_instances AS instance
 	    CROSS JOIN LATERAL jsonb_array_elements((instance.data #> '{contributors}')::jsonb) 
-	    with ordinality AS contributors(data)
-    on instance.hrid = recs.instance_hrid
+	    WITH ORDINALITY AS contributors(data)
+    ON instance.hrid = recs.instance_hrid
     
-    left join recent_patron_group as rpg 
-    on recs.item_id = rpg.item_id
+    LEFT JOIN recent_patron_group as rpg 
+    ON recs.item_id = rpg.item_id
     
 --where (contributors.ordinality = 1 or contributors.ordinality is null)
 --and recs.whole_call_number like 'Q1 .I81%'
 )
 
-select 
-recs2.library_name,           
+SELECT
+        recs2.library_name,           
         recs2.holdings_perm_loc_name,
         recs2.holdings_temp_loc_name,
         recs2.item_perm_loc_name,
@@ -193,23 +193,25 @@ recs2.library_name,
         recs2.format,
         recs2.most_recent_patron_group,
         recs2.effective_shelving_order COLLATE "C"
-from recs2
-where recs2.ordinality = 1 or recs2.ordinality is null
+FROM recs2
+WHERE recs2.ordinality = 1 or recs2.ordinality IS NULL
 
 ORDER BY 
-	recs2."size",
-	recs2.effective_shelving_order COLLATE "C",
-	recs2.holdings_perm_loc_name,
+    recs2."size",
+    recs2.effective_shelving_order COLLATE "C",
+    recs2.holdings_perm_loc_name,
     recs2.holdings_temp_loc_name,
     recs2.item_perm_loc_name,
     recs2.item_temp_loc_name,
     recs2.effective_location_name
 	 
-	/*itemext.enumeration,
+	/*
+	itemext.enumeration,
 	itemext.chronology,
 	itemext.copy_number,
 	itemext.status_name,
 	instext.title,
-	itemext.effective_call_number_suffix*/
+	itemext.effective_call_number_suffix
+	*/
 ;
 
