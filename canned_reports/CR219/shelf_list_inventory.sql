@@ -1,6 +1,6 @@
 --CR219
 --shelf_list_inventory
---last updated: 8/12/24
+--last updated: 9/12/24
 --written by Sharon Markus and Joanne Leary
 --This query finds shelf list inventory information by library location. 
 --The most_recent_patron_group field determines what patron group an item 
@@ -9,8 +9,8 @@
 
 WITH parameters AS (
     SELECT 
-         -- Fill out filter ----
-         --'%%'::varchar AS owning_library_name_filter, -- Examples: Olin Library, Library Annex, etc.
+         -- Fill out library location filter ----
+         '%%'::varchar AS owning_library_name_filter, -- Examples: Olin Library, Library Annex, etc.
          ''::varchar as location_name_filter --item_ext.effective_location_name
 ),
  		
