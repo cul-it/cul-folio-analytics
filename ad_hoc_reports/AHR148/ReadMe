@@ -1,0 +1,7 @@
+AHR148
+Annex_items_with_in_transit_status
+
+This query uses a local file of barcodes, which are regularly uploaded to the ldp local schema by an annex staff member (currently Jake Barnard). Jake runs the query to double-check the newly accessioned items, to be sure they don’t have an in-transit status. It is a collection maintenance query.
+
+-- 8-10-24: Annex items with an "In transit" status: this query finds items accessioned at the Annex with an "In transit" status, using an imported file of barcodes
+-- 8-13-24: changed source file to local.jake_barcode
