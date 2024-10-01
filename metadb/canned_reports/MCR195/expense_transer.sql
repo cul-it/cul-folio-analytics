@@ -1,11 +1,9 @@
 -- MCR195
 -- Expense transfer
 -- This query is a customization of CR-134 (paid invoices with bib data) for the purpose of identifying expenditures that can be transferred from unrestricted funds to restricted funds.
-
+-- Last updated: 7-29-24
 --Query writer: Joanne Leary (jl41)
---Query reviewer: Sharon Marcus (slm5)
-
--- MCR195 - Expense transfer (Metadb) - 7-29-24
+--Query reviewer: Sharon Markus (slm5)
 
 WITH parameters AS (
 
