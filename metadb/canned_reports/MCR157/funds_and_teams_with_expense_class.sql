@@ -1,23 +1,25 @@
--- MCR157 
+-- MCR157 (corrected 10-2-24)
 -- Funds and teams with expense class
---This query provides a detailed current date report of funds and teams with amounts spent, encumbered, and remaining.
---Query writer: Joanne Leary (jl41)
---Posted on: 7/25/24
+-- This query provides a detailed current date report of funds and teams with amounts spent, encumbered, and remaining.
+-- Query writer: Joanne Leary (jl41)
+-- Posted on: 7/25/24
+-- 10-2-24: corrected the query to add a join from expense class fiscal year code to finance fiscal year code
 
 WITH parameters AS (
     SELECT
-        'FY2025' AS fiscal_year_code,
+        'FY2024' AS fiscal_year_code,
         '' as team_filter
 ),
         
 expense_class AS    
 (
-SELECT       
+SELECT distinct      
 	fti.effective_fund_code,
         fti.effective_fund_name,
         fec.name AS expense_class_name,
         ffy.code AS expense_class_fiscal_year_code,
         sum(case when ft.transaction_type = 'Credit' THEN fti.transaction_amount*-1 ELSE fti.transaction_amount END) as amount_spent_in_expense_class
+        
 FROM folio_derived.finance_transaction_invoices as fti --folio_reporting.finance_transaction_invoices AS fti 
         left join folio_finance.transaction__t as ft on fti.transaction_id = ft.id --LEFT JOIN finance_transactions AS ft ON fti.transaction_id = ft.id 
         left join folio_finance.expense_class__t as fec on fti.transaction_expense_class_id = fec.id --LEFT JOIN finance_expense_classes AS fec ON fti.transaction_expense_class_id = fec.id
@@ -62,7 +64,8 @@ FROM
        left join folio_finance.group_fund_fiscal_year__t as fgffy on fgffy.budget_id = fb.id --LEFT JOIN finance_group_fund_fiscal_years AS fgffy  ON fgffy.budget_id = fb.id
        left join folio_finance.groups__t as fg on fg.id = fgffy.group_id --LEFT JOIN finance_groups AS fg ON fg.id = fgffy.group_id
        left join folio_finance.fund_type__t as fft on ff.fund_type_id = fft.id --LEFT JOIN finance_fund_types AS fft ON ff.fund_type_id = fft.id
-       left join expense_class as ec on ff.code = ec.effective_fund_code --LEFT JOIN expense_class AS ec ON ff.code = ec.effective_fund_code     
+       left join expense_class as ec on ff.code = ec.effective_fund_code --LEFT JOIN expense_class AS ec ON ff.code = ec.effective_fund_code
+       	and ec.expense_class_fiscal_year_code = ffy.code -- added 10-2-24    
 
 WHERE 
 	((ffy.code = (SELECT fiscal_year_code FROM parameters) or (select fiscal_year_code from parameters) = ''))
@@ -70,4 +73,5 @@ WHERE
 	
 ORDER BY 
 	team, finance_funds_code, finance_funds_name, expense_class_name
-;
+
+
