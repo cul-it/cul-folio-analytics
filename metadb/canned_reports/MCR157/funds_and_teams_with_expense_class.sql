@@ -33,7 +33,7 @@ GROUP BY
 )
 
 SELECT 
-        to_char(current_date::DATE - 1,'mm/dd/yyyy') AS as_of_yesterdays_date,
+        current_date,
         fgffy.fiscal_year_id,
         ffy.code AS fiscal_year,
         fg.name AS team,
