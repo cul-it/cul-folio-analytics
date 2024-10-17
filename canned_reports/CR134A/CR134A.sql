@@ -1,11 +1,13 @@
 --CR134A 
 --Approved Invoices with bib data
--- revised 10-1-24 by Joanne Leary (jl41)
-
+-- revised 10-17-24 by Sharon Markus (slm5)
+-- 10-17-24: added date parameter
 
 with parameters as 
 (select 
-'FY2025'::varchar as fiscal_year_code, -- (ex: FY2023, FY2024, FY2025, etc),
+'' AS payment_date_start_date,--enter invoice payment start date and end date in YYYY-MM-DD format
+'' AS payment_date_end_date, -- enter invoice payment end date in YYYY-MM-DD format; excludes the selected date
+''::varchar as fiscal_year_code, -- (ex: FY2023, FY2024, FY2025, etc),
 ''::varchar as fund_code_filter, -- (ex: 2030, p2258, 521, 60, etc.)
 ''::varchar as finance_group_name_filter -- (ex: Sciences, Area Studies, Central, etc.)
 ),
@@ -129,7 +131,14 @@ SELECT
 )
 
 SELECT DISTINCT
-      
+       CASE WHEN
+          ((SELECT payment_date_start_date::varchar FROM parameters)= ''
+            OR (SELECT payment_date_end_date::varchar FROM parameters) ='')
+            THEN 'Not Selected'
+            ELSE
+                (SELECT payment_date_start_date::varchar FROM parameters) || ' to '::varchar ||
+                (SELECT payment_date_end_date::varchar FROM parameters)
+            END AS payment_date_range,      
        replace(replace (iext.title, chr(13), ''),chr(10),'') AS instance_title,
        iext.instance_hrid,
        STRING_AGG (distinct locations.pol_location_name,' | ') as location_name,
@@ -176,7 +185,7 @@ FROM
         LEFT JOIN po_lines AS pol ON ftie.po_line_id = pol.id
         LEFT JOIN po_purchase_orders AS PO ON po.id = pol.purchase_order_id
         LEFT JOIN folio_reporting.instance_ext AS iext ON iext.instance_id = pol.instance_id
-        left join field050 ON iext.instance_hrid = field050.instance_hrid
+        LEFT JOIN field050 ON iext.instance_hrid = field050.instance_hrid
         LEFT JOIN folio_reporting.instance_languages AS lang ON lang.instance_id = pol.instance_id
         LEFT JOIN instance_subject_extract AS inssub ON inssub.instance_hrid = iext.instance_hrid
         LEFT JOIN fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
@@ -184,12 +193,15 @@ FROM
         LEFT JOIN locations on ftie.po_line_id = locations.pol_id
         LEFT JOIN finance_expense_classes AS fec ON fec.id = ftie.expense_class
         
-where (ftie.fiscal_year_code = (select fiscal_year_code from parameters) or (select fiscal_year_code from parameters) = '')
-and (lang.language_ordinality = '1' or lang.instance_id is null)
-and (ftie.effective_fund_code = (select fund_code_filter from parameters) or (select fund_code_filter from parameters) = '')
-and (ffyg.finance_group_name = (select finance_group_name_filter from parameters) or (select finance_group_name_filter from parameters) = '')
+WHERE 
+        ((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
+        AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
+        AND (ftie.fiscal_year_code = (select fiscal_year_code from parameters) or (select fiscal_year_code from parameters) = '')
+        AND (lang.language_ordinality = '1' or lang.instance_id is null)
+        AND (ftie.effective_fund_code = (select fund_code_filter from parameters) or (select fund_code_filter from parameters) = '')
+        AND (ffyg.finance_group_name = (select finance_group_name_filter from parameters) or (select finance_group_name_filter from parameters) = '')
 
-        GROUP BY
+GROUP BY
        ftie.transaction_id,
        iext.title,
        iext.instance_hrid,
@@ -230,3 +242,4 @@ ORDER BY
         po.po_number,
         pol.po_line_number
 ;
+
