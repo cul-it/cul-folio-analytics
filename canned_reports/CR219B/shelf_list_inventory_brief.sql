@@ -1,5 +1,5 @@
 --CR219
---shelf_list_inventory
+--shelf_list_inventory_brief
 --last updated: 10/18/24
 --written by Sharon Markus and Joanne Leary
 --This query finds shelf list inventory information by library location. 
