@@ -1,2 +1,7 @@
-MCR204
-missing_lost_claimed_returned
+ MCR204 
+ missing_lost_claimed_returned_uavailable_and in-transit
+
+6-5-24: created a subquery for the field_300 (pagination_size); moved library name filter condition to end of query
+ changed library name parameter filter to have wildcards, and changed Where statement to "ilike"
+ 10-7-24: converted to Metadb; added in Voyager circs; added Distinct to final subquery
+ 10-11-24: added "in transit" to the list of item statuses, and added in transit destination location
