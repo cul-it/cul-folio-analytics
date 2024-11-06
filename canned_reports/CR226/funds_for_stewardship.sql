@@ -6,6 +6,7 @@
 --finance group name, vendor invoice number, fund details, purchase order details, language, 
 --instance subject, fund type, and expense class.
 --12-20-23: modified and reviewed by Ann Crowley, Joanne Leary, and Sharon Beltaine
+--11-6-24: updated "json" to "jsonb"; corrected record IDs to UUID where needed; removed ORDER BY from fund_fiscal_year_group; updated finance group sort to capture reassigned fund codes
 
 WITH parameters AS (
     SELECT
@@ -16,11 +17,12 @@ WITH parameters AS (
         '%Endowment%'::VARCHAR AS fund_type, -- Ex: Endowment - Restricted, Appropriated - Unrestricted etc.
         ''::VARCHAR AS transaction_finance_group_name, -- Ex: Sciences, Central, Rare & Distinctive, Law, Cornell Medical, Course Reserves etc.
         '%%'::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
-        ''::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023, FY2024, etc.
+        'FY2025'::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023, FY2024, etc.
         ''::VARCHAR AS po_number,
         '%%'::VARCHAR AS format_name, -- Ex: Book, Serial, Textual Resource, etc.
         '%%'::VARCHAR AS expense_class,-- Ex:Physical Res - one-time perpetual, One time Electronic Res - Perpetual etc.
         ''::VARCHAR AS lc_class_filter -- Ex: NA, PE, QA, TX, S, KFN, etc.
+
 ),
 
 field050 AS -- gets the LC classification
@@ -91,10 +93,10 @@ WHERE (contributors.data #>> '{primary}')::boolean = 'True'
 locations AS ( -- gets the location name using the po_lines table
        SELECT
            pol.id AS pol_id,
-           json_extract_path_text(locations.data, 'quantity') AS pol_location_qty,
-           json_extract_path_text(locations.data, 'quantityElectronic') AS pol_loc_qty_elec,
-           json_extract_path_text(locations.data, 'quantityPhysical') AS pol_loc_qty_phys,    
-           CASE WHEN json_extract_path_text(locations.data, 'locationId') IS NOT NULL THEN json_extract_path_text(locations.data, 'locationId')
+           jsonb_extract_path_text(locations.data, 'quantity') AS pol_location_qty,
+           jsonb_extract_path_text(locations.data, 'quantityElectronic') AS pol_loc_qty_elec,
+           jsonb_extract_path_text(locations.data, 'quantityPhysical') AS pol_loc_qty_phys,    
+           CASE WHEN jsonb_extract_path_text(locations.data, 'locationId')::UUID IS NOT NULL THEN jsonb_extract_path_text(locations.data, 'locationId')::UUID
                ELSE ih.permanent_location_id
               END AS pol_location_id,
              
@@ -109,9 +111,9 @@ locations AS ( -- gets the location name using the po_lines table
           
        FROM
            po_lines AS pol
-           CROSS JOIN json_array_elements(json_extract_path(data, 'locations')) AS locations (data)
-           LEFT JOIN inventory_holdings AS ih ON json_extract_path_text(locations.data, 'holdingId') = ih.id
-           LEFT JOIN inventory_locations AS il ON json_extract_path_text(locations.data, 'locationId') = il.id
+           CROSS JOIN jsonb_array_elements(jsonb_extract_path(data, 'locations')) AS locations (data)
+           LEFT JOIN inventory_holdings AS ih ON jsonb_extract_path_text(locations.data, 'holdingId')::UUID = ih.id
+           LEFT JOIN inventory_locations AS il ON jsonb_extract_path_text(locations.data, 'locationId')::UUID = il.id
            LEFT JOIN inventory_locations AS il2 ON ih.permanent_location_id = il2.id
 ),
 
@@ -158,7 +160,7 @@ fund_fiscal_year_group AS ( -- associates the fund with the finance group and fi
            LEFT JOIN finance_fiscal_years AS ffy ON ffy. id = fgffy.fiscal_year_id
            LEFT JOIN finance_funds AS FF ON FF.id = fgffy.fund_id
        WHERE ((ffy.code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
-       ORDER BY ff.code
+       --ORDER BY ff.code
 ),
 
 new_quantity AS ( -- converts invoice line quantities showing "0" to "1" for use in a price-per-unit calculation
@@ -205,10 +207,14 @@ SELECT DISTINCT
        replace(replace (invl.comment, chr(13), ''),chr(10),'') AS invoice_line_comment,--updated code to get rid of carriage returns
        ftie.finance_ledger_name,
        ftie.fiscal_year_code AS transaction_fiscal_year_code,
-       CASE -- selects the correct finance group for funds that were merged into Area Studies from 2CUL in FY2024, based on invoice payment date
-          WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
-          WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
-          ELSE ffyg.finance_group_name END AS finance_group_name,
+       
+       CASE -- selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
+        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
+        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
+        WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
+        WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date <'2024-07-01' THEN 'Course Reserves'
+        ELSE ffyg.finance_group_name END AS finance_group_name,
+
        fec.name AS expense_class,
        ftie.effective_fund_code,
        ftie.fund_name,
@@ -232,10 +238,10 @@ SELECT DISTINCT
        ftie.external_account_no
 FROM
         finance_transaction_invoices_ext AS ftie
-        LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id
-        LEFT JOIN new_quantity AS fq ON invl.id = fq.invoice_line_id
-        LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
-        LEFT JOIN po_lines AS pol ON ftie.po_line_id = pol.id
+        LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id::UUID
+        LEFT JOIN new_quantity AS fq ON invl.id = fq.invoice_line_id::UUID
+        LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id::UUID = inv.id
+        LEFT JOIN po_lines AS pol ON ftie.po_line_id::UUID = pol.id
         LEFT JOIN po_purchase_orders AS PO ON po.id = pol.purchase_order_id
         LEFT JOIN folio_reporting.instance_ext AS iext ON iext.instance_id = pol.instance_id
         LEFT JOIN field050 ON iext.instance_hrid = field050.instance_hrid
@@ -243,8 +249,8 @@ FROM
         LEFT JOIN instance_subject_extract AS inssub ON inssub.instance_hrid = iext.instance_hrid
         LEFT JOIN fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
         LEFT JOIN format_extract AS formatt ON pol.instance_id::UUID = formatt.instance_id
-        LEFT JOIN locations on ftie.po_line_id = locations.pol_id
-        LEFT JOIN finance_expense_classes AS fec ON fec.id = ftie.expense_class
+        LEFT JOIN locations on ftie.po_line_id::UUID = locations.pol_id
+        LEFT JOIN finance_expense_classes AS fec ON fec.id = ftie.expense_class::UUID
 --publication update
         LEFT JOIN publication_extract AS pe ON pe.instance_id = iext.instance_id
 --added primary contributor 
@@ -256,10 +262,14 @@ WHERE
         AND inv.status LIKE 'Paid'
         AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
         AND ((ftie.fund_type_name like (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
-        AND ((CASE
-                 WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') AND inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
-                 WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') AND inv.payment_date::date <'2023-07-01' THEN '2CUL'
-                 ELSE ffyg.finance_group_name end) = (select transaction_finance_group_name from parameters) or (SELECT transaction_finance_group_name FROM parameters) = '')
+        
+       AND ((CASE -- selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
+        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
+        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
+        WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
+        WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date <'2024-07-01' THEN 'Course Reserves'
+        ELSE ffyg.finance_group_name end) = (SELECT transaction_finance_group_name FROM parameters) or (SELECT transaction_finance_group_name FROM parameters) = '') 
+        
         AND ((ftie.finance_ledger_name ilike (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) ilike '%%'))
         AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
         AND ((po.order_type = (SELECT order_type_filter FROM parameters)) OR ((SELECT order_type_filter FROM parameters) = ''))
