@@ -23,6 +23,8 @@ This query provides the list of approved invoices within a date range along with
 <br>-- 6-14-24: in locations subquery, added "distinct" 
 <br>-- 7-25-24: updated fund code sort for Course Reserve funds, which were changed to "Interdisciplinary" starting with FY2025
 <br>
+-In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1.
+--11-5-24: updated "json" to "jsonb"; cast UUID's where needed
 
   
 
