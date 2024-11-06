@@ -4,6 +4,9 @@
 --vendor invoice number, fund details, purchase order details, language, instance subject, fund type, expense class
 --LC classification, LC class, LC class number, and bibliographic format.
 --In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1.
+--11-5-24: updated "json" to "jsonb"; cast UUID's where needed
+
+
 
 WITH parameters AS (
     SELECT
@@ -59,10 +62,10 @@ instance_subject_extract AS ( -- gets the primary subject from the instance_subj
 locations AS ( -- gets the location name using the po_lines table
        select distinct
            pol.id AS pol_id,
-           json_extract_path_text(locations.data, 'quantity') AS pol_location_qty,
-           json_extract_path_text(locations.data, 'quantityElectronic') AS pol_loc_qty_elec,
-           json_extract_path_text(locations.data, 'quantityPhysical') AS pol_loc_qty_phys,    
-           CASE WHEN json_extract_path_text(locations.data, 'locationId') IS NOT NULL THEN json_extract_path_text(locations.data, 'locationId')
+           jsonb_extract_path_text(locations.data, 'quantity') AS pol_location_qty,
+           jsonb_extract_path_text(locations.data, 'quantityElectronic') AS pol_loc_qty_elec,
+           jsonb_extract_path_text(locations.data, 'quantityPhysical') AS pol_loc_qty_phys,    
+           CASE WHEN jsonb_extract_path_text(locations.data, 'locationId')::UUID IS NOT NULL THEN jsonb_extract_path_text(locations.data, 'locationId')::UUID
                ELSE ih.permanent_location_id
               END AS pol_location_id,
              
@@ -77,9 +80,9 @@ locations AS ( -- gets the location name using the po_lines table
           
        FROM
            po_lines AS pol
-           CROSS JOIN json_array_elements(json_extract_path(data, 'locations')) AS locations (data)
-           LEFT JOIN inventory_holdings AS ih ON json_extract_path_text(locations.data, 'holdingId') = ih.id
-           LEFT JOIN inventory_locations AS il ON json_extract_path_text(locations.data, 'locationId') = il.id
+           CROSS JOIN jsonb_array_elements(jsonb_extract_path(data, 'locations')) AS locations (data)
+           LEFT JOIN inventory_holdings AS ih ON jsonb_extract_path_text(locations.data, 'holdingId')::UUID = ih.id
+           LEFT JOIN inventory_locations AS il ON jsonb_extract_path_text(locations.data, 'locationId')::UUID = il.id
            LEFT JOIN inventory_locations AS il2 ON ih.permanent_location_id = il2.id
 ),
 
@@ -201,10 +204,10 @@ SELECT DISTINCT
        ftie.external_account_no
 FROM
         finance_transaction_invoices_ext AS ftie
-        LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id
-        LEFT JOIN new_quantity AS fq ON invl.id = fq.invoice_line_id
-        LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id = inv.id
-        LEFT JOIN po_lines AS pol ON ftie.po_line_id = pol.id
+        LEFT JOIN invoice_lines AS invl ON invl.id = ftie.invoice_line_id::UUID
+        LEFT JOIN new_quantity AS fq ON invl.id = fq.invoice_line_id::UUID
+        LEFT JOIN invoice_invoices AS inv ON ftie.invoice_id::UUID = inv.id
+        LEFT JOIN po_lines AS pol ON ftie.po_line_id::UUID = pol.id
         LEFT JOIN po_purchase_orders AS PO ON po.id = pol.purchase_order_id
         LEFT JOIN folio_reporting.instance_ext AS iext ON iext.instance_id = pol.instance_id
         left join field050 ON iext.instance_hrid = field050.instance_hrid
@@ -212,8 +215,8 @@ FROM
         LEFT JOIN instance_subject_extract AS inssub ON inssub.instance_hrid = iext.instance_hrid
         LEFT JOIN fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
         LEFT JOIN format_extract AS formatt ON pol.instance_id::UUID = formatt.instance_id
-        LEFT JOIN locations on ftie.po_line_id = locations.pol_id
-        LEFT JOIN finance_expense_classes AS fec ON fec.id = ftie.expense_class
+        LEFT JOIN locations on ftie.po_line_id::UUID = locations.pol_id
+        LEFT JOIN finance_expense_classes AS fec ON fec.id = ftie.expense_class::UUID
 WHERE
         ((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
         AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
