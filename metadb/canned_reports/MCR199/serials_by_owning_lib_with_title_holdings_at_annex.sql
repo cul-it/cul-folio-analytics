@@ -1,8 +1,13 @@
 --MCR199 - serials_by_owning_library_with_title_holdings_at_annex
 
 --This query gets serials by owning library and LC class, and shows Annex holdings for those titles. 
---To select only titles that have no holdings at the Annex, un-comment out the WHERE statement at the end (line 178), or export full results to Excel and filter the Annex holdings column to = NULL.
---Query writer: Joanne Leary (jl41)
+--To select only titles that have no holdings at the Annex, un-comment out the WHERE statement at the end (line 181), 
+--or export full results to Excel and filter the Annex holdings column to = NULL.
+--
+--Through the second subquery, this version adds the leader0607 to filter by as the holdings_type_name is not always
+--accurate; the user can choose. This redo also adds that the instance must not be suppressed.
+
+--Query writer: Joanne Leary (jl41) Updated to MetaDB on 11/6/24 (jl41, lm15)
 --Date posted: 11/6/24                             
 
 
