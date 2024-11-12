@@ -1,5 +1,7 @@
 MCR233
 adc_location_translation_table.sql
+updated 11/12/24 to include the new field added to assign locations to Contract College, Endowed, Not CUL, or Unknown
+(dfs_college_group).
 
 CR233 and MCR233 is used to help update the lm_adc_location_translation_table.  It pulls location code, location name, 
 and shelving location names data from FOLIO’s inventory_locations and inventory_libraries tables, and corresponding 
