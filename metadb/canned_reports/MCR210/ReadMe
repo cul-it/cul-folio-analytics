@@ -1,0 +1,11 @@
+MCR210
+Missing_Lost_items_for_selectors
+
+This query is specifically for selectors and it shows Missing and Lost items with different fields included that are useful in making replacement decisions.
+
+Changesfrom the LDP query:
+	--hard-coded five item statuses for missing and lost; excluded non-regular collection material types (equipment, supplies, peripherals, laptops, keys, etc)
+	-- added a separate subquery for ISSNs
+	-- for "other library" holdings, excluded suppressed holdings
+	-- removed item status filter; not needed for updated query
+	-- put in wildcards and ilike for library parameter
