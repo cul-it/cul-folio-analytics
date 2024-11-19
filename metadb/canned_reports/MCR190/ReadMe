@@ -1,0 +1,14 @@
+MCR190
+Expired patrons with open fines
+This query references the CIT file of patrons, which currently resides in the local_core schema (read-only access to everyone). The CIT table schema may change, please check and make changes to the query as needed. 
+
+
+-- 10-1-22: This query finds expired patrons with open fines.
+-- 8-24-23: applied distinct to query
+-- 1-17-24: added home address
+-- 1-31-24: re-writing in metaDB
+-- 6-13-24: testing with large dataset from CIT; updated address fields to get CIT addresses and applied the coalesce function to choose the first non-null entry for CIT/Folio Home and Campus
+-- 11-15-24: made corrections:
+	-- join from ffa table to ffffa table is ffa.id = ffffa.account_id 
+	-- added condition "__current = TRUE" to loant and ffa table; 
+	-- return date comes from the ffffa table, not the loant table 
