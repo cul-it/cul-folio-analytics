@@ -1,0 +1,6 @@
+MCR230 
+collection_inventory_by_date_range
+This query finds all items in a given location or library, and shows all charges and browses within the specified date range
+Shows all record component locations, which is helpful for record cleanup
+-- 2-1-24: for Folio loan counts > 0, "most recent checkout" dates may be before 7-1-21 because of migrated open loans from Voyager
+
