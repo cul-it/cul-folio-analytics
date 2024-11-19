@@ -1,0 +1,10 @@
+MCR229
+Inventory by call number range, with links to online access
+
+This query gets the holdings-level inventory for a library/location/call number range and shows item count and circ count since 2015
+
+-- 9-26-24: this is the Metadb conversion of the Mann inventory query; updated the last issue queries to get the max of the row number from the previous subquery
+-- 10-25-24: updated to change last issue received to "display_summary" (removed caption, enumeration, chronology and copy number due to change in pieces__t table)
+-- 11-14-24: updated the call number WHERE clause to make it compatible for a continuous call number range. 
+	-- Discontinuous ranges require an "OR" stanza in the WHERE statement, which is too complicated to code in a canned query
+	-- Query takes about 6 min to run, as of 11-14-24
