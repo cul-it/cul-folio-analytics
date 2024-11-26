@@ -1,5 +1,7 @@
+--CR179
 --bursared_items_by_fine_fee_date_and_material_type
-
+--last updated: 11/26/24
+--11/24/24: fixed LDP 2.1.0 errors
 --This query finds bursared items with fines or fees using the payment method of "CUL Transfer Account" 
 --and a fine fee type action of "Transferred Fully." Filters for fine date range and material type 
 --are included.
@@ -27,7 +29,7 @@ SELECT
         ffa.location AS item_location,
         ffa.fee_fine_owner,
        	ffa.call_number,
-        to_char(json_extract_path_text (ffa.data,'metadata','createdDate')::DATE,'mm/dd/yyyy') AS fine_create_date,
+        to_char(jsonb_extract_path_text (ffa.data,'metadata','createdDate')::DATE,'mm/dd/yyyy') AS fine_create_date,
         to_char (ffffa.date_action :: DATE, 'mm/dd/yyyy') AS bursared_date,
         to_char (cl.loan_date :: DATE, 'mm/dd/yyyy') AS loan_date,
         to_char (ffa.due_date :: DATE, 'mm/dd/yyyy') AS due_date,
@@ -36,10 +38,10 @@ SELECT
         ffa.fee_fine_type,
         ffa.amount :: MONEY,
         ffa.remaining :: MONEY,
-        json_extract_path_text (ffa.data,'status','name') AS fine_status,
+        jsonb_extract_path_text (ffa.data,'status','name') AS fine_status,
         ffffa.type_action AS action_type,
         to_char (ffffa.date_action,'mm/dd/yyyy') AS action_date,
-        json_extract_path_text (ffa.data,'paymentStatus','name') AS payment_status,
+        jsonb_extract_path_text (ffa.data,'paymentStatus','name') AS payment_status,
         ffffa.payment_method AS payment_method,
         clp.name as loan_policy_name,
         ffffa.account_id as feefine_id,
@@ -61,13 +63,19 @@ FROM
         	ON cl.loan_policy_id = clp.id    
         
 WHERE
- 		  json_extract_path_text (ffa.data,'metadata','createdDate')::DATE >= 
+     jsonb_extract_path_text (ffa.data,'metadata','createdDate')::DATE >= 
 			  (SELECT fine_start_date_filter FROM parameters) 
-      AND json_extract_path_text (ffa.data,'metadata','createdDate')::DATE < 
+      AND jsonb_extract_path_text (ffa.data,'metadata','createdDate')::DATE < 
         	(SELECT fine_end_date_filter FROM parameters)
       AND cc.occurred_date_time > ffffa.date_action
       AND ffa.fee_fine_type != ffffa.type_action
       AND (imt.name = (SELECT material_type_filter FROM parameters)
+        	OR (SELECT material_type_filter FROM parameters) = '')
+      AND ffffa.payment_method = 'CUL Transfer Account'
+		  AND ffffa.type_action iLIKE 'Transferred fully'
+;
+
+
         	OR (SELECT material_type_filter FROM parameters) = '')
       AND ffffa.payment_method = 'CUL Transfer Account'
 		  AND ffffa.type_action iLIKE 'Transferred fully'
