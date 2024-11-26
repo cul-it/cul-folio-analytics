@@ -1,0 +1,14 @@
+MCR219A
+Shelf list inventory with most recent checkout patron group
+
+This query finds shelf list inventory information by library location. The most_recent_patron_group field determines what patron group an item was assigned to most recently, which is important for assignments to the Borrow Direct and Interlibrary Loan patron groups, which change frequently.
+
+Note to users: Please contact the reporting team:
+	- If your library uses volume size designators other than "+" signs, or the words "Oversize" or "Tiny"
+	- If you have a special collection that is not assigned its own separate Folio location
+  - We will customize this query to accommodate your collection designations or size indicators
+
+-The fact that an item is boundwith should be noted in the whole call number.
+-Format is based on the item record material type id, not instance record format.
+
+
