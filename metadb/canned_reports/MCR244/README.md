@@ -1,5 +1,5 @@
---MCR244
---hathitrust_903_mapping
---Create table of mapping for instances with 903 values instance id, 
---instance hrid, holdings id, barcode and state
---
+##MCR244
+<br>hathitrust_903_mapping
+<br>Create table of mapping for instances with 903 values instance id, 
+<br>instance hrid, holdings id, barcode and state
+
