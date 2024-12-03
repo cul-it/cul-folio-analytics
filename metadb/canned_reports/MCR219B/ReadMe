@@ -1,7 +1,10 @@
 MCR219B
 shelf_list_inventory_brief
 
-This query finds shelf list inventory information by library location. The most_recent_patron_group field determines what patron group an item was assigned to most recently, which is important for assignments to the Borrow Direct and Interlibrary Loan patron groups, which change frequently.
+This query finds shelf list inventory information by library location. The most_recent_patron_group field determines what patron group an item was assigned to most recently, 
+which is important for assignments to the Borrow Direct and Interlibrary Loan patron groups, which change frequently. 
+
+The Excel file that is produced in the query results maps to an Excel macro for further processing by Collection Management staff.
 
 Note to users: Please contact the reporting team:
 - If your library uses volume size designators other than "+" signs, or the words "Oversize" or "Tiny"
