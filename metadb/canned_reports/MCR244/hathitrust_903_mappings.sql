@@ -1,6 +1,11 @@
---Create table of mapping for instances with 903 values instance id, 
---instance hrid, holdings id, barcode and state
---
+--MCR244
+--hathitrust_903_mappings
+--last updated: 12/3/24
+--written by Michelle Paolillo, revised to Metadb by Sharon Markus
+--This query creates a table of mapping for instances with 903 values and publishes it to the local_digpres schema.
+--The table of mapping for instances with 903 values includes instance id, instance hrid, holdings id, barcode and state
+
+
 DROP TABLE IF EXISTS local_hathitrust.test_z_metadbuser_cornell_ALL_903s;
 CREATE TABLE local_hathitrust.test_z_metadbuser_cornell_ALL_903s AS
 SELECT
