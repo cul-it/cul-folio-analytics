@@ -1,6 +1,7 @@
 --MCR219B
 --shelf_list_inventory_brief
 --This query finds shelf list inventory information by library location. 
+--The Excel file that is produced in the query results maps to an Excel macro for further processing by Collection Management staff.
 
 --Query writers: Joanne Leary (jl41), Sharon Markus (slm5), Linda Miller (lm15)
 --Query posted on: 11/26/24
