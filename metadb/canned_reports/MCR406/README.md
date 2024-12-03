@@ -7,6 +7,7 @@
 **Revised to Metadb by:** Sharon Markus  
 
 This query creates a table of mapping for instances with 903 values and publishes it to the `local_digpres` schema.
+It is automated to run daily at 5am.
 
 ### Description:
 The table of mapping for instances with 903 values includes:
