@@ -1,7 +1,7 @@
 --MCR205
 --libraries_locations_service_points_feefine_owners
 
---This query
+--This query finds libraries, locations, service points and fine owners associated with the service points.
 
 --Query writer: Joanne Leary (jl41)
 --Posted on: 12/4/24
