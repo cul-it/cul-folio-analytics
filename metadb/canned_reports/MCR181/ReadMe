@@ -1,0 +1,4 @@
+MCR181
+Circ counts by instance HRID for Voyager and Folio 
+
+This report returns circ counts from both Voyager and Folio for an individual instance HRID, as selected in the parameters. Title, location, and number of items are also included.  
