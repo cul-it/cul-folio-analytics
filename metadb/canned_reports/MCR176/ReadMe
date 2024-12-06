@@ -1,0 +1,5 @@
+MCR176
+Annex items to be accessioned - check for duplicates 
+
+This query is used by the Annex staff for checking lists of items to be accessioned against holdings already at the Annex, to prevent duplication. An external list of barcodes has to be imported into local_shared schema, using a personal sign-in. 
+In this query, the imported list is local_shared.cammie_barcodes. This file will need to be updated as new items arrive for accessioning.
