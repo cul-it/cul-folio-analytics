@@ -1,4 +1,4 @@
-## LOC101  
+## LS101  
 ### lm_adc_location_translation_table  
 **Last Updated:** 12/6/24  
 
