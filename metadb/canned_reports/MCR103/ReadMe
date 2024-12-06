@@ -1,0 +1,4 @@
+MCR103
+Annex items with non-circulating loan types, excluding special collections 
+
+This query finds items at the Annex that have a "non-circulating" permanent loan type, excluding rare and special collections. It also finds items with an hourly loan type. Itis used for record clean-up. 
