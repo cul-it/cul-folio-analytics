@@ -1,4 +1,5 @@
--- MCR170 - item status in process 
+-- MCR170
+-- item_status_in_process 
 -- This query finds In Process item status books that appear to be fully cataloged and should be checked in the stacks to see if they have arrived at the library without the status being updated (record cleanup). 
 -- Excludes any items with "In process", "On order", "Cancelled" or "OC" in the call number and excludes those records without a barcode, and e-resource records
 -- Changed the query to get the 300 field separately; extracted item status from 'folio_inventory.item' table to get the most current status
