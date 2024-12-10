@@ -1,11 +1,14 @@
 -- MCR170
 -- item_status_in_process 
--- This query finds In Process item status books that appear to be fully cataloged and should be checked in the stacks to see if they have arrived at the library without the status being updated (record cleanup). 
--- Excludes any items with "In process", "On order", "Cancelled" or "OC" in the call number and excludes those records without a barcode, and e-resource records
--- Changed the query to get the 300 field separately; extracted item status from 'folio_inventory.item' table to get the most current status
-
---Query writer: Joanne Leary (jl41)
---Date posted: 12/6/24
+-- This query finds "In Process" item status books that appear to be fully cataloged 
+-- and should be checked in the stacks to see if they have arrived at the library without 
+-- the status being updated (record cleanup). Excludes any items with "In process", 
+-- "On order", "Cancelled" or "OC" in the call number and excludes those records without a 
+-- barcode, and e-resource records
+-- Changed the query to get the 300 field separately; extracted item status from 
+-- 'folio_inventory.item' table to get the most current status
+-- Query writer: Joanne Leary (jl41)
+-- Last updated: 12/10/24
 
 WITH parameters AS (
     SELECT 
@@ -32,6 +35,17 @@ SELECT
         instext.title,
         TRIM (CONCAT (itemext.effective_call_number_prefix,' ',itemext.effective_call_number,' ',itemext.effective_call_number_suffix,' ',itemext.enumeration,' ',
         	itemext.chronology, CASE WHEN itemext.copy_number > '1' THEN CONCAT (' c.',itemext.copy_number) ELSE '' END)) AS whole_call_number,        
+        CASE
+            WHEN TRIM (CONCAT (itemext.effective_call_number_prefix,' ',itemext.effective_call_number,' ',
+            itemext.effective_call_number_suffix,' ',
+            itemext.enumeration,' ',
+            itemext.chronology, CASE WHEN itemext.copy_number > '1' THEN CONCAT (' c.',itemext.copy_number) ELSE '' END)) like '%+++%' THEN '+++'
+            WHEN TRIM (CONCAT (itemext.effective_call_number_prefix,' ',itemext.effective_call_number,' ',itemext.effective_call_number_suffix,' ',itemext.enumeration,' ',
+            itemext.chronology, CASE WHEN itemext.copy_number > '1' THEN CONCAT (' c.',itemext.copy_number) ELSE '' END)) like '%++%' THEN '++'
+            WHEN TRIM (CONCAT (itemext.effective_call_number_prefix,' ',itemext.effective_call_number,' ',itemext.effective_call_number_suffix,' ',itemext.enumeration,' ',
+            itemext.chronology, CASE WHEN itemext.copy_number > '1' THEN CONCAT (' c.',itemext.copy_number) ELSE '' END)) like '%+%' THEN '+'
+            ELSE ''
+        END AS size,      	
         instext.instance_hrid,
         he.holdings_hrid,
         itemext.item_hrid,
