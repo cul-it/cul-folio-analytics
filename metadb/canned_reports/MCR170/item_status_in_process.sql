@@ -90,5 +90,5 @@ WHERE  (ll.library_name ILIKE (SELECT owning_library_name_filter FROM parameters
         AND TRIM (CONCAT (itemext.effective_call_number_prefix,' ',itemext.effective_call_number,' ',itemext.effective_call_number_suffix,' ',itemext.enumeration,' ',
         	itemext.chronology,CASE WHEN itemext.copy_number > '1' THEN CONCAT (' c.',itemext.copy_number) ELSE '' END)) !=''
          
-ORDER BY library_name, permanent_location_name, item__t.effective_shelving_order COLLATE "C",  title
+ORDER BY library_name, permanent_location_name, size, item__t.effective_shelving_order COLLATE "C",  title
 ;
