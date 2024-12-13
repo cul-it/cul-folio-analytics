@@ -23,7 +23,7 @@ What to look for in the Excel output:
 --compare the location codes (in fields E and F), location names (G and H), and shelving location names (K and L)
    to see if they are the same. You can use the Excel EXACT function, e.g., "=EXACT(E2,F2)." If exact, 
    it will output "TRUE", if not "FALSE." Do the FALSES show blanks or textual differences?*
---on 3/4/24, there were 200 locations.
+--As of October 2024, there are 202 locations.
 
 
 *We have decided not to add an accent to Nestle's name as it doesn't seem to work to import it to FOLIO even
