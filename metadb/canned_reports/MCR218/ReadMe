@@ -2,3 +2,8 @@ MCR218
 Checkouts and Browses by location, date range and LC class
 
 This query finds the the most recent checkouts and browses by date range, location and LC class (total checkouts and most recent checkout in Voyager and in Folio).
+
+-- Updated for Metadb 12-11-24
+	-- removed semester filter
+	-- added "most recent loan since 2000" field
+	-- changed "most recent loan to end of date range" to "most recent loan in date range"
