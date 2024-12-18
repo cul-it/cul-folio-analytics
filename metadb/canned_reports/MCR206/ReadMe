@@ -1,4 +1,4 @@
 MCR206
 open_fines_older_than_x_days
 
-This query lists 
+This query lists all open fines that are older than a specified number of days. Includes fee owner and patron details. 
