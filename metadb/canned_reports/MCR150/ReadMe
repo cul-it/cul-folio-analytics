@@ -1,4 +1,5 @@
 MCR150 - Physical and e-reserve statistics 
 Fall 2024 reserves - 12-18-24
+This query shows the physical checkouts and online clicks for items on reserve at all libraries, for the semester indicated. 
 
 NOTE: This is the basic query, but each semester, a new Ares extract has to be imported into the local_shared directory, so the query changes to point to the new table. The table sometimes has changing fields too, so every semester this query has to be tweaked.
