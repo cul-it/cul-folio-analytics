@@ -1,0 +1,4 @@
+MCR218
+Checkouts and Browses by location, date range and LC class
+
+This query finds the the most recent checkouts and browses by date range, location and LC class (total checkouts and most recent checkout in Voyager and in Folio).
