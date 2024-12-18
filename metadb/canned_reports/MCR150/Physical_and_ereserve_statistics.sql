@@ -1,6 +1,6 @@
 -- MCR150 - Physical and e-reserve statistics 
 -- Fall 2024 reserves - 12-18-24
---This query shows physical and e-reserve statistics for a specific semester. 
+--This query shows the physical checkouts and online clicks for items on reserve at all libraries, for the semester indicated. 
 
 --Query writer: Joanne Leary (jl41)
 --Posted on: 12/18/24
