@@ -1,0 +1,4 @@
+MCR211
+Locations_with_item_counts_for_permanent_and_temporary_locations
+
+This query counts the total number of items in all locations (perm and temp locations), even if there are zero items, and includes suppressed and unsuppressed records. It was written for the Locations project, as requested by Tom Trutt.
