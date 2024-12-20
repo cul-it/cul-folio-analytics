@@ -1,0 +1,4 @@
+MCR212
+Number_of_holdings_records_in_permanent_and_temporary_locations 
+
+This query counts the total number of holdings records in all locations (perm and temp locations), even if there are zero holdings, and includes suppressed and unsuppressed records.
