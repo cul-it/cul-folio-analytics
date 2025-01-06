@@ -5,3 +5,7 @@
  changed library name parameter filter to have wildcards, and changed Where statement to "ilike"
  10-7-24: converted to Metadb; added in Voyager circs; added Distinct to final subquery
  10-11-24: added "in transit" to the list of item statuses, and added in transit destination location
+ 
+1-6-25: added size designator and changed the sort order to include size before effective shelving order 
+	-- updated most recent loan (Voyager info was missing, and used "greatest" in combination with MAX) and updated the date formats and expressions
+	-- changed last folio checkin date to "timestamp" in order for the date comparisons to work correctly (used to be "to_char")
