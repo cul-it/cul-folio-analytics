@@ -2,22 +2,21 @@
 -- missing_lost_claimed_returned
 --This query finds items whose status is missing, lost, claimed returned, or missing in transit.
 
---Original query writer: Joanne Leary (jl41)
---Query ported to Metadb by Joanne leary (jl41)
---Query reviewed by Linda Miller (lm15) and Vandana Shah (vp25)
---Query posted on 6/7/24, revised version psted on 11/5/24
+--Query writer: Joanne Leary (jl41)
+--Query posted on 6/7/24, revised version posted on 11/5/24
+--Updated on 1/6/25
 
 
 WITH parameters AS (
 SELECT 
-'%%'::VARCHAR AS owning_library_name_filter, -- Examples: Olin Library, Library Annex, etc. or leave blank for all libraries. See list of libraries at https://confluence.cornell.edu/display/folioreporting/Locations
-''::VARCHAR as item_status_filter -- enter one of: Missing, Aged to lost, Lost and paid, Declared lost, Claimed returned, Unavailable; or leave blank to get all statuses
+'%%'::VARCHAR AS owning_library_name_filter -- Examples: Olin Library, Library Annex, etc. or leave blank for all libraries. See list of libraries at https://confluence.cornell.edu/display/folioreporting/Locations
+--''::VARCHAR AS item_status_filter -- enter one of: Missing, Aged to lost, Lost and paid, Declared lost, Claimed returned, Unavailable; or leave blank to get all statuses
 ),
 
 field_300 AS 
 	(SELECT 
 	sm.instance_hrid,
-	string_agg (DISTINCT sm.content,' | ') AS pagination_size
+	STRING_AGG (DISTINCT sm.content,' | ') AS pagination_size
 	
 	FROM folio_source_record.marc__t as sm 
 	WHERE sm.field = '300'
@@ -30,13 +29,14 @@ recs AS
 	he.permanent_location_name,
 	instext.title,
 	TRIM (CONCAT_WS (' ', he.call_number_prefix, he.call_number, he.call_number_suffix, ii.enumeration, ii.chronology,
-	CASE WHEN ii.copy_number >'1' THEN concat ('c.', ii.copy_number) ELSE '' END)) AS whole_call_number,
+		CASE WHEN ii.copy_number >'1' THEN CONCAT ('c.', ii.copy_number) ELSE '' END)) AS whole_call_number,
 	ii.barcode,
 	itemext.status_name,
 	itemext.status_date::DATE AS item_status_date, 
-	CASE WHEN jsonb_extract_path_text (item__.jsonb,'lastCheckIn', 'dateTime') is null then null  
-		ELSE TO_CHAR (jsonb_extract_path_text (item__.jsonb,'lastCheckIn', 'dateTime')::TIMESTAMP, 'mm/dd/yyyy hh:mi am') END AS last_folio_check_in,
-	MAX (TO_CHAR (cta.discharge_date::TIMESTAMP,'mm/dd/yyyy hh:mi am')) AS last_voyager_check_in,
+	CASE WHEN jsonb_extract_path_text (item__.jsonb,'lastCheckIn', 'dateTime')::TIMESTAMP IS NULL THEN NULL  
+		ELSE jsonb_extract_path_text (item__.jsonb,'lastCheckIn', 'dateTime')::TIMESTAMP END AS last_folio_check_in,
+	MAX (cta.charge_date::TIMESTAMP) AS last_voyager_checkout,
+	MAX (cta.discharge_date::TIMESTAMP) AS last_voyager_check_in,
 	isp.name AS last_folio_check_in_service_point,
 	itemext.in_transit_destination_service_point_name,
 	field_300.pagination_size,
@@ -61,11 +61,11 @@ FROM folio_derived.instance_ext as instext
 	LEFT JOIN folio_derived.item_ext AS itemext 
 	ON he.holdings_id = itemext.holdings_record_id
 	
-	LEFT JOIN folio_inventory.item__t as ii 
+	LEFT JOIN folio_inventory.item__t AS ii 
 	ON itemext.item_id = ii.id
 	
-	left join folio_inventory.item__ 
-	on ii.id = item__.id
+	LEFT JOIN folio_inventory.item__ 
+	ON ii.id = item__.id
 	
 	LEFT JOIN vger.circ_trans_archive AS cta 
 	ON ii.hrid::VARCHAR = cta.item_id::VARCHAR
@@ -106,7 +106,7 @@ GROUP BY
 	he.type_name,
 	itemext.status_name,
 	itemext.status_date::date,
-	jsonb_extract_path_text (item__.jsonb,'lastCheckIn', 'dateTime'),
+	jsonb_extract_path_text (item__.jsonb,'lastCheckIn', 'dateTime')::TIMESTAMP,
 	isp.name,
 	ii.effective_shelving_order
 ),
@@ -115,13 +115,13 @@ loan1 AS
 (SELECT 
 	recs.item_id,
 	recs.item_hrid,
-	MAX (li.loan_date) AS most_recent_loan
+	GREATEST (MAX (li.loan_date), recs.last_voyager_checkout) AS most_recent_loan
 FROM recs 
-	LEFT JOIN folio_derived.loans_items AS li 
+	INNER JOIN folio_derived.loans_items AS li 
 	ON recs.item_id = li.item_id 
 
 GROUP BY 
-	recs.item_hrid, recs.item_id
+	recs.item_hrid, recs.item_id, recs.last_voyager_checkout
 ),
 
 loan2 AS 
@@ -129,19 +129,19 @@ loan2 AS
 	loan1.item_id,
 	loan1.item_hrid,
 	loan1.most_recent_loan, 
-	jsonb_extract_path_text (users__.jsonb,'personal','lastName') as user_last_name,
-	jsonb_extract_path_text (users__.jsonb,'personal','firstName') as user_first_name,
+	jsonb_extract_path_text (users__.jsonb,'personal','lastName') AS user_last_name,
+	jsonb_extract_path_text (users__.jsonb,'personal','firstName') AS user_first_name,
 	uu.active AS patron_status
 
 FROM loan1 
-	LEFT JOIN folio_derived.loans_items AS li 
-	ON loan1.most_recent_loan = li.loan_date 
+	INNER JOIN folio_derived.loans_items AS li 
+	ON loan1.most_recent_loan::date = li.loan_date::date 
 		AND loan1.item_id = li.item_id
 
-	LEFT JOIN folio_users.users__t as uu --user_users AS uu 
+	INNER JOIN folio_users.users__t as uu 
 	ON li.user_id::UUID = uu.id
 	
-	LEFT JOIN folio_users.users__ 
+	inner JOIN folio_users.users__ 
 	ON uu.id = users__.id
 
 WHERE users__.__current = TRUE
@@ -152,11 +152,17 @@ SELECT DISTINCT
 	recs.library_name,
 	recs.permanent_location_name,
 	recs.title,
+	CASE
+	        WHEN recs.whole_call_number like '%+++%' THEN '+++'
+        	WHEN recs.whole_call_number like '%++%' THEN '++'
+        	WHEN recs.whole_call_number like '%+%' THEN '+'
+        	ELSE ''
+        	END AS size,
 	recs.whole_call_number,
 	recs.barcode,
 	recs.status_name,
 	recs.item_status_date, 
-	COALESCE (recs.last_folio_check_in, recs.last_voyager_check_in,'-') AS last_check_in_date, 
+	to_char (COALESCE (recs.last_folio_check_in, recs.last_voyager_check_in, NULL)::timestamp, 'mm/dd/yyyy hh:mi am') AS last_check_in_date, 
 	COALESCE (recs.last_folio_check_in_service_point,location.Location_name,'-') AS last_check_in_location,
 	recs.in_transit_destination_service_point_name,
 	recs.pagination_size,
@@ -176,7 +182,7 @@ SELECT DISTINCT
 
 FROM recs 
 	LEFT JOIN vger.circ_trans_archive AS cta 
-	ON recs.last_voyager_check_in = TO_CHAR (cta.discharge_date::TIMESTAMP,'mm/dd/yyyy hh:mi am') 
+	ON recs.last_voyager_check_in = cta.discharge_date::TIMESTAMP
 		AND recs.item_hrid = cta.item_id::VARCHAR
 
 	LEFT JOIN vger.location 
@@ -188,6 +194,6 @@ FROM recs
 WHERE (recs.library_name ilike (SELECT owning_library_name_filter FROM parameters) OR (SELECT owning_library_name_filter FROM parameters) = '')
 --recs.status_name = (SELECT item_status_filter FROM parameters) OR (SELECT item_status_filter FROM parameters) = '' 
 
-ORDER BY library_name, permanent_location_name, effective_shelving_order COLLATE "C"
+ORDER BY library_name, permanent_location_name, size, effective_shelving_order COLLATE "C"
 ;
 
