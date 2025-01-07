@@ -157,7 +157,7 @@ SELECT DISTINCT
         	WHEN recs.whole_call_number like '%++%' THEN '++'
         	WHEN recs.whole_call_number like '%+%' THEN '+'
         	ELSE ''
-        	END AS size,
+        	END AS size_group,
 	recs.whole_call_number,
 	recs.barcode,
 	recs.status_name,
@@ -194,6 +194,6 @@ FROM recs
 WHERE (recs.library_name ilike (SELECT owning_library_name_filter FROM parameters) OR (SELECT owning_library_name_filter FROM parameters) = '')
 --recs.status_name = (SELECT item_status_filter FROM parameters) OR (SELECT item_status_filter FROM parameters) = '' 
 
-ORDER BY library_name, permanent_location_name, size, effective_shelving_order COLLATE "C"
+ORDER BY library_name, permanent_location_name, size_group, effective_shelving_order COLLATE "C"
 ;
 
