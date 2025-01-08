@@ -1,2 +1,7 @@
 MCR207
 Fine_Arts_ser_curr_rec_NAAB
+Last updated: 1/6/25
+
+This query estimates the number of physical serial titles currently received in the Mui Ho Fine Arts Library.
+It uses two queries that search via purchase order and via holding records notes, combines instance HRIDs, 
+and then dedupes. Used in fall of 2024 for NAAB reporting.
