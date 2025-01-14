@@ -1,0 +1,7 @@
+MCR220
+Voyager and Folio circ counts with parameters
+
+This query finds total Voyager and Folio circ usage for given parameters: LC class, library, title, instance hrid and/or language.
+
+NOTE: It's best to comment out any of the WHERE statement parameters that you're not using, or the query will take an eternity to run.
+However, DO NOT comment out the "language ordinality" condition, even if you comment out the language_filter parameter.
