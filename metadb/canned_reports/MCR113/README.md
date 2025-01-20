@@ -11,5 +11,5 @@ This query provides the total amount of voucher lines per account number and per
 for transactions exported to accounting.  
 
 ### Parameters  
-The invoice status is hardcoded as `'Paid'`. 
+The invoice status is hardcoded as `'Paid'`. <br>
 The date range for records in results is set for FY2025.
