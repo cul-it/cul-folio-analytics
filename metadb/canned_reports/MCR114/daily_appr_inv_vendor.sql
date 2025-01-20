@@ -2,7 +2,8 @@
 --daily_appr_inv_vendor
 --This query provide the list of invoices paid by vendor along with voucher lines details.
 --written by Nancy Bolduc, revised for Metadb by Sharon Markus, and tested by Ann Crowley
---last updated 5/6/24
+--last updated 1/20/25
+--The date range for records in results is set for FY2025.
 
 WITH parameters AS (
     SELECT
