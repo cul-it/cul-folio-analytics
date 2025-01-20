@@ -4,7 +4,7 @@
 **Written by:** Nancy Bolduc  
 **Revised for Metadb by:** Sharon Markus  
 **Reviewed and tested by:** Ann Crowley  
-**Last updated:** 2/19/24  
+**Last updated:** 1/21/25  
 
 ### Description  
 This query provides the total amount of voucher lines per account number and per approval date 
