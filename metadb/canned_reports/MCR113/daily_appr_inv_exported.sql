@@ -6,6 +6,7 @@
 -- This query provides the total amount of voucher_lines per account number 
 -- and per approval date for transactions exported to accounting. 
 -- The invoice status is hardcoed as 'Paid'
+-- The data range for records in results is set for FY2025.
 
 /* Change the lines below to filter or leave blank to return all results. Add details in '' for a specific filter.*/
 
