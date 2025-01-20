@@ -7,7 +7,7 @@
 **Last updated:** 2/19/24  
 
 ### Description  
-This query provides the total amount of `voucher_lines` per account number and per approval date 
+This query provides the total amount of voucher lines per account number and per approval date 
 for transactions exported to accounting.  
 
 **Note:** The invoice status is hardcoded as `'Paid'`. 
