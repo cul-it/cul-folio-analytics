@@ -1,8 +1,7 @@
 -- MCR113
 -- daily_appr_inv_exported.sql
+-- last updated: 1/21/25
 -- written by Nancy Bolduc, revised for Metadb by Sharon Markus, reviewed and tested by Ann Crowley
--- Last updated 2/19/24
-
 -- This query provides the total amount of voucher_lines per account number 
 -- and per approval date for transactions exported to accounting. 
 -- The invoice status is hardcoed as 'Paid'
