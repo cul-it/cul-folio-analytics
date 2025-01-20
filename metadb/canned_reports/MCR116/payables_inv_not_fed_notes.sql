@@ -1,10 +1,14 @@
 --MCR116
 --payables_inv_not_fed_notes
 --This query was written by Nancy Bolduc and revised for metadb by Sharon Markus and Ann Crowley
+--last updated 1/21/25
+--The date range for this query is currently set to show data for FY2025.
 
-/* This query provides the total amount of voucher lines not sent to accounting (manuals) per account number with notes*/
+/* This query provides the total amount of voucher lines not sent to accounting (manuals) 
+per account number with notes*/
 
-/* Change the lines below to filter or leave blank to return all results. Add details in '' for a specific filter.*/
+/* Change the lines below to filter or leave blank to return all results. 
+Add details in '' for a specific filter.*/
 
 WITH parameters AS (
 	SELECT
