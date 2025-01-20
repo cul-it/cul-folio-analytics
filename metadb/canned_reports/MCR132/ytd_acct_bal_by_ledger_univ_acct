@@ -25,7 +25,7 @@ FROM
     LEFT JOIN folio_finance.ledger__t AS fl ON fl.id::UUID = ff.ledger_id
 WHERE
     ff.fund_status LIKE 'Active'
-    AND ffy.code LIKE 'FY2023'
+    AND ffy.code LIKE 'FY2025'
 GROUP BY
     external_account_no,
     fl.name
