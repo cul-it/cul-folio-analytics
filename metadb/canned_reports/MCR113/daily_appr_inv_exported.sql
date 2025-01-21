@@ -11,8 +11,8 @@
 
 WITH parameters AS (
 	SELECT
-        '2021-07-01'::DATE AS voucher_date_start_date, --ex:2000-01-01 
-        '2022-06-30'::DATE AS voucher_date_end_date -- ex:2020-06-30 
+        '2024-07-01'::DATE AS voucher_date_start_date, --ex:2000-01-01 
+        '2025-06-30'::DATE AS voucher_date_end_date -- ex:2020-06-30 
 ),
 ledger_fund AS (
 	SELECT 
