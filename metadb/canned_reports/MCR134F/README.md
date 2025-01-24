@@ -3,7 +3,7 @@
 
 ****
 
-This is a version of the MCR134 approved invoices query using by accounting that has been modified to exclude the bibliographic data. Accounting approves invoices Mondays through Fridays, so it is best to run this query on Fridays if you want it to match the data in the FOLIO financial applications. 
+This is a version of the MCR134 approved invoices query using by accounting that has been modified to exclude the bibliographic data. Accounting approves invoices Mondays through Fridays, so it is best to run this query on Fridays if you want it to match the data in the FOLIO financial applications. This query does not use derived tables.
 
 **Last updated:** 1-24-25  
 **Written by:** Joanne Leary
