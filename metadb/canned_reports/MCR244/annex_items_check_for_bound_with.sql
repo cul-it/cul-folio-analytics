@@ -1,5 +1,6 @@
 --MCR244
 --annex_items_check_for_bound_with.sql
+--written by: Joanne Leary
 --last updated: 1/23/25
 --This query looks for holdings records that have bound-with barcodes in the holdings notes field, and matches the
 --barcodes from the notes field to a list of barcodes supplied by the Annex. Then it finds all the item records associatd with
