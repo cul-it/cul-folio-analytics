@@ -5,20 +5,8 @@
 --This query provides the list of approved invoices within a date range along with ledger name, external account no, vendor name, 
 --vendor invoice no, invoice line number, invoice line description, invoice date, invoice payment date, order format, format name, 
 --purchase order line no,fund code, transaction type, transaction amount.
---In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1
---Change Log:
---Converted to MetaDB 8-29-24 
-	-- added invoice line number and invoice status to Select fields 
-	-- changed Where condition to "inv.status in ('Paid','Approved')" 
-	-- added the invoice approval date as part of the where condition, using the start and end date as parameters
---9-5-24: removed "distinct" from the main query
-	-- removed "new quantity" subquery (not needed, because all entries in the invoice_lines__t table have non-zero and non-null values)
-	-- replaced "new quantity" with invl.quantity
-	-- changed the payment_end_date Where statement to be "less than," not "less than or equal to"
-	-- changed invoice status condition to "Paid" or "Approved" and applied the payment date parameter values to both "Paid date" or "Approval date"
---10-29-24: discovered that invoice_line__t.quantity does in fact have some entries = '0', but because this query does not include the "transaction_amount_per_qty" field, there is no need to have the New Quantity subquery.
--- 1-24-25: replaced the finance_transaction_invoices derived table with the derivation code, in order to make the query pull current data; 
-	--replaced instance_ext with instance__t tab;e.
+--In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1.
+--This query does not use derived tables.
 
 WITH parameters AS (
     SELECT
