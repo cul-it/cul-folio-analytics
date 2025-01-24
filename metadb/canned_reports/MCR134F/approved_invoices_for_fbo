@@ -1,32 +1,89 @@
---MCR134_F 
---Approved Invoices for FBO
---last updated: 10-29-24
---This query provides the list of approved invoices within a date range along with ledger name, external account no, 
---vendor name, vendor invoice no, invoice line number, invoice line description, invoice date, invoice payment date, 
---order format, format name, purchase order line no,fund code, transaction type, transaction amount.
+--MCR134F 
+--approved_invoices_for_fbo
+--last updated: 1-24-25
+--written by: Joanne Leary
+--This query provides the list of approved invoices within a date range along with ledger name, external account no, vendor name, 
+--vendor invoice no, invoice line number, invoice line description, invoice date, invoice payment date, order format, format name, 
+--purchase order line no,fund code, transaction type, transaction amount.
 --In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1
+--Change Log:
 --Converted to MetaDB 8-29-24 
 	-- added invoice line number and invoice status to Select fields 
 	-- changed Where condition to "inv.status in ('Paid','Approved')" 
 	-- added the invoice approval date as part of the where condition, using the start and end date as parameters
 --9-5-24: removed "distinct" from the main query
-	-- removed "new quantity" subquery (not needed, because all entries in the invoice_lines__t table have non-zero 
-        --and non-null values)
+	-- removed "new quantity" subquery (not needed, because all entries in the invoice_lines__t table have non-zero and non-null values)
 	-- replaced "new quantity" with invl.quantity
 	-- changed the payment_end_date Where statement to be "less than," not "less than or equal to"
 	-- changed invoice status condition to "Paid" or "Approved" and applied the payment date parameter values to both "Paid date" or "Approval date"
 --10-29-24: discovered that invoice_line__t.quantity does in fact have some entries = '0', but because this query does not include the "transaction_amount_per_qty" field, there is no need to have the New Quantity subquery.
-
+-- 1-24-25: replaced the finance_transaction_invoices derived table with the derivation code, in order to make the query pull current data; 
+	--replaced instance_ext with instance__t tab;e.
 
 WITH parameters AS (
     SELECT
         '2024-07-01' AS payment_date_start_date,--enter invoice payment start date and end date in YYYY-MM-DD format
-        '2025-1-22' AS payment_date_end_date, -- Excludes the selected date
+        '2025-06-30' AS payment_date_end_date, -- Excludes the selected date
         ''::VARCHAR AS transaction_fund_code, -- Ex: 999, 521, p1162 etc.
         ''::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
         ''::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023 etc.
         ''::VARCHAR AS format_name -- Ex: Book, Serial, Textual Resource, etc.      
 ),
+
+fintraninv as 
+(
+SELECT
+    ft.id AS transaction_id,
+    jsonb_extract_path_text(ft.jsonb, 'amount')::numeric(19,4) AS transaction_amount,
+    CASE WHEN jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Credit'
+        THEN 
+            jsonb_extract_path_text(ft.jsonb, 'amount') :: NUMERIC(19,4) * -1
+        ELSE 
+            jsonb_extract_path_text(ft.jsonb, 'amount') :: NUMERIC(19,4)
+    END AS effective_transaction_amount,
+    jsonb_extract_path_text(ft.jsonb, 'currency') AS transaction_currency,
+    jsonb_extract_path_text(ft.jsonb, 'metadata', 'createdDate')::date AS transaction_created_date,
+    jsonb_extract_path_text(ft.jsonb, 'metadata', 'updatedDate')::date AS transaction_updated_date,
+	jsonb_extract_path_text(ft.jsonb, 'description') AS transaction_description,
+    ft.expenseclassid AS transaction_expense_class_id,
+    ft.fiscalyearid AS transaction_fiscal_year_id,
+    ft.fromfundid AS transaction_from_fund_id,
+    jsonb_extract_path_text(ff.jsonb, 'name') AS transaction_from_fund_name,
+    jsonb_extract_path_text(ff.jsonb, 'code') AS transaction_from_fund_code,
+    ft.tofundid AS transaction_to_fund_id,
+    jsonb_extract_path_text(tf.jsonb, 'name') AS transaction_to_fund_name,
+    jsonb_extract_path_text(tf.jsonb, 'code') AS transaction_to_fund_code,
+    CASE WHEN ft.tofundid IS NULL THEN ft.fromfundid ELSE ft.tofundid END AS effective_fund_id,
+    CASE WHEN jsonb_extract_path_text(ff.jsonb, 'name') IS NULL THEN jsonb_extract_path_text(tf.jsonb, 'name') 
+        ELSE jsonb_extract_path_text(ff.jsonb, 'name') END AS effective_fund_name,
+    CASE WHEN jsonb_extract_path_text(ff.jsonb, 'code') IS NULL THEN jsonb_extract_path_text(tf.jsonb, 'code') 
+        ELSE jsonb_extract_path_text(ff.jsonb, 'code') END AS effective_fund_code,
+    fb.id AS transaction_from_budget_id,
+    jsonb_extract_path_text(fb.jsonb, 'name') AS transaction_from_budget_name,
+    jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceId')::uuid AS invoice_id,
+    jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceLineId')::uuid AS invoice_line_id,
+    jsonb_extract_path_text(ft.jsonb, 'transactionType') AS transaction_type,
+    jsonb_extract_path_text(ii.jsonb, 'invoiceDate') AS invoice_date,
+    jsonb_extract_path_text(ii.jsonb, 'paymentDate') AS invoice_payment_date,
+    jsonb_extract_path_text(ii.jsonb, 'exchangeRate')::numeric(19,14) AS invoice_exchange_rate,
+    jsonb_extract_path_text(il.jsonb, 'total')::numeric(19,4) AS invoice_line_total,
+    jsonb_extract_path_text(ii.jsonb, 'currency') AS invoice_currency,
+    jsonb_extract_path_text(il.jsonb, 'poLineId') AS po_line_id,
+    jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid AS invoice_vendor_id,
+    jsonb_extract_path_text(oo.jsonb, 'name') AS invoice_vendor_name   
+FROM
+    folio_finance.transaction AS ft
+    LEFT JOIN folio_invoice.invoices AS ii ON jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceId')::uuid = ii.id
+    LEFT JOIN folio_invoice.invoice_lines AS il ON jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceLineId')::uuid = il.id
+    LEFT JOIN folio_finance.fund AS ff ON ft.fromfundid = ff.id
+    LEFT JOIN folio_finance.fund AS tf ON ft.tofundid = tf.id
+    LEFT JOIN folio_finance.budget AS fb ON ft.fromfundid = fb.fundid AND ft.fiscalyearid = fb.fiscalyearid
+    LEFT JOIN folio_organizations. organizations AS oo ON jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid = oo.id
+WHERE (jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Pending payment'
+    OR jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Payment'
+    OR jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Credit')
+),
+
 
 format_extract AS ( -- gets the format code from the marc leader and links to the local translation table
     SELECT
@@ -65,7 +122,7 @@ finance_transaction_invoices_ext AS ( -- gets details of the finance transaction
          END AS effective_transaction_amount,
         ff.external_account_no AS external_account_no
     FROM 
-    	folio_derived.finance_transaction_invoices AS fti
+    	fintraninv as fti --folio_derived.finance_transaction_invoices AS fti
     LEFT JOIN folio_finance.fund__t AS ff ON ff.code = fti.effective_fund_code
     LEFT JOIN folio_finance.fiscal_year__t AS ffy ON ffy.id = fti.transaction_fiscal_year_id
     LEFT JOIN folio_finance.fund_type__t AS fft ON fft.id = ff.fund_type_id
@@ -103,6 +160,7 @@ fund_fiscal_year_group AS ( -- associates the fund with the finance group and fi
 	     FROM folio_invoice.invoice_lines__t
 	),*/
 
+ 
 SELECT 
         current_date AS current_date,           
        CASE WHEN 
@@ -144,7 +202,7 @@ FROM
         LEFT JOIN folio_invoice.invoices__t AS inv ON ftie.invoice_id::UUID = inv.id::UUID
         LEFT JOIN folio_orders.po_line__t AS pol ON ftie.po_line_id::UUID = pol.id::UUID
         LEFT JOIN folio_orders.purchase_order__t AS PO ON po.id::UUID = pol.purchase_order_id::UUID
-        LEFT JOIN folio_derived.instance_ext AS iext ON iext.instance_id = pol.instance_id
+        LEFT JOIN folio_inventory.instance__t as iext on iext.id = pol.instance_id --folio_derived.instance_ext AS iext ON iext.instance_id = pol.instance_id
         LEFT JOIN folio_finance.group_fund_fiscal_year__t AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
         LEFT JOIN format_extract AS formatt ON pol.instance_id::UUID = formatt.instance_id::UUID
 WHERE
