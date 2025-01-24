@@ -3,8 +3,6 @@
 --written by: Joanne Leary
 --last updated 1/24/25
 --This query finds items accessioned at the Annex with an "In transit" status, using an imported file of barcodes.
---Change Log:
--- 1-22-25: updated query to use primary tables (not derived)
 
 SELECT DISTINCT
         TO_CHAR (current_date::DATE,'mm/dd/yyyy') AS todays_date,
