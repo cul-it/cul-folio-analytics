@@ -1,8 +1,12 @@
-# MCR134_F: Approved Invoices for FBO
+# MCR134F
+# approved_invoices_for_fbo.sql
 
-**Last updated:** 10-29-24
-**Written by:** Nancy Bolduc
-**Revised to Metadb by:** Joanne Leary
+****
+
+This is a version of the MCR134 approved invoices query using by accounting that has been modified to exclude the bibliographic data. Accounting approves invoices Mondays through Fridays, so it is best to run this query on Fridays if you want it to match the data in the FOLIO financial applications. 
+
+**Last updated:** 1-24-25  
+**Written by:** Joanne Leary
 
 This query provides the list of approved invoices within a date range along with:
 - Ledger name
@@ -22,7 +26,7 @@ This query provides the list of approved invoices within a date range along with
 
 In cases where the quantity was incorrectly entered as zero, this query replaces zero with 1.
 
-## History
+## Change Log
 
 ### Converted to MetaDB (8-29-24)
 - Added invoice line number and invoice status to Select fields.
@@ -38,5 +42,9 @@ In cases where the quantity was incorrectly entered as zero, this query replaces
 
 ### 10-29-24
 - Discovered that `invoice_line__t.quantity` does in fact have some entries = '0', but because this query does not include the `transaction_amount_per_qty` field, there is no need to have the New Quantity subquery.
+
+### 1-24-25
+- Replaced the `finance_transaction_invoices` derived table with the derivation code, in order to make the query pull current data.
+- Replaced `instance_ext` with `instance__t` table.
 
 - 
