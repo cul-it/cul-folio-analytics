@@ -1,9 +1,12 @@
--- MCR195
--- Expense transfer
+-- MCR195 - Expense transfer
+-- last updated: 1-24-25
 -- This query is a customization of CR-134 (paid invoices with bib data) for the purpose of identifying expenditures that can be transferred from unrestricted funds to restricted funds.
--- Last updated: 7-29-24
---Query writer: Joanne Leary (jl41)
---Query reviewer: Sharon Markus (slm5)
+-- Last updated: 1-24-25
+-- Query writer: Joanne Leary (jl41)
+-- Query reviewer: Sharon Markus (slm5)
+-- 11-18-24: excluded restricted funds and certain funds that Ann indicated would never be used to transfer funds out of (line 203 and 204)
+-- 1-24-25: added instance UUId and replaced the derived tables with primary tables (added derivation code for po_lines_locations, finance_transaction_invoices and instance_languages; 
+	-- used instance__t instead of instance_ext)
 
 WITH parameters AS (
 
@@ -71,6 +74,105 @@ subj2 as -- gets the secondary subjects from the instance_subjects derived table
 	WHERE s.ordinality > 1
 ),
 
+fintraninv as --- this is the derivation code for the finance_transaction_invoices derived table
+(
+SELECT
+    ft.id AS transaction_id,
+    jsonb_extract_path_text(ft.jsonb, 'amount')::numeric(19,4) AS transaction_amount,
+    CASE WHEN jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Credit'
+        THEN 
+            jsonb_extract_path_text(ft.jsonb, 'amount') :: NUMERIC(19,4) * -1
+        ELSE 
+            jsonb_extract_path_text(ft.jsonb, 'amount') :: NUMERIC(19,4)
+    END AS effective_transaction_amount,
+    jsonb_extract_path_text(ft.jsonb, 'currency') AS transaction_currency,
+    jsonb_extract_path_text(ft.jsonb, 'metadata', 'createdDate')::date AS transaction_created_date,
+    jsonb_extract_path_text(ft.jsonb, 'metadata', 'updatedDate')::date AS transaction_updated_date,
+	jsonb_extract_path_text(ft.jsonb, 'description') AS transaction_description,
+    ft.expenseclassid AS transaction_expense_class_id,
+    ft.fiscalyearid AS transaction_fiscal_year_id,
+    ft.fromfundid AS transaction_from_fund_id,
+    jsonb_extract_path_text(ff.jsonb, 'name') AS transaction_from_fund_name,
+    jsonb_extract_path_text(ff.jsonb, 'code') AS transaction_from_fund_code,
+    ft.tofundid AS transaction_to_fund_id,
+    jsonb_extract_path_text(tf.jsonb, 'name') AS transaction_to_fund_name,
+    jsonb_extract_path_text(tf.jsonb, 'code') AS transaction_to_fund_code,
+    CASE WHEN ft.tofundid IS NULL THEN ft.fromfundid ELSE ft.tofundid END AS effective_fund_id,
+    CASE WHEN jsonb_extract_path_text(ff.jsonb, 'name') IS NULL THEN jsonb_extract_path_text(tf.jsonb, 'name') ELSE jsonb_extract_path_text(ff.jsonb, 'name') END AS effective_fund_name,
+    CASE WHEN jsonb_extract_path_text(ff.jsonb, 'code') IS NULL THEN jsonb_extract_path_text(tf.jsonb, 'code') ELSE jsonb_extract_path_text(ff.jsonb, 'code') END AS effective_fund_code,
+    fb.id AS transaction_from_budget_id,
+    jsonb_extract_path_text(fb.jsonb, 'name') AS transaction_from_budget_name,
+    jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceId')::uuid AS invoice_id,
+    jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceLineId')::uuid AS invoice_line_id,
+    jsonb_extract_path_text(ft.jsonb, 'transactionType') AS transaction_type,
+    jsonb_extract_path_text(ii.jsonb, 'invoiceDate') AS invoice_date,
+    jsonb_extract_path_text(ii.jsonb, 'paymentDate') AS invoice_payment_date,
+    jsonb_extract_path_text(ii.jsonb, 'exchangeRate')::numeric(19,14) AS invoice_exchange_rate,
+    jsonb_extract_path_text(il.jsonb, 'total')::numeric(19,4) AS invoice_line_total,
+    jsonb_extract_path_text(ii.jsonb, 'currency') AS invoice_currency,
+    jsonb_extract_path_text(il.jsonb, 'poLineId') AS po_line_id,
+    jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid AS invoice_vendor_id,
+    jsonb_extract_path_text(oo.jsonb, 'name') AS invoice_vendor_name   
+FROM
+    folio_finance.transaction AS ft
+    LEFT JOIN folio_invoice.invoices AS ii ON jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceId')::uuid = ii.id
+    LEFT JOIN folio_invoice.invoice_lines AS il ON jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceLineId')::uuid = il.id
+    LEFT JOIN folio_finance.fund AS ff ON ft.fromfundid = ff.id
+    LEFT JOIN folio_finance.fund AS tf ON ft.tofundid = tf.id
+    LEFT JOIN folio_finance.budget AS fb ON ft.fromfundid = fb.fundid AND ft.fiscalyearid = fb.fiscalyearid
+    LEFT JOIN folio_organizations. organizations AS oo ON jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid = oo.id
+WHERE (jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Pending payment'
+    OR jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Payment'
+    OR jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Credit')
+),
+
+polineslocs as ---- this is the derivation code for the po_lines_locations derived table
+	(WITH ploc AS (
+	    SELECT
+	        p.id::uuid AS pol_id,
+	        jsonb_extract_path_text(locations.data, 'locationId')::uuid AS pol_location_id,
+	        jsonb_extract_path_text(locations.data, 'holdingId')::uuid AS pol_holding_id,
+	        jsonb_extract_path_text(locations.data, 'quantity')::int AS pol_loc_qty,
+	        jsonb_extract_path_text(locations.data, 'quantityElectronic')::int AS pol_loc_qty_elec,
+	        jsonb_extract_path_text(locations.data, 'quantityPhysical')::int AS pol_loc_qty_phys
+	    FROM
+	        folio_orders.po_line AS p
+	        CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(jsonb, 'locations')) AS locations (data)
+			)
+			
+		SELECT
+		    ploc.pol_id,
+		    ploc.pol_loc_qty,
+		    ploc.pol_loc_qty_elec,
+		    ploc.pol_loc_qty_phys,
+		CASE WHEN ploc.pol_location_id IS NOT NULL THEN ploc.pol_location_id  
+		          ELSE hr.permanent_location_id
+		END AS pol_location_id, 
+		CASE WHEN pol_location.name IS NOT NULL THEN pol_location.name
+		         ELSE holdings_location.name
+		END AS pol_location_name,
+		CASE WHEN pol_location.name IS NOT NULL THEN 'pol_location'
+		         WHEN holdings_location.name IS NOT NULL THEN 'pol_holding'
+		         ELSE 'no_source'
+		END AS pol_location_source
+		FROM
+		    ploc
+		    LEFT JOIN folio_inventory.holdings_record__t AS hr ON ploc.pol_holding_id::uuid = hr.id
+		    LEFT JOIN folio_inventory.location__t AS pol_location ON pol_location.id = ploc.pol_location_id
+	    LEFT JOIN folio_inventory.location__t AS holdings_location ON holdings_location.id::uuid = hr.permanent_location_id
+),
+
+langs as --- this is the derivation code for the instance_languuages derived table
+	(SELECT
+	    instances.id AS instance_id,
+	    jsonb_extract_path_text(instances.jsonb, 'hrid') AS instance_hrid,
+	    languages.jsonb #>> '{}' AS instance_language,
+	    languages.ordinality AS language_ordinality
+	FROM
+	    folio_inventory.instance AS instances
+	    CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(jsonb, 'languages')) WITH ORDINALITY AS languages (jsonb)
+ 	),
+
 finance_transaction_invoices_ext AS ( -- gets details of the finance transactions and converts Credits to negative values
        SELECT
         fti.transaction_id AS transaction_id,    
@@ -94,11 +196,14 @@ finance_transaction_invoices_ext AS ( -- gets details of the finance transaction
         CASE WHEN fti.transaction_type = 'Credit' AND fti.transaction_amount >0.01 THEN fti.transaction_amount *-1 ELSE fti.transaction_amount END AS effective_transaction_amount,
         ff.external_account_no AS external_account_no
        FROM
-        folio_derived.finance_transaction_invoices fti --folio_reporting.finance_transaction_invoices AS fti
+        fintraninv as fti --folio_derived.finance_transaction_invoices fti --folio_reporting.finance_transaction_invoices AS fti
                 LEFT JOIN folio_finance.fund__t as ff on ff.code = fti.effective_fund_code  --finance_funds AS ff ON ff.code = fti.effective_fund_code
                 LEFT JOIN folio_finance.fiscal_year__t as ffy on ffy.id = fti.transaction_fiscal_year_id --finance_fiscal_years AS ffy ON ffy.id = fti.transaction_fiscal_year_id
                 LEFT JOIN folio_finance.fund_type__t as fft on fft.id = ff.fund_type_id --finance_fund_types AS fft ON fft.id = ff.fund_type_id
                 LEFT JOIN folio_finance.ledger__t as fl on ff.ledger_id = fl.id   --finance_ledgers AS fl ON ff.ledger_id = fl.id
+       
+        where fft.name like '%Unrestricted%'
+	    and ff.code not in ('4','7','515','518','522','6920','6921','813','999') 
 ),
 
 fund_fiscal_year_group as  -- associates the fund with the finance group and fiscal year
@@ -118,7 +223,7 @@ fund_fiscal_year_group as  -- associates the fund with the finance group and fis
 	    LEFT JOIN folio_finance.fund__t as ff on ff.id = fgffy.fund_id --finance_funds AS FF ON FF.id = fgffy.fund_id
 ),
 
-new_quantity AS 
+new_quantity AS --- this converts invoice line quantity values of zero to one; necessary for calculating price per unit ordered (line 296)
 	(SELECT 
 		id AS invoice_line_id,
 	       CASE WHEN quantity = 0
@@ -142,7 +247,8 @@ main AS
        po.order_type,
        pol.order_format,
        REPLACE (REPLACE (iext.title, chr(13), ''),chr(10),'') AS instance_title,
-       iext.instance_hrid,
+       iext.hrid as instance_hrid,
+       iext.id as instance_uuid,
        CASE -- selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
 	        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
 	        WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
@@ -168,7 +274,7 @@ main AS
        string_agg (distinct field050.lc_class,' | ') as lc_class,
        string_agg (distinct field050.lc_class_number,' | ') as lc_class_number,
        formatt.bib_format_display AS format_name,
-       STRING_AGG (DISTINCT locations.pol_location_name,' | ') AS location_name,
+       STRING_AGG (DISTINCT polineslocs.pol_location_name, ' | ') as location_name, --locations.pol_location_name,' | ') AS location_name,
        po.po_number,
        pol.po_line_number,
        REPLACE (REPLACE (pol.title_or_package, chr(13), ''),chr(10),'') AS po_line_title_or_package,
@@ -197,17 +303,17 @@ FROM
        	LEFT JOIN folio_invoice.invoices__t as inv on ftie.invoice_id = inv.id --invoice_invoices AS inv ON ftie.invoice_id = inv.id
         LEFT JOIN folio_orders.po_line__t as pol on ftie.po_line_id::UUID = pol.id::UUID --po_lines AS pol ON ftie.po_line_id = pol.id
         LEFT JOIN folio_orders.purchase_order__t as po on po.id::UUID = pol.purchase_order_id::UUID --po_purchase_orders AS PO ON po.id = pol.purchase_order_id
-        LEFT JOIN folio_derived.instance_ext as iext on iext.instance_id = pol.instance_id --folio_reporting.instance_ext AS iext ON iext.instance_id = pol.instance_id
-        LEFT JOIN folio_derived.instance_languages as lang on lang.instance_id::UUID = pol.instance_id::UUID--folio_reporting.instance_languages AS lang ON lang.instance_id = pol.instance_id
-        LEFT JOIN subj1 on iext.instance_hrid = subj1.instance_hrid
-        LEFT JOIN subj2 on iext.instance_hrid = subj2.instance_hrid       
+        LEFT JOIN folio_inventory.instance__t as iext on iext.id = pol.instance_id--LEFT JOIN folio_derived.instance_ext as iext on iext.instance_id = pol.instance_id --folio_reporting.instance_ext AS iext ON iext.instance_id = pol.instance_id
+        LEFT JOIN langs as lang on lang.instance_id::UUID = pol.instance_id::UUID --folio_derived.instance_languages as lang on lang.instance_id::UUID = pol.instance_id::UUID--folio_reporting.instance_languages AS lang ON lang.instance_id = pol.instance_id
+        LEFT JOIN subj1 on iext.hrid = subj1.instance_hrid
+        LEFT JOIN subj2 on iext.hrid = subj2.instance_hrid       
         LEFT JOIN folio_finance.group_fund_fiscal_year__t as ffyg on ffyg.fund_id = ftie.effective_fund_id --fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
         left join folio_finance.groups__t on groups__t.id = ffyg.group_id
         left join folio_finance.fund__t on ffyg.fund_id = fund__t.id
         LEFT JOIN format_extract AS formatt ON pol.instance_id::UUID = formatt.instance_id
-        LEFT JOIN folio_derived.po_lines_locations as locations on ftie.po_line_id::UUID = locations.pol_id::UUID --locations on ftie.po_line_id = locations.pol_id
+        LEFT JOIN polineslocs on ftie.po_line_id::UUID = polineslocs.pol_id ----folio_derived.po_lines_locations as locations on ftie.po_line_id::UUID = locations.pol_id::UUID --locations on ftie.po_line_id = locations.pol_id
         LEFT JOIN folio_finance.expense_class__t as fec on fec.id = ftie.expense_class--finance_expense_classes AS fec ON fec.id = ftie.expense_class
-        left join field050 ON iext.instance_hrid = field050.instance_hrid
+        left join field050 ON iext.hrid = field050.instance_hrid
         
 WHERE
         ((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
@@ -233,7 +339,8 @@ WHERE
         
  GROUP BY
        iext.title,
-       iext.instance_hrid,
+       iext.hrid,
+       iext.id,
        po.order_type,
        pol.order_format,
        ftie.invoice_date::DATE,
@@ -280,6 +387,7 @@ SELECT
        main.order_format,
        main.instance_title,
        main.instance_hrid,
+       main.instance_uuid,
        main.finance_group_name,
        main.fund_name,
        main.effective_fund_code,
