@@ -1,14 +1,68 @@
--- MCR157 (corrected 10-2-24)
+-- MCR157 (corrected 10-2-24) - revised 1-24-25
 -- Funds and teams with expense class
+-- last updated 1-24-25
 -- This query provides a detailed current date report of funds and teams with amounts spent, encumbered, and remaining.
 -- Query writer: Joanne Leary (jl41)
 -- Posted on: 7/25/24
 -- 10-2-24: corrected the query to add a join from expense class fiscal year code to finance fiscal year code
+-- 1-24-25: replaced derived table finance_transaction_invoices with derivation for derived table; gets up-to-the-minute data
 
 WITH parameters AS (
     SELECT
-        'FY2024' AS fiscal_year_code,
+        '' AS fiscal_year_code,
         '' as team_filter
+),
+
+fintraninv as 
+(
+SELECT
+    ft.id AS transaction_id,
+    jsonb_extract_path_text(ft.jsonb, 'amount')::numeric(19,4) AS transaction_amount,
+    CASE WHEN jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Credit'
+        THEN 
+            jsonb_extract_path_text(ft.jsonb, 'amount') :: NUMERIC(19,4) * -1
+        ELSE 
+            jsonb_extract_path_text(ft.jsonb, 'amount') :: NUMERIC(19,4)
+    END AS effective_transaction_amount,
+    jsonb_extract_path_text(ft.jsonb, 'currency') AS transaction_currency,
+    jsonb_extract_path_text(ft.jsonb, 'metadata', 'createdDate')::date AS transaction_created_date,
+    jsonb_extract_path_text(ft.jsonb, 'metadata', 'updatedDate')::date AS transaction_updated_date,
+	jsonb_extract_path_text(ft.jsonb, 'description') AS transaction_description,
+    ft.expenseclassid AS transaction_expense_class_id,
+    ft.fiscalyearid AS transaction_fiscal_year_id,
+    ft.fromfundid AS transaction_from_fund_id,
+    jsonb_extract_path_text(ff.jsonb, 'name') AS transaction_from_fund_name,
+    jsonb_extract_path_text(ff.jsonb, 'code') AS transaction_from_fund_code,
+    ft.tofundid AS transaction_to_fund_id,
+    jsonb_extract_path_text(tf.jsonb, 'name') AS transaction_to_fund_name,
+    jsonb_extract_path_text(tf.jsonb, 'code') AS transaction_to_fund_code,
+    CASE WHEN ft.tofundid IS NULL THEN ft.fromfundid ELSE ft.tofundid END AS effective_fund_id,
+    CASE WHEN jsonb_extract_path_text(ff.jsonb, 'name') IS NULL THEN jsonb_extract_path_text(tf.jsonb, 'name') ELSE jsonb_extract_path_text(ff.jsonb, 'name') END AS effective_fund_name,
+    CASE WHEN jsonb_extract_path_text(ff.jsonb, 'code') IS NULL THEN jsonb_extract_path_text(tf.jsonb, 'code') ELSE jsonb_extract_path_text(ff.jsonb, 'code') END AS effective_fund_code,
+    fb.id AS transaction_from_budget_id,
+    jsonb_extract_path_text(fb.jsonb, 'name') AS transaction_from_budget_name,
+    jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceId')::uuid AS invoice_id,
+    jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceLineId')::uuid AS invoice_line_id,
+    jsonb_extract_path_text(ft.jsonb, 'transactionType') AS transaction_type,
+    jsonb_extract_path_text(ii.jsonb, 'invoiceDate') AS invoice_date,
+    jsonb_extract_path_text(ii.jsonb, 'paymentDate') AS invoice_payment_date,
+    jsonb_extract_path_text(ii.jsonb, 'exchangeRate')::numeric(19,14) AS invoice_exchange_rate,
+    jsonb_extract_path_text(il.jsonb, 'total')::numeric(19,4) AS invoice_line_total,
+    jsonb_extract_path_text(ii.jsonb, 'currency') AS invoice_currency,
+    jsonb_extract_path_text(il.jsonb, 'poLineId') AS po_line_id,
+    jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid AS invoice_vendor_id,
+    jsonb_extract_path_text(oo.jsonb, 'name') AS invoice_vendor_name   
+FROM
+    folio_finance.transaction AS ft
+    LEFT JOIN folio_invoice.invoices AS ii ON jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceId')::uuid = ii.id
+    LEFT JOIN folio_invoice.invoice_lines AS il ON jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceLineId')::uuid = il.id
+    LEFT JOIN folio_finance.fund AS ff ON ft.fromfundid = ff.id
+    LEFT JOIN folio_finance.fund AS tf ON ft.tofundid = tf.id
+    LEFT JOIN folio_finance.budget AS fb ON ft.fromfundid = fb.fundid AND ft.fiscalyearid = fb.fiscalyearid
+    LEFT JOIN folio_organizations. organizations AS oo ON jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid = oo.id
+WHERE (jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Pending payment'
+    OR jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Payment'
+    OR jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Credit')
 ),
         
 expense_class AS    
@@ -20,7 +74,7 @@ SELECT distinct
         ffy.code AS expense_class_fiscal_year_code,
         sum(case when ft.transaction_type = 'Credit' THEN fti.transaction_amount*-1 ELSE fti.transaction_amount END) as amount_spent_in_expense_class
         
-FROM folio_derived.finance_transaction_invoices as fti --folio_reporting.finance_transaction_invoices AS fti 
+FROM fintraninv as fti --folio_derived.finance_transaction_invoices as fti  
         left join folio_finance.transaction__t as ft on fti.transaction_id = ft.id --LEFT JOIN finance_transactions AS ft ON fti.transaction_id = ft.id 
         left join folio_finance.expense_class__t as fec on fti.transaction_expense_class_id = fec.id --LEFT JOIN finance_expense_classes AS fec ON fti.transaction_expense_class_id = fec.id
         left join folio_finance.fiscal_year__t as ffy on ffy.id = fti.transaction_fiscal_year_id --LEFT JOIN finance_fiscal_years AS ffy ON ffy.id = fti.transaction_fiscal_year_id   
@@ -73,5 +127,4 @@ WHERE
 	
 ORDER BY 
 	team, finance_funds_code, finance_funds_name, expense_class_name
-
-
+;
