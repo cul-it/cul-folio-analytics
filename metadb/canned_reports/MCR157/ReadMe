@@ -1,4 +1,13 @@
--- MCR157 - funds and teams with expense class 
---This query provides a detailed current date report of funds and teams with amounts spent, encumbered, and remaining.
--- added team filter parameter and updated Where statements at the end
--- deleted the Where statement from expense_class parameter, because it was slowing down the query tremendously
+# MCR157 (corrected 10-2-24) - revised 1-24-25
+
+## Funds and Teams with Expense Class
+
+**Last updated:** 1-24-25
+
+This query provides a detailed current date report of funds and teams with amounts spent, encumbered, and remaining.
+
+**Query writer:** Joanne Leary (jl41)
+
+### Revision History
+- **10-2-24:** Corrected the query to add a join from expense class fiscal year code to finance fiscal year code.
+- **1-24-25:** Replaced derived table `finance_transaction_invoices` with derivation for derived table; gets up-to-the-minute data.
