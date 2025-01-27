@@ -31,5 +31,8 @@ This query provides the list of approved invoices within a date range along with
 <br>	-- removed the "or-is-blank" component from all the WHERE clause statements
 <br>-- 7-17-24: updated fund sort for Course Reserves (7311, 7342, 7370, p7358) - changed to Interdisciplinary finance group for FY2025
 <br>-- 7-25-24: added the original filter statements back in, and corrected the CASE WHEN sort for funds
+<br>-- 1-24-25: replaced derived tables with primary tables by adding the derivations for each as subqueries (finance_transaction_invoices, instance_languages, po_lines_locations)
+
+
 
 
