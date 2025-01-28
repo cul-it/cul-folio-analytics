@@ -1,6 +1,6 @@
 --MCR139Y
 --inv_appr_paid_diff_date_yesterday.sql
---last updated: 1/21/25
+--last updated: 1/28/25
 --written by Nancy Boluc, revised to metadb by Ann Crowley and Sharon Markus
 --This query provides a list of approved invoices that have been paid at a different date. 
 --Sometimes Folio won't allow an invoice to get paid and the invoice will only be paid at a 
