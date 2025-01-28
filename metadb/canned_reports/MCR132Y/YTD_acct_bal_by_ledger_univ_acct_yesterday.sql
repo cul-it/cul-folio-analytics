@@ -1,13 +1,13 @@
 --MCR132Y 
---yesterday_YTD_acct_bal_by_ledger_univ_acct
---last updated: 11/18/24
+--ytd_acct_bal_by_ledger_univ_acct_yesterday
+--last updated: 1-27-25
 --written by Nancy Bolduc, revised to Metadb by Sharon Markus and reviewed by Ann Crowley
---This report provides the previous day's totals for the year-to-date external account cash balance 
---along with total_expenditures, initial allocation, and net allocation. 
---The fiscal year can be modified in the WHERE clause. 
+--This report provides the year-to-date external account cash balance along with 
+--total_expenditures, initial allocation, and net allocation. 
+--The fiscal year can be selected in the WHERE clause. 
 
 SELECT
-    CURRENT_DATE-INTERVAL '1 day' AS date,
+    CURRENT_DATE,
     fl.name AS finance_ledger_name,
     ff.external_account_no AS external_account,
     SUM(COALESCE (fb.expenditures,0)) AS YTD_expenditures,
@@ -26,10 +26,11 @@ FROM
     LEFT JOIN folio_finance.ledger__t AS fl ON fl.id::UUID = ff.ledger_id
 WHERE
     ff.fund_status LIKE 'Active'
-    AND ffy.code LIKE 'FY2025' --change fiscal year here, e.g., FY2024
+    AND ffy.code LIKE 'FY2025'
 GROUP BY
     external_account_no,
     fl.name
 ORDER BY
     finance_ledger_name,
     external_account_no ASC; 
+  
