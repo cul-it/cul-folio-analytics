@@ -1,0 +1,9 @@
+MCR194
+Checkouts and checkins by service point, material type, collection type and date range
+
+This query shows checkouts and checkins by service point, material type, collection type and date range.
+
+  -- note that the action date is the field called "createdDate" at the end of the acl jsonb array
+	-- updated from the LDP query to show material type name as well as collection type
+	-- when item records from the circulation table are not found in the item table (because they were deleted some time after having circulated), 
+	-- the assigned collection type is "equipment" because those types of records are most likely to have been deleted
