@@ -1,5 +1,7 @@
 -- MCR194
 -- checkouts and checkins by service point, material type, collection type and date range
+--This query finds checkouts and checkins by month for a given service point and date range. Item records that have been deleted will show a material type name of null. Because most deleted records are equipment records, these items have been categorized as "Equipment" collection type as a best guess.
+
 --Query writer: Joanne Leary (jl41)
 --Query posted on: 1/29/25
 
