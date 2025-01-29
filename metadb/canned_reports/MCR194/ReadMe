@@ -1,7 +1,7 @@
 MCR194
 Checkouts and checkins by service point, material type, collection type and date range
 
-This query shows checkouts and checkins by service point, material type, collection type and date range.
+This query finds checkouts and checkins by month for a given service point and date range. Item records that have been deleted will show a material type name of null. Because most deleted records are equipment records, these items have been categorized as "Equipment" collection type as a best guess.
 
   -- note that the action date is the field called "createdDate" at the end of the acl jsonb array
 	-- updated from the LDP query to show material type name as well as collection type
