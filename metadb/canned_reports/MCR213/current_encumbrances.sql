@@ -6,10 +6,11 @@
 --NOTE: As of 6/21/23, Fully Paid orders may still have a current encumbrance; this is a system issue to be fixed.
 --11-19-24: converted to Metadb
 --11-21-24: corrected "order type" extraction and updated po_instance to vs_po_instance
+--2-2-25: You must enter the current fiscal year to get accurate results.
 
 WITH parameters AS (
     SELECT
-        ''::VARCHAR AS fiscal_year_code, -- e.g., FY2025
+        'FY2025'::VARCHAR AS fiscal_year_code, -- e.g., FY2025
         ''::VARCHAR AS fund_code
 ),
 
