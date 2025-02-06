@@ -1,4 +1,5 @@
 --CR207 
+--2/6/25: updated for LDP 2.1.0
 
 --po_lines_no_expense_class
 --To get a listing of purchase order lines with no expense class selected when the PO was created
@@ -15,10 +16,10 @@ SELECT
   title_or_package AS title_or_package
 
 FROM po_lines AS pol
-  CROSS JOIN json_array_elements(json_extract_path(data, 'fundDistribution')) AS dist(data)
-  LEFT JOIN finance_expense_classes AS fec ON json_extract_path_text(dist.DATA, 'expenseClassId') =fec.id
-  LEFT JOIN finance_funds AS ff ON ff.id = json_extract_path_text(dist.data, 'fundId')
-  LEFT JOIN po_purchase_orders AS ppo ON ppo.id = pol.purchase_order_id
+  CROSS JOIN jsonb_array_elements(jsonb_extract_path(data, 'fundDistribution')) AS dist(data)
+  LEFT JOIN finance_expense_classes AS fec ON jsonb_extract_path_text(dist.DATA, 'expenseClassId')::UUID = fec.id::UUID
+  LEFT JOIN finance_funds AS ff ON ff.id::UUID = jsonb_extract_path_text(dist.data, 'fundId')::UUID
+  LEFT JOIN po_purchase_orders AS ppo ON ppo.id::UUID = pol.purchase_order_id::UUID
 
 WHERE fec.name IS NULL
 AND ff.code != '522'
