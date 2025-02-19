@@ -1,2 +1,5 @@
 MCR126
 Borrow_direct_interlibrary_loan_recalls
+
+Last updated: 2-19-25 Changed join to holdings_ext table to accommodate change in holdings_ext derived table published in tagged version 
+https://github.com/folio-org/folio-analytics/tree/v1.8.0-20250217223617
