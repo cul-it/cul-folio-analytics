@@ -40,7 +40,7 @@ FROM folio_derived.loans_items AS li
         ON li.item_id = ie.item_id
         
         INNER JOIN folio_derived.holdings_ext AS he 
-        ON ie.holdings_record_id = he.id 
+        ON ie.holdings_record_id = he.holdings_id 
         
         INNER JOIN folio_derived.instance_ext AS instext 
         ON he.instance_id = instext.instance_id
