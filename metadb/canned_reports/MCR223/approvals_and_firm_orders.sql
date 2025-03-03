@@ -153,7 +153,7 @@ FROM folio_invoice.invoices__t ii
     LEFT JOIN folio_derived.invoice_lines_fund_distributions AS ilfd on il.id = ilfd.invoice_line_id
     LEFT JOIN folio_orders.po_line__t AS pl ON il.po_line_id = pl.id
     LEFT JOIN folio_derived.po_lines_locations AS poll on il.po_line_id = poll.pol_id
-    LEFT JOIN folio_derived.po_instance AS poi on pl.id::uuid = poi.po_line_id::uuid
+    LEFT JOIN local_shared.vs_po_instance AS poi on pl.id::uuid = poi.po_line_id::uuid
     LEFT JOIN folio_derived.holdings_ext AS he on poi.pol_instance_id = he.instance_id
     LEFT JOIN folio_inventory.instance__t AS invinst on he.instance_id = invinst.id
     LEFT join folio_format on invinst.hrid = folio_format.instance_hrid
