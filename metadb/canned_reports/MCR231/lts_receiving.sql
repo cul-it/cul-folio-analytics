@@ -23,7 +23,7 @@ SELECT
 FROM folio_orders.pieces__t pp
 LEFT JOIN folio_orders.po_line__t pl ON pp.po_line_id = pl.id
 LEFT JOIN folio_orders.purchase_order__t ppo ON ppo.id = pl.purchase_order_id
-LEFT JOIN folio_derived.po_instance poi ON ppo.id::uuid=poi.po_number_id::uuid
+LEFT JOIN local_shared.vs_po_instance poi ON ppo.id::uuid=poi.po_number_id::uuid
 where ppo.order_type = 'Ongoing'
 and pp.format = 'Physical'
 and pp.receiving_status = 'Received'
@@ -41,5 +41,5 @@ SELECT
    rc.po_number_prefix,
    rc.order_format,
    rc.ship_to
-   FROM receiving AS rc
+FROM receiving AS rc
 ;
