@@ -27,7 +27,7 @@ FROM
 	LEFT JOIN folio_invoice.vouchers__t AS invv ON invv.id = invvl.voucher_id
 	LEFT JOIN folio_invoice.invoices__t AS inv ON inv.id = invv.invoice_id
 	LEFT JOIN folio_orders.po_line__t AS pol ON pol.id = invl.po_line_id
-	LEFT JOIN folio_derived.po_instance AS poins ON poins.po_line_number = pol.po_line_number 
+	LEFT JOIN local_shared.vs_po_instance AS poins ON poins.po_line_number = pol.po_line_number 
 	LEFT JOIN folio_organizations.organizations__t AS org ON org.id = invv.vendor_id
 WHERE
 	invv.voucher_date::date >= (SELECT start_date FROM parameters) 
