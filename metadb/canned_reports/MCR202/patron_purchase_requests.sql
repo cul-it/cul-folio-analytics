@@ -1,3 +1,4 @@
+-- DO NOT USE, QUERY WILL NOT RUN AS IS, IT IS UNDER REVIEW (3/5/2025)
 -- MCR202
 -- This query finds purchase requests by fund code, location, library or fiscal year AND shows requester information, number of days FROM request DATE to receipt DATE, AND number of loans for that title (cannot get circulatiON informatiON at item level)
 
