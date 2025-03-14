@@ -1,9 +1,10 @@
---MCR226 funds_for_stewardship - revised 3-3-25
+--MCR226 funds_for_stewardship - Endowment funds only - revised 3-13-25
 --This query provides the list of approved invoices within a date range along with primary contributor name, publisher name, publication date, publication place, vendor name, LC classification, LC class, LC class number, finance group name, vendor invoice number, fund details, purchase order details, language, instance subject, fund type, and expense class.
 --Query writer: Joanne Leary (jl41)
 --Posted on: 11/6/24
 -- 2-28-25: added field 902 subquery (shows p-fund donor)
 -- 3-3-25: replaced derived tables with source tables; replaced "locations" subquery with the derivation code for po_lines_locations
+-- 3-13-25: changed the fund type in the Where statement near the bottom to be like 'Endowment%'
 
 WITH parameters AS (
     SELECT
@@ -358,7 +359,7 @@ WHERE
         AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
         AND inv.status = 'Paid'
         AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
-        AND ((ftie.fund_type_name ILIKE (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
+        and ftie.fund_type_name ILIKE 'Endowment%'--(SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
         AND ((CASE
                  WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') 
                     AND inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
