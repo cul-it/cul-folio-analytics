@@ -6,6 +6,9 @@ It provides the list of approved invoices within a date range along with primary
 publisher name, publication date, publication place, vendor name, LC classification, LC class, LC class number, 
 finance group name, vendor invoice number, fund details, purchase order details, language, 
 instance subject, fund type, and expense class.
+
+3-13-25: changed the fund type in the Where statement near the bottom to be like 'Endowment%'
+
 12-20-23: modified and reviewed by Ann Crowley, Joanne Leary, and Sharon Beltaine
 11-6-24: converted to Metadb, updated contributor subquery and fund sort
 1-21-25: 902 MARC field will be updated quarterly to show endowment purchases and to feed bookplate website (see Jenn); may need to add 902 to this query
