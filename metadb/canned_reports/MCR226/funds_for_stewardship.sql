@@ -1,10 +1,11 @@
---MCR226 funds_for_stewardship - Endowment funds only - revised 3-13-25
+--MCR226 funds_for_stewardship - Endowment funds only - revised 3-14-25
 --This query provides the list of approved invoices within a date range along with primary contributor name, publisher name, publication date, publication place, vendor name, LC classification, LC class, LC class number, finance group name, vendor invoice number, fund details, purchase order details, language, instance subject, fund type, and expense class.
 --Query writer: Joanne Leary (jl41)
 --Posted on: 11/6/24
 -- 2-28-25: added field 902 subquery (shows p-fund donor)
 -- 3-3-25: replaced derived tables with source tables; replaced "locations" subquery with the derivation code for po_lines_locations
--- 3-13-25: changed the fund type in the Where statement near the bottom to be like 'Endowment%'
+-- 3-13-25: revised to get just Endowment funds (fund_type like 'Endowment%') line 362
+-- 3-14-25: added invoice_line_number; added contributor ordinality = 1; added field050 ordinality = 1
 
 WITH parameters AS (
     SELECT
@@ -15,7 +16,7 @@ WITH parameters AS (
         '%%'::VARCHAR AS fund_type, -- Ex: Endowment - Restricted, Appropriated - Unrestricted etc.
         ''::VARCHAR AS transaction_finance_group_name, -- Ex: Sciences, Central, Rare & Distinctive, Law, Cornell Medical, Course Reserves etc.
         '%%'::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
-        'FY2025'::VARCHAR AS fiscal_year_code, -- Ex: FY2022, FY2023, FY2024, etc.
+        'FY2024'::VARCHAR AS fiscal_year_code, -- Ex: FY2022, FY2023, FY2024, etc.
         ''::VARCHAR AS po_number,
         '%%'::VARCHAR AS format_name, -- Ex: Book, Serial, Textual Resource, etc.
         '%%'::VARCHAR AS expense_class, -- Ex:Physical Res - one-time perpetual, One time Electronic Res - Perpetual etc. 
@@ -32,6 +33,7 @@ field050 AS -- gets the LC classification
        FROM folio_source_record.marc__t AS sm--srs_marctab AS sm
               WHERE sm.field = '050'
               AND sm.sf = 'a'
+              and sm.ord = 1
 ),
 
 format_extract AS ( -- gets the format code from the marc leader and links to the local translation table
@@ -88,8 +90,9 @@ contrib AS (
     FROM
         folio_inventory.instance AS i
         CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(i.jsonb, 'contributors')) WITH ORDINALITY AS ctb (jsonb)
-        
+     
     WHERE jsonb_extract_path_text(ctb.jsonb, 'primary')::boolean = true
+    and ctb.ordinality = 1
 ),
 
 po_lines_locations AS -- replaced the "locations" subquery with this, the derivation code for po_lines_locations
@@ -300,6 +303,7 @@ SELECT DISTINCT
        ftie.transaction_type,
        ftie.invoice_vendor_name,
        inv.vendor_invoice_no,
+       invl.invoice_line_number,
        REPLACE (REPLACE (invl.description, chr(13), ''),chr(10),'') AS invoice_line_description, -- updated code to get rid of carriage returns
        REPLACE (REPLACE (invl.comment, chr(13), ''),chr(10),'') AS invoice_line_comment, -- updated code to get rid of carriage returns
        ftie.finance_ledger_name,
@@ -390,6 +394,7 @@ GROUP BY
        ftie.transaction_type,
        ftie.invoice_vendor_name,
        inv.vendor_invoice_no,
+       invl.invoice_line_number,
        invl.description,
        invl.comment,
        ftie.finance_ledger_name,
@@ -423,3 +428,4 @@ ORDER BY
         po.po_number,
         pol.po_line_number
 ;
+
