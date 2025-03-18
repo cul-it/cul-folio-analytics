@@ -1,19 +1,18 @@
-MCR226 
-funds_for_stewardship 
+# MCR226 
+## funds_for_stewardship 
 
-This query was modified from CR134 to accommodate alumni affairs needs for information on stewarded funds. 
-It provides the list of approved invoices within a date range along with primary contributor name, 
+This query was modified from CR134 to better serve the needs of alumni affairs by providing information on stewarded funds. 
+It generates a list of approved invoices within a specified date range and includes details such as the primary contributor's name, 
 publisher name, publication date, publication place, vendor name, LC classification, LC class, LC class number, 
-finance group name, vendor invoice number, fund details, purchase order details, language, 
-instance subject, fund type, and expense class.
+finance group name, vendor invoice number, fund details, purchase order details, language, instance subject, fund type, and expense class.
 
-3-13-25: changed the fund type in the Where statement near the bottom to be like 'Endowment%'
-
-12-20-23: modified and reviewed by Ann Crowley, Joanne Leary, and Sharon Beltaine
-11-6-24: converted to Metadb, updated contributor subquery and fund sort
-1-21-25: 902 MARC field will be updated quarterly to show endowment purchases and to feed bookplate website (see Jenn); may need to add 902 to this query
-3-3-25: Joanne Leary replaced all the derived tables with the code for those derived tables, 
-replaced the “locations” subquery with the po_lines_locations derived table code, 
-replaced the subqueries for subjects and languages, updated the contributors subquery 
-(it didn’t need the other table joins) and 
-added a subquery for field 902 (donor information in some instance records).
+### Change Log
+- **3-14-25**: Added `invoice_line_number`; set contributor ordinality = 1; added field050 ordinality = 1.
+- **3-13-25**: Revised to specifically retrieve Endowment funds (fund_type like 'Endowment%') at line 362.
+- **3-13-25**: Altered the fund type in the Where clause to be like 'Endowment%'.
+- **3-3-25**: Joanne Leary overhauled all the derived tables with the code for those tables, replaced the “locations” subquery with the `po_lines_locations` derived table code, revised the subqueries for subjects and languages, updated the contributors subquery (eliminated unnecessary table joins), and introduced a subquery for field 902 (donor information in some instance records).
+- **3-3-25**: Replaced derived tables with source tables; replaced "locations" subquery with the derivation code for `po_lines_locations`.
+- **2-28-25**: Added field 902 subquery (shows p-fund donor).
+- **1-21-25**: The 902 MARC field will be updated quarterly to display endowment purchases and to support the bookplate website (see Jenn); may require adding 902 to this query.
+- **11-6-24**: Converted to Metadb, updated the contributor subquery and sorted funds.
+- **12-20-23**: Modified and reviewed by Ann Crowley, Joanne Leary, and Sharon Beltaine.
