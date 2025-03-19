@@ -1,6 +1,6 @@
 --MCR116Y
 --payables_inv_not_fed_notes_yesterday.sql
---last updated: 1-23-25
+--last updated: 3-19-25
 --This query provides the total amount of voucher lines not sent to accounting (manuals) per account number.
 --written by Nancy Boluc, converted to Metadb by Sharon Markus, tested by Ann Crowley
 --The date parameter restricts the results to records with a voucher date from the previous day.
@@ -21,7 +21,8 @@ ledger_fund AS (
        fl.name
 )
 SELECT DISTINCT
-    current_date - integer '1' AS voucher_date,   	
+    --current_date - integer '1' AS voucher_date,   	
+    invv.voucher_date::date AS voucher_date,
 	lf.name AS ledger_name,
 	invvl.external_account_number AS voucher_line_account_number,
 	inv.vendor_invoice_no,
@@ -37,9 +38,10 @@ FROM
 	LEFT JOIN folio_organizations.organizations__t AS org ON org.id = invv.vendor_id
 WHERE 
 	inv.status LIKE 'Paid'
-	AND invv.voucher_date::date >= (SELECT start_date FROM parameters)
+	AND invv.voucher_date::date = (SELECT start_date FROM parameters)
 	AND invv.export_to_accounting = FALSE
 GROUP BY 
+	invv.voucher_date,
 	vendor_invoice_no,	
 	lf.name,
 	org.erp_code,
