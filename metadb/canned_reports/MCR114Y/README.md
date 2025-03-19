@@ -11,4 +11,6 @@ This query provides a list of invoices paid by vendor along with voucher line de
 
 ### Notes:
 - The invoice status is hardcoded as `'Paid'`.
-- The date parameter restricts the results to records from the previous day.
+3-18-25: adjusted date parameters to restrict results to records from the previous day only
+
+  
