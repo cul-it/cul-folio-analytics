@@ -1,11 +1,11 @@
 -- MCR113Y
 -- daily_appr_inv_exported_yesterday.sql
 -- written by Nancy Bolduc, revised by Sharon Markus, reviewed and tested by Ann Crowley
--- Last updated 1/23/25
+-- Last updated 3-19-25
 -- This query provides the total amount of voucher_lines per account number 
 -- and per approval date for transactions exported to accounting. 
 -- The invoice status is hardcoded as 'Paid'.
--- The date parameter restricts the results to records from the previous day.
+-- 3-19-25: adjusted date parameters to restrict results to records from the previous day only
 
 WITH parameters AS (
     SELECT
@@ -23,7 +23,8 @@ ledger_fund AS (
 		fl.name
 )
 SELECT
-	current_date - integer '1' AS voucher_date,	
+	--current_date - integer '1' AS voucher_date,	
+	invv.voucher_date::date AS voucher_date, 
 	lf.name AS ledger_name,
     invvl.external_account_number AS voucher_line_account_number,
     invv.export_to_accounting AS export_to_accounting,
@@ -35,9 +36,10 @@ FROM
 	LEFT JOIN ledger_fund AS lf ON lf.external_account_no = invvl.external_account_number
 WHERE 
 	inv.status LIKE 'Paid'
-	AND invv.voucher_date::date >= (SELECT start_date FROM parameters)
+	AND invv.voucher_date::date = (SELECT start_date FROM parameters)
 	AND invv.export_to_accounting = TRUE
 GROUP BY 
+	invv.voucher_date, 
 	voucher_line_account_number,
 	lf.name,
 	invv.export_to_accounting
