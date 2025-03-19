@@ -2,16 +2,16 @@
 -- daily_appr_inv_vendor_yesterday.sql
 -- This query provide the list of invoices paid by vendor along with voucher lines details.
 -- written by Nancy Bolduc, revised for Metadb by Sharon Markus, and tested by Ann Crowley
--- last updated: 1/23/25
+-- last updated: 3/18/25
 -- The invoice status is hardcoded as 'Paid'.
--- The date parameter restricts the results to records from the previous day.
+-- 3-18-25: adjusted date parameters to restrict results to records from the previous day only
 
 WITH parameters AS (
     SELECT
            current_date - integer '1' AS start_date -- get all orders created XX days from today
 )
 SELECT 
-	current_date - integer '1' AS voucher_date,    	
+	invv.voucher_date::date AS voucher_date,    	
     org.erp_code AS vendor_erp_code,
 	org.name AS vendor_name,
 	inv.vendor_invoice_no,
@@ -30,9 +30,10 @@ FROM
 	LEFT JOIN local_shared.vs_po_instance AS poins ON poins.po_line_number = pol.po_line_number 
 	LEFT JOIN folio_organizations.organizations__t AS org ON org.id = invv.vendor_id
 WHERE
-	invv.voucher_date::date >= (SELECT start_date FROM parameters) 
+	invv.voucher_date::date = (SELECT start_date FROM parameters) 
 	AND inv.status LIKE 'Paid'
 GROUP BY 
+	invv.voucher_date,
 	vendor_invoice_no,
     org.erp_code,
 	org.name,
