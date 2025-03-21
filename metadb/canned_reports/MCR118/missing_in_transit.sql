@@ -144,3 +144,4 @@ INNER JOIN folio_inventory.service_point__t
 WHERE CURRENT_DATE::DATE - loc1.most_recent_check_in::DATE > 10
 
 ORDER BY library_name, effective_location_name, effective_shelving_order COLLATE "C", call_number
+;
