@@ -4,7 +4,7 @@
 --This query finds items that are still in transit after 10 days and shows requesters and designated pickup locations.
 --Written by: Joanne Leary (jl41)
 --Reviewed by: Linda Miller (lm15), Vandana Shah(vp25)
---Date posted: 6/7/24
+
 
 WITH parameters AS 
 (SELECT 
