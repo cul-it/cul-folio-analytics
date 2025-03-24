@@ -1,6 +1,6 @@
 ## MAHR102 – Physical Items Acquired Since 2019
 
-**File Name:** `physical_items_acquired_since_2019.sql`
+**Query:** `physical_items_acquired_since_2019.sql`
 
 **Written by:** Joanne Leary  
 **Tested by:** Sharon Markus
