@@ -1,4 +1,13 @@
-MCR118
-Missing in Transit
-This Metadb query is a revised version of the LDP query. It finds items that are still in transit after 10 days.
+## MCR118 – Missing in Transit
+
+**Written by:** Joanne Leary (jl41)  
+**Reviewed by:** Linda Miller (lm15) and Vandana Shah (vp25)  
+
+### Description
+This query finds items that are still in transit after 10 days and shows requesters and designated pickup locations.
 This query does not use the derived table "users_groups" because that table is wrong.
+
+
+## Change Log
+**Last Updated:** 3-20-25  
+**Date Posted:** 6-7-24  
