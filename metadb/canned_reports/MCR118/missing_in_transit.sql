@@ -1,10 +1,9 @@
 --MCR118
 --missing_in_transit
---last updated: 3-20-25
+--last updated: 3-25-25
 --This query finds items that are still in transit after 10 days and shows requesters and designated pickup locations.
 --Written by: Joanne Leary (jl41)
 --Reviewed by: Linda Miller (lm15), Vandana Shah(vp25)
-
 
 WITH parameters AS 
 (SELECT 
@@ -68,7 +67,7 @@ recs AS
 		CASE 
 			WHEN item.jsonb#>>'{copyNumber}' >'1' 
 			THEN CONCAT ('c.',item.jsonb#>>'{copyNumber}') 
-			ELSE NULL END)) AS item_call_number,
+			ELSE null end)) AS item_call_number,
 	item.jsonb#>>'{barcode}' AS item_barcode,
 	instance__t.hrid AS instance_hrid,
 	hrt.hrid AS holdings_hrid,
@@ -76,7 +75,8 @@ recs AS
 	item.jsonb#>>'{status,name}' AS item_status_name,
 	(item.jsonb#>>'{status,date}')::DATE AS item_status_date,
 	service_point__t.name AS last_checkin_location,
-	to_char ((item.jsonb#>>'{lastCheckIn,dateTime}')::TIMESTAMP,'mm-dd-yyyy hh:mi am') AS last_checkin_date,
+	to_char ((item.jsonb#>>'{lastCheckIn,dateTime}')::TIMESTAMPTZ,'mm-dd-yyyy hh:mi am') AS last_checkin_date,
+	spt2.name as in_transit_destination_service_point_name,
 	requests2.requester_last_name,
 	requests2.requester_first_name,
 	requests2.netid,
@@ -102,6 +102,9 @@ FROM folio_inventory.instance__t
 	LEFT JOIN folio_inventory.service_point__t 
 	ON (item.jsonb#>>'{lastCheckIn,servicePointId}')::UUID = service_point__t.id
 	
+	left join folio_inventory.service_point__t as spt2 
+	on (item.jsonb#>>'{inTransitDestinationServicePointId}')::uuid = spt2.id
+	
 	LEFT JOIN requests2
 	ON item.id = requests2.item_id
 	
@@ -119,9 +122,9 @@ SELECT
 	recs.holdings_location_name,
 	recs.title,
 	CASE
-		WHEN recs.item_call_number LIKE '%+++%' THEN '+++'
-	    WHEN recs.item_call_number LIKE '%++%' THEN '++'
-	    WHEN recs.item_call_number LIKE '%+%' THEN '+'
+		WHEN recs.item_call_number LIKE '%+++%' or recs.item_call_number LIKE '%###%'THEN '+++'
+	    WHEN recs.item_call_number LIKE '%++%' or recs.item_call_number LIKE '%##%' THEN '++'
+	    WHEN recs.item_call_number LIKE '%+%' or substring (recs.item_call_number,1) like '#%' or recs.item_call_number LIKE '%Oversize%' THEN '+'
 	    ELSE ''
 	    END AS size_group,
 	recs.item_call_number,
@@ -133,6 +136,7 @@ SELECT
 	recs.item_status_date,
 	recs.last_checkin_location,
 	recs.last_checkin_date,
+	recs.in_transit_destination_service_point_name,
 	recs.requester_last_name,
 	recs.requester_first_name,
 	recs.netid,
