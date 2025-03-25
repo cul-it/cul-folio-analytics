@@ -7,9 +7,11 @@
 This query finds items that are still in transit after 10 days and shows requesters and designated pickup locations.
 This query does not use the derived table "users_groups" because that table is wrong.
 
-
 ## Change Log
-**Last Updated:** 3-20-25  
+**3-25-25:** updated to add "in transit destination service point name" since that is a separate field from request pickup destination; 
+	-- updated last check in date to "timestamptz" (otherwise it was pulling the GMT date/time)
+	-- updated size grouping formula to include "#" symbols, and for cases where the word "Oversize" appears without "+" symbols
+**Updated:** 3-20-25  
 **Date Posted:** 6-7-24  
 
 
