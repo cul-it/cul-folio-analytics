@@ -1,6 +1,7 @@
 --MRC192
 --volumes withdrawn or transferred
 --This query extracts holdings administrative note data to allow counts of physical items withdrawn by location AND to allow the identification of transfers that go from endowed to contract units, and vice-versa. These counts are used for volumes withdrawn figures needed by the Division of Financial Services each quarter. PLEASE SEE README FILE NOTES BEFORE USING THIS QUERY. 
+--3-26-25: updated the CASE WHEN statement (line 99) to allow for more than one blank space; applied TRIM function to results to get rid of leading and trailing blank spaces; cast result as INTEGER
 
 WITH parameters AS 
         (SELECT 
@@ -71,7 +72,7 @@ SELECT
         CASE WHEN instance__t.discovery_suppress = 'FALSE' OR  instance__t.discovery_suppress IS NULL THEN 'FALSE' ELSE 'TRUE' END AS instance_suppress,
     CASE WHEN he.discovery_suppress = 'FALSE' OR  he.discovery_suppress IS NULL THEN 'FALSE' ELSE 'TRUE' END AS holdings_suppress,
         TRIM (concat_ws (' ',he.call_number_prefix,he.call_number,he.call_number_suffix, 
-        CASE WHEN he.copy_number>'' then concat ('c.',he.copy_number) else '' END))AS whole_call_number,
+        CASE WHEN he.copy_number>'' then concat ('c.',he.copy_number) else '' END)) AS whole_call_number,
     mf.leader0607,            
         han.administrative_note as holdings_administrative_note,
         string_agg (distinct hn.note,' | ') as holdings_notes,
@@ -84,21 +85,21 @@ SELECT
         --fbo.fbo_college_group,
         adclt.dfs_college_group,
 
-        CASE 
-                WHEN han.administrative_note not ilike '%ttype%' then 0  -- WHEN the note does not contain a ttype, enter 0 
+        (TRIM (CASE 
+                WHEN han.administrative_note not ilike '%ttype%' then '0'  -- WHEN the note does not contain a ttype, enter 0 
                 WHEN TRIM (SUBSTRING (SUBSTRING (han.administrative_note, '(ttype:\s{0,1}[a-z]{1,5})'),7)) not in ('w','t') 
-                        THEN 0 -- WHEN the ttype is not "w" or "t", enter "0"
+                        THEN '0' -- WHEN the ttype is not "w" or "t", enter "0"
                 WHEN TRIM (SUBSTRING (SUBSTRING (han.administrative_note, '(ttype:\s{0,1}[a-z]{1,5})'),7)) in ('w','t') 
                         AND SUBSTRING (han.administrative_note,'pcs:') is null 
                         AND SUBSTRING (SUBSTRING (han.administrative_note,'(lts\s\d{1,})'),'\s\d{1,}') is not null
-                        THEN SUBSTRING (SUBSTRING (han.administrative_note,'(lts\s\d{1,})'),'\s\d{1,}')::integer -- WHEN ttype is "w" or "t" AND "pcs:" is not there AND there is a string of digits at the end, enter the string of digits
+                        THEN (SUBSTRING (SUBSTRING (han.administrative_note,'(lts\s\d{1,})'),'\s\d{1,}')) -- WHEN ttype is "w" or "t" AND "pcs:" is not there AND there is a string of digits at the end, enter the string of digits
                 WHEN TRIM (SUBSTRING (SUBSTRING (han.administrative_note, '(ttype:\s{0,1}[a-z]{1,5})'),7)) in ('w','t')
                         AND SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5) is null 
-                        THEN 1 -- WHEN the ttype is withdrawn or transferred, but the "pcs" code is not there (AND after the ones with digits at the end are taken care of), enter "1"                    
-                WHEN SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5) = '' 
-                        THEN 1 -- WHEN the pcs code is there, but no number is entered, enter "1"
-                ELSE SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5)::integer -- else get the digits at the end of "pcs:"
-        END
+                        THEN '1' -- WHEN the ttype is withdrawn or transferred, but the "pcs" code is not there (AND after the ones with digits at the end are taken care of), enter "1"                    
+                WHEN SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5) like '% %' 
+                        THEN '1' -- WHEN the pcs code is there, but no number is entered, enter "1"
+                ELSE (SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5)) -- else get the digits at the end of "pcs:"
+        end))::integer
         AS number_of_pieces
         
 FROM folio_derived.holdings_administrative_notes AS han
@@ -110,7 +111,7 @@ FROM folio_derived.holdings_administrative_notes AS han
         and han.holdings_id = he.holdings_id
         
         INNER JOIN folio_derived.holdings_notes AS hn
-    ON he.holdings_id = hn.holding_id
+        ON he.holdings_id = hn.holding_id
         
         INNER JOIN folio_inventory.location__t AS ll 
         on he.permanent_location_id = ll.id
@@ -127,7 +128,7 @@ WHERE TRIM (SUBSTRING (SUBSTRING (han.administrative_note, '(ttype:\s{0,1}[a-z]{
         AND SUBSTRING (han.administrative_note,'\d{8,}') >= (SELECT begin_date FROM parameters)
         AND SUBSTRING (han.administrative_note,'\d{8,}') < (SELECT end_date FROM parameters)
         AND mf.leader0607 LIKE ANY (ARRAY ['a%','t%','c%','d%'])
-    AND ll.code != 'serv,remo'
+        AND ll.code != 'serv,remo'
 
 GROUP BY 
         current_date::date,
@@ -144,10 +145,10 @@ GROUP BY
         ll.name,
         ll.code,
         CASE WHEN instance__t.discovery_suppress = 'FALSE' OR  instance__t.discovery_suppress IS NULL THEN 'FALSE' ELSE 'TRUE' END,
-    CASE WHEN he.discovery_suppress = 'FALSE' OR  he.discovery_suppress IS NULL THEN 'FALSE' ELSE 'TRUE' END,
+        CASE WHEN he.discovery_suppress = 'FALSE' OR  he.discovery_suppress IS NULL THEN 'FALSE' ELSE 'TRUE' END,
         TRIM (concat_ws (' ',he.call_number_prefix,he.call_number,he.call_number_suffix, 
         CASE WHEN he.copy_number>'' then concat ('c.',he.copy_number) else '' END)),
-    mf.leader0607,            
+        mf.leader0607,            
         han.administrative_note,
         SUBSTRING (han.administrative_note,'\d{8,}'),            
         SUBSTRING (han.administrative_note, '(ttype:\s{0,1}[a-z]{1,5})'),
@@ -156,24 +157,25 @@ GROUP BY
         SUBSTRING (SUBSTRING (han.administrative_note, '(ploc:[a-z]{1,})'),6),
         LOWER(TRIM(SUBSTRING (SUBSTRING (han.administrative_note,'orig:\s{0,1}.+'),6,10))) ,
 
-        CASE 
-                WHEN han.administrative_note not ilike '%ttype%' then 0  -- WHEN the note does not contain a ttype, enter 0 
+        (TRIM (CASE 
+                WHEN han.administrative_note not ilike '%ttype%' then '0'  -- WHEN the note does not contain a ttype, enter 0 
                 WHEN TRIM (SUBSTRING (SUBSTRING (han.administrative_note, '(ttype:\s{0,1}[a-z]{1,5})'),7)) not in ('w','t') 
-                        THEN 0 -- WHEN the ttype is not "w" or "t", enter "0"
+                        THEN '0' -- WHEN the ttype is not "w" or "t", enter "0"
                 WHEN TRIM (SUBSTRING (SUBSTRING (han.administrative_note, '(ttype:\s{0,1}[a-z]{1,5})'),7)) in ('w','t') 
                         AND SUBSTRING (han.administrative_note,'pcs:') is null 
                         AND SUBSTRING (SUBSTRING (han.administrative_note,'(lts\s\d{1,})'),'\s\d{1,}') is not null
-                        THEN SUBSTRING (SUBSTRING (han.administrative_note,'(lts\s\d{1,})'),'\s\d{1,}')::integer -- WHEN ttype is "w" or "t" AND "pcs:" is not there AND there is a string of digits at the end, enter the string of digits
+                        THEN (SUBSTRING (SUBSTRING (han.administrative_note,'(lts\s\d{1,})'),'\s\d{1,}')) -- WHEN ttype is "w" or "t" AND "pcs:" is not there AND there is a string of digits at the end, enter the string of digits
                 WHEN TRIM (SUBSTRING (SUBSTRING (han.administrative_note, '(ttype:\s{0,1}[a-z]{1,5})'),7)) in ('w','t')
                         AND SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5) is null 
-                        THEN 1 -- WHEN the ttype is withdrawn or transferred, but the "pcs" code is not there (AND after the ones with digits at the end are taken care of), enter "1"                    
-                WHEN SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5) = '' 
-                        THEN 1 -- WHEN the pcs code is there, but no number is entered, enter "1"
-                ELSE SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5)::integer -- else get the digits at the end of "pcs:"
-        end,
-        --fbo.fbo_college_group,
+                        THEN '1' -- WHEN the ttype is withdrawn or transferred, but the "pcs" code is not there (AND after the ones with digits at the end are taken care of), enter "1"                    
+                WHEN SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5) like '% %' 
+                        THEN '1' -- WHEN the pcs code is there, but no number is entered, enter "1"
+                ELSE (SUBSTRING (SUBSTRING (han.administrative_note, '(pcs:\s{0,1}[0-9]{0,})'),5)) -- else get the digits at the end of "pcs:"
+        end))::integer,
+        
         adclt.dfs_college_group
         
 ORDER BY title 
 ;
+
 
