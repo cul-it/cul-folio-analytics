@@ -97,10 +97,14 @@ FROM folio_derived.instance_languages AS instlang
 ),
 subj AS -- get primary subject
     (SELECT 
-    instsub.instance_id,
-    instsub.subjects 
-FROM folio_derived.instance_subjects AS instsub
-    WHERE instsub.subjects_ordinality = 1
+    i.id AS instance_id,
+    jsonb_extract_path_text(i.jsonb, 'hrid') AS instance_hrid,
+    s.jsonb #>> '{value}' AS subjects,
+    s.ordinality AS subjects_ordinality
+FROM 
+    folio_inventory.instance AS i
+    CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(i.jsonb, 'subjects')) WITH ORDINALITY AS s (jsonb)
+    WHERE s.ordinality = 1
 ),
 finall AS -- join up all the preceding subqueries
 (SELECT DISTINCT
