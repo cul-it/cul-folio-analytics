@@ -1,6 +1,6 @@
 --MCR120Y
 --daily_inv_appr_control_yesterday.sql
---last updated: 1-27-25
+--last updated: 4-2-25
 --written by Nancy Bolduc, revised for metadb by Sharon Markus and Ann Crowley
 --This query provides the total amount of voucher_lines per external account number along with the approval dates. 
 --It includes manuals and transactions sent to accounting. The invoice status is hardcoded as 'Paid'.
@@ -24,7 +24,8 @@ ledger_fund AS (
 		fl.name
 )
 SELECT
-	current_date - integer '1' AS voucher_date, 	
+	--current_date - integer '1' AS voucher_date, 	
+    current_date - 1 AS voucher_date,
 	lf.name AS ledger_name,
 	invvl.external_account_number AS voucher_line_account_number,
 	invv.export_to_accounting AS export_to_accounting,
@@ -38,7 +39,7 @@ FROM
 
 WHERE 
 	inv.status LIKE 'Paid'
-	AND invv.voucher_date::date >= (SELECT start_date FROM parameters)
+	AND invv.voucher_date::date = current_date - 1
 	
 GROUP BY 
 	voucher_line_account_number,
@@ -49,3 +50,4 @@ GROUP BY
  	lf.name,
   	invvl.external_account_number
   ;
+
