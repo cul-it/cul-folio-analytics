@@ -2,7 +2,7 @@
 -- This query finds books that are on loan to BD and ILL, were recalled and are now overdue
 -- Query writer: Joanne Leary (jl41)
 -- Query reviewed by:Linda Miller (lm15)
--- Date posted: 5/23/24
+-- Last updated: 4-14-25
 
 --Query details:
 --This query provides a list of overdue CUL-owned items checked out to Borrow Direct or Interlibrary loan patrons (borrowers) that have been recalled by CU patrons (requestors). (These items have not yet been received back by CUL, based on the current due date). There are no filters for this report. The report contains details of the borrower (institution codes) as well as of the CU requestor who requested the recall. The report also shows the date the item was recalled, and the number of days overdue (based on the recall date).
