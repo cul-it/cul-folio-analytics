@@ -59,7 +59,7 @@ FROM folio_derived.instance_ext as instext
 	ON he.permanent_location_id = ll.location_id
 	
 	LEFT JOIN folio_derived.item_ext AS itemext 
-	ON he.holdings_id = itemext.holdings_record_id
+	ON he.id = itemext.holdings_record_id
 	
 	LEFT JOIN folio_inventory.item__t AS ii 
 	ON itemext.item_id = ii.id
