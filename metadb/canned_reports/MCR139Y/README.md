@@ -13,5 +13,6 @@ The date range for this query is currently set to show data for **FY2025**.
 
 ### Change Log:
 --4-10-25: Added WHERE clause filter to restrict results to records year-to-date through yesterday using the invoice approval date.
+<br>
 --4-17-25: Added WHERE clause filter to restrict results to FY2025
 
