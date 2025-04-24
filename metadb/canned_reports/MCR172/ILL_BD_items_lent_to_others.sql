@@ -40,7 +40,7 @@ SELECT DISTINCT
 
 FROM folio_derived.loans_items AS li 
        LEFT JOIN folio_derived.holdings_ext AS he 
-       ON li.holdings_record_id = he.holdings_id
+       ON li.holdings_record_id = he.id
        
        LEFT JOIN folio_derived.instance_ext AS ie 
        ON he.instance_id = ie.instance_id
