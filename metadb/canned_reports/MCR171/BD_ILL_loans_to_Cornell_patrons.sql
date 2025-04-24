@@ -31,7 +31,7 @@ SELECT
 
 FROM folio_derived.loans_items as li --folio_reporting.loans_items AS li 
        left join folio_derived.holdings_ext as he --LEFT JOIN folio_reporting.holdings_ext AS he 
-       ON li.holdings_record_id = he.holdings_id
+       ON li.holdings_record_id = he.id
        
        LEFT JOIN folio_derived.instance_ext AS ie 
        ON he.instance_id = ie.instance_id
