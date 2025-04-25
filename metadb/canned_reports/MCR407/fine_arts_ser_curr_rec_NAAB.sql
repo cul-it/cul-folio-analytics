@@ -28,7 +28,7 @@ FROM folio_orders.po_line__t AS poi
               LEFT JOIN folio_derived.po_lines_locations pll 
               ON poi.id = pll.pol_id
               
-              LEFT JOIN local_shared.vs_po_instance as pi --folio_derived.po_instance AS pi -- need to change to local_shared.vs_po_instance 
+              LEFT JOIN local_static.vs_po_instance as pi --folio_derived.po_instance AS pi -- need to change to local_shared.vs_po_instance 
               ON poi.instance_id = pi.pol_instance_id
               
               LEFT Join folio_source_record.marc__t 
