@@ -22,7 +22,7 @@ WITH instances AS
         ihi.holdings_type_name,
         string_agg (distinct hs.holdings_statement,' | ') AS holdings_summary
 
-FROM local_shared.cammie_barcodes 
+FROM local_static.cammie_barcodes 
         LEFT JOIN folio_derived.items_holdings_instances AS ihi 
         ON cammie_barcodes.item_barcode::varchar = ihi.barcode
         
