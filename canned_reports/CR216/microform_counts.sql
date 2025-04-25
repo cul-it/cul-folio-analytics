@@ -51,7 +51,7 @@ AND trim(concat (he.call_number_prefix,' ',he.call_number,' ',he.call_number_suf
   
   FROM candidates AS cc
   INNER JOIN marc_formats AS mf ON cc.instance_id=mf.instance_id
-  INNER JOIN local_core.vs_folio_physical_material_formats AS mfg ON mf.leader0607=mfg.leader0607
+  INNER JOIN local_static.vs_folio_physical_material_formats AS mfg ON mf.leader0607=mfg.leader0607
        
    GROUP BY  
        mfg.leader0607description,
