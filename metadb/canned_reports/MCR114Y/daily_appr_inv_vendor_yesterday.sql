@@ -5,6 +5,7 @@
 -- last updated: 3/18/25
 -- The invoice status is hardcoded as 'Paid'.
 -- 3-18-25: adjusted date parameters to restrict results to records from the previous day only
+-- 4-25-25: updated local_shared to local_static
 
 WITH parameters AS (
     SELECT
