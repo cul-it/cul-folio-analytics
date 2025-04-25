@@ -21,7 +21,7 @@ loans AS
         date_part ('year', loans_items.loan_date::DATE) AS year_of_loan
      
  FROM folio_derived.loans_items 
-	 LEFT JOIN local_shared.loans_renewal_dates AS lrd 
+	 LEFT JOIN local_static.loans_renewal_dates AS lrd 
 	 ON loans_items.loan_id::UUID = lrd.loan_id::UUID
         
  GROUP BY loans_items.loan_id,loans_items.loan_date, year_of_loan
