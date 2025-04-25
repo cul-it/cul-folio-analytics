@@ -88,10 +88,10 @@ FROM   folio_inventory.instance AS ii
         LEFT JOIN folio_inventory.loclibrary__t AS loclib__t
         ON loc__t.library_id = loclib__t.id
        
-        LEFT JOIN local_shared.lm_marc_code_list_for_languages AS mcll
+        LEFT JOIN local_static.lm_marc_code_list_for_languages AS mcll
        ON instlang.instance_language = mcll.marc_language_code
        
-       LEFT JOIN local_shared.vs_folio_physical_material_formats AS pmf
+       LEFT JOIN local_static.vs_folio_physical_material_formats AS pmf
        ON marcfmt.leader0607 = pmf.leader0607 
        
 WHERE ((instlang.instance_language = (SELECT language_filter FROM parameters) OR (SELECT language_filter FROM parameters) =''))
