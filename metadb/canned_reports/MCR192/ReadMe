@@ -1,6 +1,9 @@
 MCR192
 Volumes withdrawn or transferred
 
+Note: this query was updated by Joanne Leary around 4/1/25 to exclude derived tables and to use "split part" functions to parse out comments
+in administrative notes.
+
 This query extracts holdings administrative note data to allow counts of physical items withdrawn by location AND to allow the identification of transfers that go from endowed to contract units, and vice-versa. These counts are used for volumes withdrawn figures needed by the Division of Financial Services each quarter.
 It pulls fields like: the number of pieces withdrawn/transferred, the date, the originating library, the netid, processing unit, and contract/endowed college group.
 (notes without ttype codes, or note with different ttypes are marked '0' for number of pieces)
