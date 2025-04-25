@@ -3,13 +3,13 @@
 -- Last updated: 7/1/24
 -- The update_circ_snapshot4_metadb.sql query
 -- runs the following code on Metadb, which uses the INSERT function to get the new checkouts 
--- and add them to the local_shared.sm_circsnapshot4 table daily automatically. 
--- The sm_local_shared.circsnapshot4 table is used in circulation queries to generate reports 
+-- and add them to the local_static.sm_circsnapshot4 table daily automatically. 
+-- The sm_local_static.circsnapshot4 table is used in circulation queries to generate reports 
 -- that need certain demographic data that is removed everyday from circulation data in the FOLIO system.
  
 -- 6-27-24: This query creates the "insert into" portion of the circ_snapshot4 query
 
-INSERT INTO local_shared.sm_circ_snapshot4
+INSERT INTO local_static.sm_circ_snapshot4
 
 -- 1. In order to get to the department code in the departments__t table, we need to extract the department ID from the jsonb array in the users__ table
 
