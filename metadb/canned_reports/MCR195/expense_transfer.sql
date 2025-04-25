@@ -45,7 +45,7 @@ format_extract AS ( -- gets the format code from the marc leader and links to th
  
        FROM
            folio_source_record.marc__t as sm --srs_marctab AS sm
-           LEFT JOIN local_shared.vs_folio_physical_material_formats as vs --local_core.vs_folio_physical_material_formats AS vs
+           LEFT JOIN local_static.vs_folio_physical_material_formats as vs --local_core.vs_folio_physical_material_formats AS vs
            ON substring (sm.content,7,2) = vs.leader0607
            WHERE sm.field = '000'
 ),
