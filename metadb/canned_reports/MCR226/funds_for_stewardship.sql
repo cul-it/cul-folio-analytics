@@ -6,6 +6,7 @@
 -- 3-3-25: replaced derived tables with source tables; replaced "locations" subquery with the derivation code for po_lines_locations
 -- 3-13-25: revised to get just Endowment funds (fund_type like 'Endowment%') line 362
 -- 3-14-25: added invoice_line_number; added contributor ordinality = 1; added field050 ordinality = 1
+-- 4-25-25: updated local_shared to local_static
 
 WITH parameters AS (
     SELECT
@@ -44,7 +45,7 @@ format_extract AS ( -- gets the format code from the marc leader and links to th
 
        FROM
            folio_source_record.marc__t AS sm 
-           LEFT JOIN local_shared.vs_folio_physical_material_formats AS vs
+           LEFT JOIN local_static.vs_folio_physical_material_formats AS vs
            ON substring (sm.content,7,2) = vs.leader0607
            WHERE sm.field = '000'
 ),
