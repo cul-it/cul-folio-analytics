@@ -42,7 +42,7 @@ FROM folio_derived.loans_items as li --folio_reporting.loans_items AS li
        LEFT JOIN folio_derived.users_departments_unpacked AS udu 
        ON li.user_id = udu.user_id
        
-       left join local_shared.sm_circ_snapshot4 as cs 
+       left join local_static.sm_circ_snapshot4 as cs 
        on li.loan_id = cs.loan_id::UUID
 
 WHERE
