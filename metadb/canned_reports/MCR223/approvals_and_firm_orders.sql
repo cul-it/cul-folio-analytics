@@ -49,7 +49,7 @@ folio_format as
         substring (sm.content,7,2) as leader_code,
         vs.folio_format_type
 FROM folio_source_record.marc__t as sm 
-LEFT JOIN local_shared.vs_folio_physical_material_formats as vs on trim (substring (sm.content,7,2)) = trim (vs.leader0607)
+LEFT JOIN local_static.vs_folio_physical_material_formats as vs on trim (substring (sm.content,7,2)) = trim (vs.leader0607)
     WHERE sm.field = '000'
 ),
 invbillto AS -- extracts "name" from the value field (used for invoice_invoices bill_to field)
@@ -157,7 +157,7 @@ FROM folio_invoice.invoices__t ii
     LEFT JOIN folio_derived.invoice_lines_fund_distributions AS ilfd on il.id = ilfd.invoice_line_id
     LEFT JOIN folio_orders.po_line__t AS pl ON il.po_line_id = pl.id
     LEFT JOIN folio_derived.po_lines_locations AS poll on il.po_line_id = poll.pol_id
-    LEFT JOIN local_shared.vs_po_instance AS poi on pl.id::uuid = poi.po_line_id::uuid
+    LEFT JOIN local_static.vs_po_instance AS poi on pl.id::uuid = poi.po_line_id::uuid
     LEFT JOIN folio_derived.holdings_ext AS he on poi.pol_instance_id = he.instance_id
     LEFT JOIN folio_inventory.instance__t AS invinst on he.instance_id = invinst.id
     LEFT join folio_format on invinst.hrid = folio_format.instance_hrid
