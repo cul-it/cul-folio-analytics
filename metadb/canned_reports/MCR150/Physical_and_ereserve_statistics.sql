@@ -22,7 +22,7 @@ loans AS
 		jl.itembarcode,
 		COUNT (li.loan_id) AS number_of_loans
 	
-	FROM local_shared.jl_fall_2024_12_18_24 AS jl 
+	FROM local_static.jl_fall_2024_12_18_24 AS jl 
 		LEFT JOIN folio_derived.item_ext AS ie 
 		ON jl.itembarcode = ie.barcode
 		
