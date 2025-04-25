@@ -44,7 +44,7 @@ from folio_inventory.instance__t as ii
 	left join folio_source_record.marc__t as sm 
 	on ii.id = sm.instance_id
 	
-	left join local_shared.vs_folio_physical_material_formats vs
+	left join local_static.vs_folio_physical_material_formats vs
 	on vs.leader0607 = substring (sm.content,7,2)
 	
 	left join folio_derived.instance_physical_descriptions as ipd 
