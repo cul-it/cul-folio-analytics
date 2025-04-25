@@ -81,7 +81,7 @@ pub_status AS
 	SUBSTRING (sm.content,7,1) AS pub_status_code
 
 FROM folio_source_record.marc__t AS sm
-	LEFT JOIN local_shared.publication_status1 AS ps
+	LEFT JOIN local_static.publication_status1 AS ps
 	ON trim (SUBSTRING (sm.content,7,1)) = trim (ps."PubStatusCode")
 
 WHERE sm.field = '008'
@@ -97,7 +97,7 @@ open_access AS
 	de.url_in_doaj
 
 FROM folio_derived.instance_identifiers AS iid
-	LEFT JOIN local_shared.doaj_20240930 AS de 
+	LEFT JOIN local_static.doaj_20240930 AS de 
 	ON iid.identifier = de.journal_issn_print_version
 
 	LEFT JOIN folio_derived.instance_identifiers AS iid2 
