@@ -1,6 +1,6 @@
 --MCR184
 -- loans and renewals by fiscal year
---NOTE: 6/24/24: This query uses the loans_renewal_dates from local_shared. Change to folio_derived once the derived table is fixed. 
+--NOTE: 6/24/24: This query uses the loans_renewal_dates from local_static. Change to folio_derived once the derived table is fixed. 
 
 WITH PARAMETERS AS 
 (SELECT
@@ -91,10 +91,10 @@ renews AS
                 END AS fiscal_year_of_renewal
                 
 FROM
-       local_shared.loans_renewal_dates
+       local_static.loans_renewal_dates
        LEFT JOIN folio_circulation.loan__t  
        --the loan_id in the derived table needs to be cast as uuid
-       ON folio_circulation.loan__t.id = local_shared.loans_renewal_dates.loan_id::uuid
+       ON folio_circulation.loan__t.id = local_static.loans_renewal_dates.loan_id::uuid
         
 WHERE
      	loans_renewal_dates.renewal_date::date >= (SELECT start_date FROM parameters)::date
