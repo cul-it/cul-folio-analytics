@@ -14,7 +14,7 @@ WITH parameters AS (
         ''::VARCHAR AS fund_code
 ),
 
-po_instance as -- use this subquery for po_instance as a substitute for using the local_shared.po_instance table or the folio_derived.po_instance (which is wrong as of 11-19-24)
+po_instance as -- use this subquery for po_instance as a substitute for using the local_static.po_instance table or the folio_derived.po_instance (which is wrong as of 11-19-24)
 (-- 9-19-24: this is a revision of the po_instance Metadb derived table
 
 SELECT DISTINCT	
@@ -151,7 +151,7 @@ FROM
         --LEFT JOIN po_instance as poi 
         --ON jsonb_extract_path_text(ft.jsonb, 'encumbrance', 'sourcePoLineId')::uuid = poi.po_line_id 
         
-        left join local_shared.vs_po_instance AS poi -- if not using the local_shared table, use the po_instance derivation in the first subquery, un-comment out the join above this, and comment out this join 
+        left join local_static.vs_po_instance AS poi -- if not using the local_static table, use the po_instance derivation in the first subquery, un-comment out the join above this, and comment out this join 
         ON jsonb_extract_path_text(ft.jsonb, 'encumbrance', 'sourcePoLineId')::uuid = poi.po_line_id::uuid        
 
 where
