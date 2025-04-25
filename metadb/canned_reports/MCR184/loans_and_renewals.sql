@@ -1,12 +1,13 @@
 --MCR184
 -- loans and renewals by fiscal year
---NOTE: 6/24/24: This query uses the loans_renewal_dates from local_static. Change to folio_derived once the derived table is fixed. 
+--NOTE: 6/24/24: This query uses the loans_renewal_dates from local_static. Change to folio_derived once the derived table is fixed.
+-- 4-25-25: updated to use the regular derived table (folio_derived.loans_renewal_dates) since that is now fixed in the Apr. 10 tag 
 
 WITH PARAMETERS AS 
 (SELECT
        /* Choose a start and end date in the format "yyyy-mm-dd" */
-       '2023-07-01'::date AS start_date,
-       '2024-07-01'::date AS end_date
+       '2024-07-01'::date AS start_date,
+       '2025-07-01'::date AS end_date
 ),
 
 loans AS 
@@ -91,10 +92,10 @@ renews AS
                 END AS fiscal_year_of_renewal
                 
 FROM
-       local_static.loans_renewal_dates
+       local_derived.loans_renewal_dates
        LEFT JOIN folio_circulation.loan__t  
        --the loan_id in the derived table needs to be cast as uuid
-       ON folio_circulation.loan__t.id = local_static.loans_renewal_dates.loan_id::uuid
+       ON folio_circulation.loan__t.id = loans_renewal_dates.loan_id::uuid
         
 WHERE
      	loans_renewal_dates.renewal_date::date >= (SELECT start_date FROM parameters)::date
