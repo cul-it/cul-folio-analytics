@@ -141,7 +141,7 @@ format_extract AS  -- gets the format code from the marc leader and links to the
         vs.folio_format_type as bib_format_display
     FROM
         folio_source_record.marc__t AS sm
-    	LEFT JOIN local_shared.vs_folio_physical_material_formats AS vs
+    	LEFT JOIN local_static.vs_folio_physical_material_formats AS vs
         ON substring (sm.content,7,2) = vs.leader0607
     WHERE sm.field = '000'
 ),
