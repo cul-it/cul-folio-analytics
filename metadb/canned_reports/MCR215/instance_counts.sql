@@ -55,7 +55,7 @@ WHERE marc__t.field LIKE '899'
        LEFT JOIN unpurch ON instance_ext.instance_id = unpurch.instance_id 
        LEFT JOIN folio_derived.holdings_ext ON instance_ext.instance_id = holdings_ext.instance_id   
        LEFT JOIN folio_inventory.location__t ON holdings_ext.permanent_location_id = location__t.id  
-       LEFT JOIN local_shared.vs_folio_physical_material_formats ON marc_formats.leader0607=vs_folio_physical_material_formats.leader0607  
+       LEFT JOIN local_static.vs_folio_physical_material_formats ON marc_formats.leader0607=vs_folio_physical_material_formats.leader0607  
         
  /*Excludes serv,remo and Mann Gateway which are all e-materials and are counted in a separate query. Also excludes materials 
 * from the following locations as they: no longer exist; are not yet received/cataloged; are not owned by the Library; etc.
