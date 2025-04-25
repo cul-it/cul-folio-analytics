@@ -27,7 +27,7 @@ FROM folio_inventory."location" AS invloc
        LEFT JOIN folio_inventory.location__t AS invloc__t ON invloc.id = invloc__t.id
        left join folio_inventory.loclibrary__t as invloclib__t on invloc.libraryid = invloclib__t.id
        
-       left join local_shared.lm_adc_location_translation_table as adc
+       left join local_static.lm_adc_location_translation_table as adc
        on invloc.id = adc.inv_loc_id::uuid  -- I had TO ADD this TO the adc table
 
 order by invloc__t.code
