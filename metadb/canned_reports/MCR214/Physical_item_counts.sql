@@ -78,7 +78,7 @@ FROM folio_inventory.instance__t
        LEFT JOIN folio_derived.holdings_ext 
        ON instance__t.id = holdings_ext.instance_id  
        LEFT JOIN folio_derived.item_ext 
-       ON holdings_ext.holdings_id = item_ext.holdings_record_id
+       ON holdings_ext.id = item_ext.holdings_record_id
        
        LEFT JOIN folio_inventory.location__t 
        ON holdings_ext.permanent_location_id = location__t.id  
