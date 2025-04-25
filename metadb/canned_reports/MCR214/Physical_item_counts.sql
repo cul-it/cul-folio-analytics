@@ -86,10 +86,10 @@ FROM folio_inventory.instance__t
        LEFT JOIN folio_inventory.loclibrary__t 
        ON holdings_ext.permanent_location_id = loclibrary__t.id 
        
-       LEFT JOIN local_shared.vs_folio_physical_material_formats 
+       LEFT JOIN local_static.vs_folio_physical_material_formats 
        ON marc_formats.leader0607 = vs_folio_physical_material_formats.leader0607 
        
-       LEFT JOIN local_shared.lm_adc_location_translation_table 
+       LEFT JOIN local_static.lm_adc_location_translation_table 
        ON location__t.code = lm_adc_location_translation_table.adc_invloc_location_code
        
 WHERE 
