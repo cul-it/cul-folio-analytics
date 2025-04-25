@@ -37,7 +37,7 @@ formats AS
 		vspmf.folio_format_type
 		
 	FROM folio_source_record.marc__t AS sm 
-	LEFT JOIN local_shared.vs_folio_physical_material_formats AS vspmf 
+	LEFT JOIN local_static.vs_folio_physical_material_formats AS vspmf 
 	ON SUBSTRING (sm.content,7,2) = vspmf.leader0607
 	
 	WHERE sm.field = '000'
