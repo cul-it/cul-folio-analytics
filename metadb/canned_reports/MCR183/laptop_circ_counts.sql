@@ -65,7 +65,7 @@ LEFT JOIN folio_derived.loans_items
         ON   item_ext.item_id = loans_items.item_id 
 LEFT JOIN folio_derived.item_effective_callno_components   
         ON   item_ext.item_id = item_effective_callno_components.item_id      
-LEFT JOIN local_shared.loans_renewal_dates   
+LEFT JOIN local_static.loans_renewal_dates   
         ON   loans_items.loan_id = loans_renewal_dates.loan_id::uuid     
 WHERE
        (loans_items.loan_date::TIMESTAMPTZ >= (SELECT start_date FROM parameters) AND loans_items.loan_date::TIMESTAMPTZ < (
