@@ -73,7 +73,7 @@ format_merge AS
 FROM marc_formats
                 LEFT JOIN field_format ON marc_formats.instance_hrid = field_format.instance_hrid
                 LEFT JOIN statcode_format ON marc_formats.instance_hrid = statcode_format.instance_hrid
-                LEFT JOIN local_shared.vs_folio_physical_material_formats ON marc_formats.leader0607 = vs_folio_physical_material_formats.leader0607  --LEFT JOIN local_core.vs_folio_physical_material_formats AS fmg ON mf.leader0607 = fmg.leader0607
+                LEFT JOIN local_static.vs_folio_physical_material_formats ON marc_formats.leader0607 = vs_folio_physical_material_formats.leader0607  --LEFT JOIN local_core.vs_folio_physical_material_formats AS fmg ON mf.leader0607 = fmg.leader0607
                 LEFT JOIN unpurch ON unpurch.instance_hrid = marc_formats.instance_hrid
                     
 ),
