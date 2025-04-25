@@ -11,7 +11,7 @@ WITH itemids AS
 		ie.barcode AS ie_item_barcode,
 		ie.item_id,
 		ie.item_hrid
-	FROM local_shared.jl_fall_2024_12_18_24 AS jl
+	FROM local_static.jl_fall_2024_12_18_24 AS jl
 	INNER JOIN folio_derived.item_ext AS ie 
 	ON jl.itembarcode = ie.barcode
 ),
@@ -42,7 +42,7 @@ SELECT DISTINCT
 	CASE WHEN jl.totalclicks IS NULL THEN 0 ELSE jl.totalclicks END AS total_ereserve_clicks,
 	CASE WHEN loans.number_of_loans IS NULL THEN 0 ELSE loans.number_of_loans END AS total_physical_loans
 
-FROM local_shared.jl_fall_2024_12_18_24 AS jl 
+FROM local_static.jl_fall_2024_12_18_24 AS jl 
 	LEFT JOIN loans 
 	ON jl.itembarcode = loans.itembarcode
 	
