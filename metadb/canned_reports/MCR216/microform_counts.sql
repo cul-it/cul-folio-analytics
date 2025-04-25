@@ -62,7 +62,7 @@ SELECT
   
   FROM candidates
   INNER JOIN marc_formats ON candidates.instance_id=marc_formats.instance_id
-  INNER JOIN local_shared.vs_folio_physical_material_formats ON marc_formats.leader0607=vs_folio_physical_material_formats.leader0607 
+  INNER JOIN local_static.vs_folio_physical_material_formats ON marc_formats.leader0607=vs_folio_physical_material_formats.leader0607 
        
    GROUP BY  
        vs_folio_physical_material_formats.leader0607description,
