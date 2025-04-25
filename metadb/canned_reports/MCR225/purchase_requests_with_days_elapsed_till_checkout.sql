@@ -74,7 +74,7 @@ SELECT distinct
        THEN ((ilfd.invoice_line_total*ilfd.fund_distribution_value)/100)::numeric(12,2) else ilfd.fund_distribution_value 
        END AS cost
 
-FROM local_shared.vs_po_instance as pi2 --folio_reporting.po_instance pi2  
+FROM local_static.vs_po_instance as pi2 --folio_reporting.po_instance pi2  
        LEFT JOIN folio_orders.po_line__t as pol --po_lines pol 
        ON pi2.po_line_number = pol.po_line_number 
        
