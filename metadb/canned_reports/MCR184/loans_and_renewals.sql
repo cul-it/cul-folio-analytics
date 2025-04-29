@@ -92,7 +92,7 @@ renews AS
                 END AS fiscal_year_of_renewal
                 
 FROM
-       local_derived.loans_renewal_dates
+       folio_derived.loans_renewal_dates
        LEFT JOIN folio_circulation.loan__t  
        --the loan_id in the derived table needs to be cast as uuid
        ON folio_circulation.loan__t.id = loans_renewal_dates.loan_id::uuid
