@@ -1,4 +1,4 @@
---metadb:function get_count_user_group
+--ldp:function get_count_user_group
 
 
 DROP FUNCTION IF EXISTS local_core.slm5_test_get_count_user_group;
