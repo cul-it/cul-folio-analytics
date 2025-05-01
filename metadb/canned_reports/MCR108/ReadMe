@@ -1,3 +1,6 @@
 MCR108
 Services_Usage Documentation
 6/7/24
+
+--5/1/25: The current version of the folio derived table ‘loans_items’ does not show correct locations in the field ‘checkout_service_point_name’. 
+--This query has been updated to use the field ‘service_point_t.name’ from the table folio_inventory.service_point_t, which shows correct data. 
