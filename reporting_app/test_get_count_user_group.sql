@@ -1,4 +1,4 @@
---ldp:function get_count_user_group
+--metadb:function get_count_user_group
 
 DROP FUNCTION IF EXISTS z_reporting.test_get_count_user_group;
 
