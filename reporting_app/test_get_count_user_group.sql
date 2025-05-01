@@ -28,5 +28,7 @@ GROUP BY
     ug.desc,
     ug.group
 $$
-LANGUAGE SQL;
+LANGUAGE SQL
+STABLE
+PARALLEL SAFE;
 
