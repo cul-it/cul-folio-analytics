@@ -1,8 +1,8 @@
---metadb:function get_count_user_group
+--metadb:function test_get_count_user_group
 
-DROP FUNCTION IF EXISTS z_reporting.test_get_count_user_group;
+DROP FUNCTION IF EXISTS test_get_count_user_group;
 
-CREATE FUNCTION z_reporting.test_get_count_user_group(
+CREATE FUNCTION test_get_count_user_group(
     param_user_group TEXT DEFAULT ''
 )
 RETURNS TABLE (
