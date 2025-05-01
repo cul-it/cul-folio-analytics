@@ -4,16 +4,19 @@
 --Ported by Linda Miller (lm15)
 --Query reviewers: Joanne Leary (jl41), Vandana Shah (vp25)
 --Query posted on 5/22/24
+--Revised on 5/1/25
 
-WITH parameters AS (
+
+       WITH parameters AS (
     SELECT
-        '2023-07-01'::date AS start_date, 
-        '2024-07-01'::date AS end_date
+        '2021-07-01'::date AS start_date, 
+        '2026-07-01'::date AS end_date
 ),
 
 checkout_actions AS (
     SELECT
-    loans_items.checkout_service_point_name AS service_point_name,
+    service_point__t.name AS service_point_name,
+   --loans_items.checkout_service_point_name AS service_point_name,
     loans_items.loan_date::date AS action_date,
     to_char(loans_items.loan_date, 'Day') AS day_of_week,
     extract(hours FROM loans_items.loan_date) AS hour_of_day,
@@ -24,6 +27,9 @@ checkout_actions AS (
     count(DISTINCT loans_items.loan_id) AS ct 
 FROM
     folio_derived.loans_items 
+    left join folio_inventory.service_point__t 
+    on loans_items.checkout_service_point_id = service_point__t.id
+
     WHERE
         loans_items.loan_date >= (
             SELECT
