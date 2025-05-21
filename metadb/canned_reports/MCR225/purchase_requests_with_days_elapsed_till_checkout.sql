@@ -82,10 +82,10 @@ FROM local_static.vs_po_instance as pi2 --folio_reporting.po_instance pi2
        ON ppo.id = pol.purchase_order_id
        
        LEFT JOIN folio_derived.holdings_ext as he --folio_reporting.holdings_ext he 
-       ON he.holdings_id::UUID = pi2.pol_holding_id::UUID
+       ON he.id::UUID = pi2.pol_holding_id::UUID
        
        LEFT JOIN folio_derived.item_ext as ie --folio_reporting.item_ext ie 
-       ON he.holdings_id = ie.holdings_record_id 
+       ON he.id = ie.holdings_record_id 
        
        LEFT JOIN folio_invoice.invoice_lines__t as il --invoice_lines il 
        ON pol.id = il.po_line_id
