@@ -3,6 +3,7 @@
 --Query writer: Joanne Leary (jl41)
 --Posted on: 6/24/24
 --Updated on: 8/29/24
+--Added publisher name to query on 5/22/25
 
 WITH parameters AS (
     SELECT
@@ -17,6 +18,7 @@ SELECT DISTINCT
        date_part ('year', li.loan_date::DATE) AS year_of_loan,
        li.material_type_name,
        ie.title,
+       ip.publisher,
        ip.date_of_publication,
        SUBSTRING (ip.date_of_publication,'\d{4}') AS year_of_publication,
        ie.instance_hrid,
