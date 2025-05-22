@@ -10,3 +10,4 @@ Posted on: 6/24/24; revised 8-28-24
 	-- added LC class AND LC class number; inserted CASE WHEN statement to get LC class FROM Library of Congress classification call numbers only
 	-- added item__t table to get the effective_shelving_order and sorted by effective shelving order
 	-- added enumeration, chronology and copy number to effective call number
+5/22/25: Added publisher name
