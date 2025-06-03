@@ -27,13 +27,13 @@ FROM local_static.cammie_barcodes
         ON cammie_barcodes.item_barcode::varchar = ihi.barcode
         
         LEFT JOIN folio_derived.holdings_ext AS he 
-        ON ihi.holdings_id = he.holdings_id
+        ON ihi.holdings_id = he.id
         
         LEFT JOIN folio_derived.instance_ext AS instext 
         ON he.instance_id = instext.instance_id
         
         LEFT JOIN folio_derived.holdings_statements AS hs 
-        ON he.holdings_id = hs.holdings_id
+        ON he.id = hs.holdings_id
  group by 
  		ihi.title,
         he.permanent_location_name,
@@ -71,7 +71,7 @@ FROM instances
         ON instances.instance_id = he.instance_id
         
         LEFT JOIN folio_derived.holdings_statements AS hs 
-        ON he.holdings_id = hs.holdings_id
+        ON he.id = hs.holdings_id
         
 WHERE he.permanent_location_name LIKE '%Annex%' OR he.permanent_location_name = instances.holdings_loc_name
 ;
