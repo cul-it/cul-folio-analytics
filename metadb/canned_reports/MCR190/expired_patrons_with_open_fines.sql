@@ -4,6 +4,7 @@
 --NOTE: This query uses a CIT table, please check schema location 
 --Query writer: Joanne LEary (jl41)
 --Query posted on: 11/19/24
+--6-3-25: query no longer works because source table has been deleted (local_core.first_patron_data_set_all)
 
 
 WITH user_address AS -- get Home address
