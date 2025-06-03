@@ -56,7 +56,7 @@ SELECT
 FROM
        folio_derived.item_ext    
 LEFT JOIN folio_derived.holdings_ext  
-        ON   item_ext.holdings_record_id = holdings_ext.holdings_id
+        ON   item_ext.holdings_record_id = holdings_ext.id
 LEFT JOIN folio_derived.instance_ext  
         ON   holdings_ext.instance_id = instance_ext.instance_id 
 LEFT JOIN folio_derived.locations_libraries   
