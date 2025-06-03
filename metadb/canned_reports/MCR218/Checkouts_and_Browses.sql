@@ -44,7 +44,7 @@ from folio_inventory.instance__t as ii
        on ii.id = he.instance_id::UUID
        
        left join folio_derived.item_ext as ie 
-       on he.holdings_id = ie.holdings_record_id
+       on he.id = ie.holdings_record_id
        
        left join folio_inventory.item__t as invitems 
        on ie.item_id::UUID = invitems.id
