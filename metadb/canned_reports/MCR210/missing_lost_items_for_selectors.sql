@@ -126,7 +126,7 @@ FROM folio_inventory.instance__t as ii
                 ON ii.id = he.instance_id::UUID 
                 
                 LEFT JOIN folio_derived.item_ext AS itemext 
-                ON he.holdings_id = itemext.holdings_record_id 
+                ON he.id = itemext.holdings_record_id 
                 
                 LEFT JOIN folio_inventory.item__t as invitems  
                 ON itemext.item_id::UUID = invitems.id
