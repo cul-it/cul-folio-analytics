@@ -25,7 +25,7 @@ data1 AS
         instance_ext.instance_hrid,
         instance_ext.discovery_suppress AS instance_suppress,
         count (distinct item__t.id) as number_of_volumes,
-        holdings_ext.holdings_id,
+        holdings_ext.id,
         holdings_ext.holdings_hrid,
         holdings_ext.call_number,
         TRIM (CONCAT_WS (' ', holdings_ext.call_number_prefix, holdings_ext.call_number, holdings_ext.call_number_suffix, 
@@ -46,10 +46,10 @@ FROM folio_derived.instance_ext
         ON holdings_ext.holdings_hrid = holdings_statements.holdings_hrid
         
         LEFT JOIN folio_derived.holdings_notes
-        ON holdings_ext.holdings_id = holdings_notes.holding_id
+        ON holdings_ext.id = holdings_notes.holding_id
         
         LEFT JOIN folio_inventory.item__t
-        ON item__t.holdings_record_id = holdings_ext.holdings_id
+        ON item__t.holdings_record_id = holdings_ext.id
         
         LEFT JOIN folio_derived.locations_libraries
         ON holdings_ext.permanent_location_id = locations_libraries.location_id
@@ -75,7 +75,7 @@ GROUP BY
         instance_ext.instance_id,
         instance_ext.instance_hrid,
         instance_ext.discovery_suppress,
-        holdings_ext.holdings_id,
+        holdings_ext.id,
         holdings_ext.holdings_hrid,
         holdings_ext.call_number_prefix,
         holdings_ext.call_number,
@@ -101,7 +101,7 @@ annex AS
                 ON data1.instance_id = holdings_ext.instance_id 
                 
                 LEFT JOIN folio_derived.holdings_statements
-                ON holdings_ext.holdings_id = holdings_statements.holdings_id
+                ON holdings_ext.id = holdings_statements.holdings_id
                 
         WHERE holdings_ext.permanent_location_name LIKE '%Annex%'
         and (holdings_ext.discovery_suppress = 'false' or holdings_ext.discovery_suppress is null)
