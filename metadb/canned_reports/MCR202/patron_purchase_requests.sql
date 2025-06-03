@@ -201,7 +201,7 @@ circs_after_purch AS
 		LEFT JOIN folio_derived.holdings_ext AS he ---folio_reporting.holdings_ext AS he 
 		    ON orders.holdings_hrid = he.holdings_hrid
 		LEFT JOIN folio_derived.item_ext AS ie --folio_reporting.item_ext AS ie 
-		    ON he.holdings_id = ie.holdings_record_id
+		    ON he.id = ie.holdings_record_id
 		LEFT JOIN folio_derived.loans_items AS li --folio_reporting.loans_items AS li 
 		    ON ie.item_id = li.item_id
 		    
@@ -223,7 +223,7 @@ circs_overall AS
 		LEFT JOIN folio_derived.holdings_ext AS he --folio_reporting.holdings_ext AS he 
 		    ON orders.holdings_hrid = he.holdings_hrid
 		LEFT JOIN folio_derived.item_ext AS ie --folio_reporting.item_ext AS ie 
-		    ON he.holdings_id = ie.holdings_record_id
+		    ON he.id = ie.holdings_record_id
 		LEFT JOIN folio_derived.loans_items AS li --folio_reporting.loans_items AS li 
 		    ON ie.item_id = li.item_id
 	
