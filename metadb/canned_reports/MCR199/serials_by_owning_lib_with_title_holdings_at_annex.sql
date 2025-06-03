@@ -34,7 +34,7 @@ owning_library_recs AS
         he.permanent_location_name,
         he.type_name AS holdings_type_name,
         mf.leader0607 AS bib_format,
-        he.holdings_id,
+        he.id AS holdings_id,
         he.holdings_hrid,
         he.call_number,
         he.receipt_status,
@@ -49,7 +49,7 @@ FROM folio_inventory.instance__t AS ii
         ON ii.id = he.instance_id 
         
         LEFT JOIN folio_derived.holdings_statements AS hs 
-        ON he.holdings_id = hs.holdings_id
+        ON he.id = hs.holdings_id
         
         LEFT JOIN folio_derived.locations_libraries AS ll 
         ON he.permanent_location_id = ll.location_id 
@@ -73,7 +73,7 @@ GROUP BY
         he.permanent_location_name,
         he.type_name,
         mf.leader0607,
-        he.holdings_id,
+        he.id,
         he.holdings_hrid,
         he.call_number,
         he.receipt_status,
@@ -133,7 +133,7 @@ FROM owning_library_recs
         ON owning_library_recs.instance_id = he.instance_id 
         
         LEFT JOIN folio_derived.holdings_statements AS hs 
-        ON he.holdings_id = hs.holdings_id 
+        ON he.id = hs.holdings_id 
         
         LEFT JOIN folio_derived.locations_libraries AS ll 
         ON he.permanent_location_id = ll.location_id
