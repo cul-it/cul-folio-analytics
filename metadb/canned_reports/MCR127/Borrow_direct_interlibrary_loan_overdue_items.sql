@@ -66,7 +66,7 @@ LEFT JOIN days ON
 	days.loan_id = folio_derived.loans_items.loan_id
 LEFT JOIN folio_derived.holdings_ext 
         ON
-	folio_derived.loans_items.holdings_record_id = folio_derived.holdings_ext.holdings_id
+	folio_derived.loans_items.holdings_record_id = folio_derived.holdings_ext.id
 LEFT JOIN folio_derived.instance_ext 
         ON
 	folio_derived.holdings_ext.instance_id = folio_derived.instance_ext.instance_id
