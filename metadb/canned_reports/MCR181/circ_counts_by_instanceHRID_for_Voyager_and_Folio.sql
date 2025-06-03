@@ -28,7 +28,7 @@ FROM folio_inventory.instance__t as ii --inventory_instances ii
         ON ii.id = he.instance_id::UUID 
         
         LEFT JOIN folio_inventory.item__t as invitems -- inventory_items AS invitems 
-        ON he.holdings_id::UUID = invitems.holdings_record_id 
+        ON he.id::UUID = invitems.holdings_record_id 
         
         LEFT JOIN vger.item 
         ON invitems.hrid::varchar = item.item_id::varchar
