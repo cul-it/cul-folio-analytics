@@ -306,7 +306,7 @@ from folio_orders.purchase_order__t
 	on pieces__t.location_id = ll.location_id
 	
 	left join folio_derived.holdings_ext as he 
-	on pieces__t.holding_id = he.holdings_id
+	on pieces__t.holding_id = he.id
 	
 	left join folio_derived.locations_libraries as ll2 
 	on coalesce (ll.location_name, he.permanent_location_name) = ll2.location_name
@@ -393,10 +393,10 @@ FROM folio_inventory.instance__t AS ii
 	ON he.permanent_location_id = ll.location_id 
 	
 	LEFT JOIN folio_derived.holdings_statements AS hs 
-	ON he.holdings_id = hs.holdings_id
+	ON he.id = hs.holdings_id
 	
 	LEFT JOIN folio_inventory.item__t as invitems -- inventory_items AS invitems 
-	ON he.holdings_id = invitems.holdings_record_id 
+	ON he.id = invitems.holdings_record_id 
 	
 	LEFT JOIN folio_derived.item_ext AS ie 
 	ON invitems.id = ie.item_id 
@@ -518,7 +518,7 @@ FROM unitrecs2
 	ON ii.id = he.instance_id 
 	
 	LEFT JOIN folio_derived.holdings_statements AS hs
-	ON he.holdings_id = hs.holdings_id
+	ON he.id = hs.holdings_id
 	
 	LEFT JOIN folio_derived.locations_libraries ll 
 	ON he.permanent_location_id = ll.location_id
