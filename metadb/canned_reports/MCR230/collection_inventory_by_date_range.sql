@@ -52,7 +52,7 @@ from folio_inventory.instance__t as ii --inventory_instances as ii
 	on ii.id = he.instance_id::UUID
 	
 	left join folio_derived.item_ext as ie 
-	on he.holdings_id::UUID = ie.holdings_record_id::UUID
+	on he.id = ie.holdings_record_id::UUID
 	
 	left join folio_derived.locations_libraries as ll 
 	on ie.effective_location_id::UUID = ll.location_id::UUID
