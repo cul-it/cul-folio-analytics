@@ -60,7 +60,7 @@ FROM
 WHERE
    loan__t.id NOT IN 
 	   (SELECT cs4.loan_id::UUID
-	   FROM local_shared.sm_circ_snapshot4 as cs4
+	   FROM local_static.sm_circ_snapshot4 as cs4
 	   )
    AND loan__t.user_id is not null 
    AND users__.__current = true
