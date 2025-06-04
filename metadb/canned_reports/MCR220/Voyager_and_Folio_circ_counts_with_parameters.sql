@@ -65,7 +65,7 @@ FROM folio_inventory.instance__t as ii
         on he.permanent_location_id::UUID = ll.location_id::UUID
         
         LEFT JOIN folio_inventory.item__t as invitems 
-        ON he.holdings_id::UUID = invitems.holdings_record_id::UUID 
+        ON he.id = invitems.holdings_record_id::UUID 
         
         left join folio_derived.item_ext as ie 
         on invitems.id = ie.item_id::UUID
