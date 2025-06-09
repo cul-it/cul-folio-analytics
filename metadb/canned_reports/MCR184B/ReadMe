@@ -3,8 +3,11 @@ MCR184B: orig_locs_for_phys_collections_no_library_charges
 The results in MC184 include counts under "removed locations" and "no library." For the 
 annual data collection, you can use this query to see which locations those counts were originally for before
 the locations were retired.
-Note that the annual data collection only includes charges counts for general and reserve items.
+Note that the annual data collection only includes charges counts for general and reserve items, so this query
+attemps to remove equipment.
 Each year you must update the dates.
-FY24 was the first year this was used. Make sure all lines up as expected in FY25 (tested OK on 9/9/24).
-In FY24, this was 10 for entomology, 50 for FAL reserve and 12 for JGSM reserve.
+FY24 was the first year this was used. Each year, make sure counts for "removed locations" and "no library" match 
+between MCR184 and MCR184B as expected.
+In FY24, results were: 10 for entomology, 50 for FAL reserve and 12 for JGSM reserve.
 The item_effective_location_name_at_check_out tells you whether a loan was a reserve loan or not.
+
