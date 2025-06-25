@@ -1,4 +1,4 @@
-MCR217B
+/*MCR217B
 HathiTrust_title_counts_to_add_to_ADC_e-counts
 
 This query is used by A&P staff to get counts of titles CUL sent to Google to be digitized in one of the Google Books Projects, 
@@ -18,7 +18,7 @@ VM - visual material
 MX - mixed materials.
 
 If item counts are needed for any reason, one can replace this query’s count distinct line with the following: 
-“count(distinct volume_identifier) as item_count” .
+“count(distinct volume_identifier) as item_count” .*/
 
 
 SELECT
