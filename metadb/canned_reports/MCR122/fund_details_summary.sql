@@ -12,7 +12,7 @@ WITH parameters AS (
         ''::VARCHAR AS fiscal_year_code,
         ''::VARCHAR AS fund_code,
  		''::VARCHAR AS fund_name,
- 		'Humanities'::VARCHAR AS group_name
+ 		''::VARCHAR AS group_name  -- e.g., 'Humanities'
 )
 SELECT 
 	CURRENT_DATE,
