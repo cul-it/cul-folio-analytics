@@ -15,12 +15,13 @@
 	-- added finance group filter (AND joins to group_fund_fiscal_year__t AND groups__t); also added a join to transaction__t table
 	-- Added pol.receipt_status AND pol.receipt_date to Select stanza
 -- 5-27-25: cleaned up commented-out lines
+-- 7-9-25: added purchase order create date and po_line create date; added wildcards to fund_code filter; changed Where condition for fund_code to "LIKE"
 
 WITH parameters AS (
     SELECT
-        'FY2025'::VARCHAR AS fiscal_year_code, -- enter fiscal year (FY2023, FY2024, etc.) or leave blank for all Fiscal Years
-        '2030'::VARCHAR AS fund_code, -- enter a fund code (ex: 2030, p8154, etc.) or leave blank for all funds
-        'Area Studies'::VARCHAR AS finance_group_filter -- (new AS of 5-14-25) enter a finance group (ex: Sciences, Humanities, Area Studies, etc.) or leave blank for all finance groups
+        ''::VARCHAR AS fiscal_year_code, -- enter fiscal year (FY2023, FY2024, etc.) or leave blank for all Fiscal Years
+        '%%'::VARCHAR AS fund_code, -- enter a fund code between the wildcards or leave blank for all funds (ex: 2030, p8154, etc.)
+        ''::VARCHAR AS finance_group_filter -- (new AS of 5-14-25) enter a finance group (ex: Sciences, Humanities, Area Studies, etc.) or leave blank for all finance groups
 )
 
 SELECT DISTINCT
@@ -36,9 +37,11 @@ SELECT DISTINCT
     	jsonb_extract_path_text(ft.jsonb, 'metadata', 'createdDate')::timestamptz AS encumbrance_created_date,
     	pol.title_or_package AS title,
     	poi.pol_location_name AS pol_location_name,
-		poi.pol_instance_hrid,
-		pol.receipt_status AS pol_receipt_status, -- new 5-14-25
-		pol.receipt_date::date AS pol_receipt_date, -- new 5-14-25
+	poi.pol_instance_hrid,
+	purchase_order.creation_date::date AS puchase_order_create_date,
+	(po_line.jsonb#>>'{metadata,createdDate}')::date AS po_line_create_date,
+	pol.receipt_status AS pol_receipt_status, -- new 5-14-25
+	pol.receipt_date::date AS pol_receipt_date, -- new 5-14-25
     	pol.payment_status AS pol_payment_status, --note that Fully Paid orders may still have an unreleased encumbrance; this is a SYSTEM issue to be fixed
     	pol.descriptiON AS pol_description,
     	po.order_type AS po_order_type,
@@ -88,9 +91,9 @@ WHERE
 	jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Encumbrance'
     	AND jsonb_extract_path_text(ft.jsonb, 'amount')::numeric(19, 4) > 0 
     	AND jsonb_extract_path_text(ft.jsonb, 'encumbrance', 'status') = 'Unreleased'  
-		AND ((fy.code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
-		AND ((ff.code = (SELECT fund_code FROM parameters)) OR ((SELECT fund_code FROM parameters) = ''))
-		AND ((groups__t.name = (SELECT finance_group_filter FROM parameters)) OR ((SELECT finance_group_filter FROM parameters) = '')) -- new 5-14-25
+	AND ((fy.code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
+	AND ((ff.code LIKE (SELECT fund_code FROM parameters)) OR ((SELECT fund_code FROM parameters) = ''))
+	AND ((groups__t.name = (SELECT finance_group_filter FROM parameters)) OR ((SELECT finance_group_filter FROM parameters) = '')) -- new 5-14-25
 	
 ORDER BY finance_group_name, fiscal_year_code, transaction_from_fund_code, pol_number
 	;
