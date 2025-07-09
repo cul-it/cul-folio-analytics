@@ -5,11 +5,15 @@
   "parameters": [
     {
       "name": "start_date",
-      "type": "DATE"
+      "displayName": "Earliest date of order creation",
+      "type": "date",
+      "required": false
     },
     {
       "name": "end_date",
-      "type": "DATE"
+      "displayName": "Latest date of order creation",
+      "type": "date",
+      "required": false
     }
   ]
 }
