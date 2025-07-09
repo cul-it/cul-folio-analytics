@@ -1,9 +1,17 @@
-CREATE OR REPLACE FUNCTION LTS_ACQ_sopo(start_date date, end_date date)
- RETURNS TABLE(pol_instance_hrid text, po_number text, po_line_number text, vendor_code text, f_status text, po_created_date date, field text, series text)
- LANGUAGE plpgsql
-AS $function$
-BEGIN
-  RETURN QUERY
+
+DROP FUNCTION IF EXISTS LTS_ACQ_sopo;
+CREATE FUNCTION LTS_ACQ_sopo(
+    start_date date DEFAULT '2021-07-01',
+    end_date date DEFAULT '2050-01-01')
+RETURNS TABLE (
+  pol_instance_hrid text, 
+  po_number text, 
+  po_line_number text, 
+  vendor_code text, 
+  f_status text,
+  po_created_date date, 
+  field text, series text)
+AS $$
   SELECT 
     poi.pol_instance_hrid,
     poi.po_number,
@@ -29,6 +37,7 @@ BEGIN
     poi.created_date,
     poi.po_workflow_status,
     marc.field;
-END;
-$function$
-;
+$$
+LANGUAGE SQL
+STABLE
+PARALLEL SAFE;
