@@ -3,13 +3,13 @@
   "description" : "Create PO with SO for date range",
   "instructions": "Choose your date range",
   "parameters": [
-    {
+{
       "name": "start_date",
       "displayName": "Earliest date of order creation",
       "type": "date",
       "required": false
     },
-    {
+{
       "name": "end_date",
       "displayName": "Latest date of order creation",
       "type": "date",
