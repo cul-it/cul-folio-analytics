@@ -1,6 +1,6 @@
 {
-    "displayName": "List the counts of users in user groups",
-    "description": "Create counts by user groups",
+    "displayName": "DEMO_1_count_users_in_user groups",
+    "description": "Create user counts by user groups",
     "instructions": "You can choose a user group or leave it empty",
     "parameters": [
         {
