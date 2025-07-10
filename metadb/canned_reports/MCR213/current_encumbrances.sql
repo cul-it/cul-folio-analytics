@@ -56,12 +56,18 @@ FROM
     	folio_finance.transactiON AS ft 
     	LEFT JOIN folio_orders.po_line__t AS pol 
     	ON jsonb_extract_path_text (ft.jsonb, 'encumbrance','sourcePoLineId')::uuid = pol.id
+
+	left join folio_orders.po_line 
+    	on pol.id = po_line.id
     	
     	LEFT JOIN folio_finance.transaction__t -- new 5-14-25
     	ON ft.id = transaction__t.id
     	
     	LEFT JOIN folio_orders.purchase_order__t AS po 
     	ON jsonb_extract_path_text (ft.jsonb, 'encumbrance','sourcePurchaseOrderId')::uuid = po.id 
+
+	left join folio_orders.purchase_order 
+    	on po.id = purchase_order.id
     	
     	LEFT JOIN folio_finance.fund__t AS ff 
     	ON ft.fromfundid = ff.id 
