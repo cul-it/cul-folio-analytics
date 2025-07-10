@@ -1,5 +1,5 @@
 {
-  "displayName": "PO Line Notes Report",
+  "displayName": "LTS_ACQ_2_PO_Line_Notes_Report",
   "description": "Returns a list of PO lines with notes and flags for requester, selector, donor, and rush orders created in the last 90 days.",
   "instructions": "Run this report to view PO line notes.",
   "parameters": []
