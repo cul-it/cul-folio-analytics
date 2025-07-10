@@ -1,3 +1,5 @@
+--metadb:function test_lts_acq_sopo
+
 DROP FUNCTION IF EXISTS test_lts_acq_sopo;
 CREATE FUNCTION test_lts_acq_sopo(
     start_date date DEFAULT '2021-07-01',
