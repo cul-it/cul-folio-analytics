@@ -1,4 +1,3 @@
-
 DROP FUNCTION IF EXISTS LTS_ACQ_sopo;
 CREATE FUNCTION LTS_ACQ_sopo(
     start_date date DEFAULT '2021-07-01',
