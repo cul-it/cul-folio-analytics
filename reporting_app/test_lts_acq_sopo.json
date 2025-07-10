@@ -1,0 +1,19 @@
+{
+  "title": "Standing Order / Purchase Order Lines with Series Data",
+  "parameters": [
+    {
+      "name": "start_date",
+      "type": "date",
+      "label": "Start Date",
+      "required": false,
+      "defaultValue": "2021-07-01"
+    },
+    {
+      "name": "end_date",
+      "type": "date",
+      "label": "End Date",
+      "required": false,
+      "defaultValue": "2050-01-01"
+    }
+  ]
+}
