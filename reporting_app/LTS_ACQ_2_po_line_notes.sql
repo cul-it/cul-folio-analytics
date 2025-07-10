@@ -1,3 +1,5 @@
+--metadb:function po_line_notes
+
 DROP FUNCTION IF EXISTS po_line_notes;
 CREATE FUNCTION po_line_notes()
 RETURNS TABLE (
