@@ -1,5 +1,5 @@
 {
-  "title": "Standing Order / Purchase Order Lines with Series Data",
+  "title": "List of POs with Standing Orders",
   "parameters": [
     {
       "name": "start_date",
