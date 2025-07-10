@@ -1,5 +1,5 @@
 {
-    "displayName": "List of PO with Standing Orders",
+    "displayName": "LTS_ACQ_1_List_of_POs_with_Standing_Orders",
     "description": "Create PO with SO for date range",
     "instructions": "Choose your date range",
     "parameters": [
