@@ -17,8 +17,8 @@ RETURNS TABLE (
 AS 
 $$
 SELECT 
+    Distinct plt.po_line_number,
     pl.creation_date::date,
-    plt.po_line_number,
     plt.title_or_package,
     CASE 
       WHEN jsonb_extract_path_text(pl.jsonb, 'details','receivingNote') IS NOT NULL 
@@ -35,7 +35,7 @@ SELECT
 FROM folio_orders.po_line__t plt 
 LEFT JOIN folio_orders.po_line pl ON plt.purchase_order_id = pl.purchaseorderid
 WHERE pl.creation_date::date >= now() - INTERVAL '90 DAYS'
-ORDER BY pl.creation_date DESC;
+ORDER BY pl.creation_date::date DESC;
 $$
 LANGUAGE SQL
 STABLE
