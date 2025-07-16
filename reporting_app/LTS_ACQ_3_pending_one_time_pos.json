@@ -1,0 +1,6 @@
+{
+  "displayName": "LTS_ACQ_3_Pending_One_Time_PO_Report",
+  "description": "Returns pending one-time purchase orders with relevant details.",
+  "instructions": "Run this report to view Pending POs.",
+  "parameters": []
+}
