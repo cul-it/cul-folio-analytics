@@ -1,4 +1,4 @@
---metadb:function LTS_ACQ_pending_orders
+--metadb:function LTS_ACQ_3_pending_orders
 
 DROP FUNCTION IF EXISTS get_pending_one_time_orders;
 CREATE FUNCTION get_pending_one_time_orders()
