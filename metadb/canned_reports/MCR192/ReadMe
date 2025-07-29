@@ -1,39 +1,44 @@
 MCR192
 Volumes withdrawn or transferred
 
-Note: this query was updated by Joanne Leary around 4/1/25 to exclude derived tables and to use "split part" functions to parse out comments
-in administrative notes.
+This query extracts holdings administrative note data to allow counts of physical items withdrawn by location AND 
+to allow the identification of transfers that go from endowed to contract units, and vice-versa. These counts are 
+used by A&P for volumes added and withdrawn figures needed by the Division of Financial Services each quarter.
+It pulls fields like: the number of pieces withdrawn/transferred, the date, the originating library, the netid, 
+processing unit, and contract/endowed college group.
+(Notes without ttype codes, or note with different ttypes are marked '0' for number of pieces.)
+Note that these holdings administrative notes are being used for technical services processing counts as well 
+as these counts.  LTS has said these piece counts can be used as item record counts, but there are exceptions 
+(for example, our MCR214 counts exclude bound-with items, but these results will not).
+--JL/LM/with additional regular expressions help from Microsoft CoPilot, 10/16/24. See query for updates made since.
 
-This query extracts holdings administrative note data to allow counts of physical items withdrawn by location AND to allow the identification of transfers that go from endowed to contract units, and vice-versa. These counts are used for volumes withdrawn figures needed by the Division of Financial Services each quarter.
-It pulls fields like: the number of pieces withdrawn/transferred, the date, the originating library, the netid, processing unit, and contract/endowed college group.
-(notes without ttype codes, or note with different ttypes are marked '0' for number of pieces)
-JL/LM/with additional regular expressions help from Microsoft CoPilot. 10/16/24
- 
 IMPORTANT NOTES
 This is a rethink of CR192, as CUL is now (as of mid-October 2024) using holdings administrative notes to track 
 withdrawals and transfers, to get full location information (see the new LTS procedure 9: 
-https://confluence.cornell.edu/pages/viewpage.action?pageId=317948999). A&P uses this query to get withdrawal 
-counts for CUL, divided between contract and endowed, for CU's Division of Financial Services depreciation 
-figures (supplied quarterly).
-
+https://confluence.cornell.edu/pages/viewpage.action?pageId=317948999). 
 This version differs also in that: it uses leader0607 to limit transactions to those for print based physical
 materials (those starting with leader0607s of a%,t%, c%, or d%); and removes items with locations of "serv,remo". 
 It also pulls out the action type so the withdrawals and transfers can be counted separately.
 The code here allows for the fact that there are a few cases of staff adding a space between "orig:" and the 
-location code. You can use the Excel function statement below to remove any extra spaces.
-Coding also allows for original location codes to have, or not have, commas in their codes.
-The query strings together multiple holdings notes.
+location code (and same for pieces). Coding also allows for original location codes to have, or not have, commas 
+in their codes. The query strings together multiple holdings notes.
 
 This query was first written with section 2 to assign contract college or endowed via location. Since then
 we have added the field "dfs_college_group" to the "lm_adc_location_translation_table" so that section
-is no longer necessary. Likewise MCR233 (used to update the location translation table) will be updated.
+is no longer necessary. 
 
 When data is pulled:
--Check to make sure no duplicates by holdings ID
+-First check for items to exclude:
+  -Any full duplicates (same holdings record and administrative note the same (and same admin note ordinality))
+  -Any items with microform call numbers (sequential numbers starting with “micro” or “film” vs. LC call numbers)
+  -Any microforms via |h in title (search by “microform” to see if  “[microform]” in title)
+  -Any items bound-with other items, through holdings notes (not the first item in the volume)
+  -Any items with location codes excluded in MCR214
 -For action type "w", use pivot table to get the sum of items withdrawn by location and sum for endowed and for 
 contract.
--For action type "t", use the following function statement to see if there were any transfers between endowed 
-and contract:  =EXACT(UPPER(LEFT(SUBSTITUTE(H2," ",""),3)), UPPER(LEFT(SUBSTITUTE(T2," ",""),3))). It allows for
-capitals in location codes, and removes spaces.
-*/
+-For action type "t", use the following or some other method to look for items transferred between contract and endowed:
+  =EXACT(UPPER(LEFT(SUBSTITUTE(H2," ",""),3)), UPPER(LEFT(SUBSTITUTE(S2," ",""),3))). It allows for
+capitals in location codes, and removes spaces. Note that column S has manually input codes, so may not match exactly.
+
+
 
