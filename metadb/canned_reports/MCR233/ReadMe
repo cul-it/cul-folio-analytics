@@ -12,10 +12,10 @@ on uploading files). Any updates should also be made to CORE’s list of locatio
 https://confluence.cornell.edu/x/yXSZGQ . These updates are Assessment & Planning’s (A&P’s) responsibility;  A&P checks 
 locations quarterly. 
 
-The query indicates which fields are to be retained for the translation table.
-The lm_adc_location_translation_table will not be renamed with the date when updated to avoid having to update the 
+The query indicates which fields are to be retained for the translation table. Once the table is complete and correct, remove the
+columns of data that are not needed.The lm_adc_location_translation_table will not be renamed with the date when updated to avoid having to update the 
 table name in queries. Instead the update date is included in the table itself. Only the latest version of the table 
-will be in shared schemas.
+will be in shared schemas. Add a "key" column at the left end of the table with sequential numbering starting with 1 to give the rows unique identifiers.
 
 What to look for in the Excel output:
 --are there location_create or location_updated dates after the last translation table check?
