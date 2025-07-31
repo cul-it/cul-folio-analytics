@@ -21,7 +21,7 @@ SELECT
        adc.adc_invlib_shelvinglibrary_name,  --keep IN TRANSLATION TABLE
        CASE WHEN (jsonb_extract_path_text (invloc.jsonb,'isActive')) = 'true' THEN 'Active' ELSE 'Inactive' END AS location_status,
       jsonb_extract_path_text (invloc.jsonb, 'description') AS inv_loc_desc,
-       adc.dfs_college_group
+       adc.dfs_college_group --keep IN TRANSLATION TABLE
 
 FROM folio_inventory."location" AS invloc 
        LEFT JOIN folio_inventory.location__t AS invloc__t ON invloc.id = invloc__t.id
