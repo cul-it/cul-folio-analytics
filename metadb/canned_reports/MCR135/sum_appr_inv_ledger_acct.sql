@@ -1,17 +1,19 @@
 --MCR135
 --sum_appr_inv_ledger_acct
---last updated: 5/28/24
+--last updated: 8-19-25
 --This query provides the total of transaction amount by account number along with the finance ledger 
 --and finance group within a date range.
 --written by Nancy Bolduc, revised for Metadb by Sharon Markus, reviewed and tested by Ann Crowley
+--8-19-25: set external_account_no ORDER BY to DESC
+--NOTE: To obtain accurate totals for the entire month, enter the first day of the following month as the payment_date_end_date
 
 
 WITH parameters AS (
     SELECT
         /* Enter invoice payment start date and end date in YYYY-MM-DD format. All 3 date parameters must be entered. */
-    	  '2022-07-01' :: DATE AS payment_date_start_date,
-        '2023-06-30' :: DATE AS payment_date_end_date, -- Excludes the selected date
-        'FY2023'::VARCHAR AS fiscal_year_code -- Ex: FY2023, FY2024 etc.
+    	  '2025-07-01' :: DATE AS payment_date_start_date,
+        '2025-08-01' :: DATE AS payment_date_end_date, -- Excludes the selected date
+        'FY2026'::VARCHAR AS fiscal_year_code -- Ex: FY2023, FY2024 etc.
 )
 
 -- MAIN QUERY
@@ -48,4 +50,4 @@ GROUP BY
 	ff.external_account_no,
 	fl.name
 ORDER BY 
-	ff.external_account_no;
+	ff.external_account_no DESC;
