@@ -1,16 +1,17 @@
 --MCR132Y 
 --ytd_acct_bal_by_ledger_univ_acct_yesterday
---last updated: 1-27-25
+--last updated: 8-18-25
 --written by Nancy Bolduc, revised to Metadb by Sharon Markus and reviewed by Ann Crowley
 --This report provides the year-to-date external account cash balance along with 
 --total_expenditures, initial allocation, and net allocation. 
---The fiscal year can be selected in the WHERE clause. 
+--The fiscal year can be selected in the WHERE clause.
+--8-15-25: added or subtracted credits into the YTD_expenditures and cash_balance calculations
 
 SELECT
     CURRENT_DATE,
     fl.name AS finance_ledger_name,
     ff.external_account_no AS external_account,
-    SUM(COALESCE (fb.expenditures,0)) AS YTD_expenditures,
+    SUM(COALESCE (fb.expenditures,0) - coalesce (fb.credits,0)) AS YTD_expenditures, -- subtracted credits
     SUM(COALESCE (fb.initial_allocation,0)) AS initial_allocation,
     SUM(COALESCE (fb.initial_allocation,0) + COALESCE (fb.allocation_to,0)
         -COALESCE (fb.allocation_from,0)) AS total_allocated,
@@ -18,7 +19,8 @@ SELECT
         -COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)) AS total_funding,
     SUM(COALESCE (fb.initial_allocation,0)+COALESCE (fb.allocation_to,0)
         -COALESCE (fb.allocation_from,0)+COALESCE (fb.net_transfers,0)
-        -COALESCE (fb.expenditures,0)) AS cash_balance -- This balance excludes encumbrances and awaiting payment
+        -COALESCE (fb.expenditures,0)
+        +coalesce (fb.credits,0)) AS cash_balance -- This balance excludes encumbrances and awaiting payment -- added credits
 FROM
     folio_finance.fund__t AS ff
     LEFT JOIN folio_finance.budget__t AS fb ON fb.fund_id = ff.id  
@@ -26,11 +28,10 @@ FROM
     LEFT JOIN folio_finance.ledger__t AS fl ON fl.id::UUID = ff.ledger_id
 WHERE
     ff.fund_status LIKE 'Active'
-    AND ffy.code LIKE 'FY2025'
+    AND ffy.code LIKE 'FY2026'
 GROUP BY
     external_account_no,
     fl.name
 ORDER BY
     finance_ledger_name,
     external_account_no ASC; 
-  
