@@ -10,7 +10,7 @@ SELECT
     CURRENT_DATE,
     fl.name AS finance_ledger_name,
     ff.external_account_no AS external_account,
-    SUM(COALESCE (fb.expenditures,0) - coalesce (fb.credits,0)) AS YTD_expenditures, -- subtracted credits
+    SUM(COALESCE (fb.expenditures,0) - coalesce (fb.credits,0)) AS YTD_net_expenditures, -- subtracted credits
     SUM(COALESCE (fb.initial_allocation,0)) AS initial_allocation,
     SUM(COALESCE (fb.initial_allocation,0) + COALESCE (fb.allocation_to,0)
         -COALESCE (fb.allocation_from,0)) AS total_allocated,
