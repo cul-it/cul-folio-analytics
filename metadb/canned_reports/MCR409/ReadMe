@@ -1,0 +1,9 @@
+MCR409
+Active Patrons in CornellTech
+
+This query finds all active patrons in Cornell Tech. 
+-- Because there is no standard department name or College code for Cornell Tech, we need to look at both fields and apply criteria.
+-- Revised query for address fields. 8-14-23.
+-- Revised to make the create date and update dates appear as dates in Excel - 8-26-24
+-- Revised for Metadb - 9-8-25
+
