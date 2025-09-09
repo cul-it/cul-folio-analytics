@@ -1,6 +1,9 @@
 --MCR409
 --Active Patrons in Cornell Tech
 
+--Query writer: Joanne Leary (jl41)
+--Query posted in: 9/9/25
+
 -- This query finds all active patrons in Cornell Tech. 
 -- Because there is no standard department name or College code for Cornell Tech, we need to look at both fields and apply criteria.
 -- Revised query for address fields. 8-14-23.
