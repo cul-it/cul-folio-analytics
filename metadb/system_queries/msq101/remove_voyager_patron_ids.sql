@@ -45,6 +45,7 @@ note = NULL
 
 UPDATE 
 vger.hold_recall
+SET
 patron_comment = NULL
 ;
 
