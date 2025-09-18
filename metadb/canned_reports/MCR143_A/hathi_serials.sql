@@ -116,7 +116,7 @@ CREATE INDEX ON local_hathitrust.h_s_4 (permanent_location_name);
 CREATE INDEX ON local_hathitrust.h_s_4 (call_number);
 
 --5--------------------selects/deselects records with 300 $amap or maps and filters from h_s_4------------------ 
-DROP TABLE IF EXISTS local_hathitrusti.h_s_5;
+DROP TABLE IF EXISTS local_hathitrust.h_s_5;
 CREATE TABLE local_hathitrust.h_s_5 AS
 WITH threehundred AS 
 (SELECT
