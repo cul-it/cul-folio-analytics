@@ -1,4 +1,5 @@
--------------------selects records based on type from a Leader/000------------------------------
+
+    -------------------selects records based on type from a Leader/000------------------------------
 DROP table IF EXISTS local_hathitrust.h_mv_1;
 CREATE TABLE local_hathitrust.h_mv_1 AS
 SELECT
@@ -40,7 +41,7 @@ CREATE TABLE local_hathitrust.h_mv_2 AS
 SELECT 
     lhm.instance_id,
     lhm.instance_hrid,
-    h.holdings_id,
+    h.id,
     h.holdings_hrid,
     h.permanent_location_name,
     h.call_number,
@@ -80,7 +81,7 @@ SELECT
     SELECT 
     h.instance_id,
     h.instance_hrid,
-    h.holdings_id,
+    h.id,
     h.holdings_hrid,
     h.permanent_location_name,
     h.call_number,
@@ -107,7 +108,7 @@ SELECT
     SELECT 
     h.instance_id,
     h.instance_hrid,
-    h.holdings_id,
+    h.id,
     h.holdings_hrid,
     h.permanent_location_name,
     h.call_number,
@@ -148,7 +149,7 @@ WITH threehundred AS
     SELECT 
     h.instance_id,
     h.instance_hrid,
-    h.holdings_id,
+    h.id,
     h.holdings_hrid,
     h.permanent_location_name,
     h.call_number,
@@ -163,7 +164,7 @@ CREATE TABLE local_hathitrust.h_mv_6 AS
 SELECT 
     hhn.instance_id,
     hhn.instance_hrid,
-    hhn.holdings_id,
+    hhn.id,
     hhn.holdings_hrid,
     hhn.call_number,
     hhn.permanent_location_name,
@@ -194,7 +195,7 @@ WITH oclc_no AS (
     SELECT 
     DISTINCT hsn.instance_id,
     hsn.instance_hrid,
-    hsn.holdings_id,
+    hsn.id,
     hsn.holdings_hrid,
     hsn.call_number,
     hsn.permanent_location_name,
@@ -215,7 +216,7 @@ CREATE table local_hathitrust.h_mv_8 AS
 SELECT
       hm.instance_id,
       hm.instance_hrid,
-      hm.holdings_id,
+      hm.id,
       hm.holdings_hrid,
       hs.holdings_statement,
       hm.permanent_location_name,
@@ -225,9 +226,9 @@ SELECT
       he.type_name,
       hm.discovery_suppress 
 FROM local_hathitrust.h_mv_7 hm
-LEFT JOIN folio_derived.holdings_ext  he ON hm.holdings_id = he.holdings_id
-LEFT JOIN folio_derived.holdings_statements hs ON hm.holdings_id = hs.holdings_id 
-LEFT JOIN folio_derived.holdings_notes hn ON hm.holdings_id = hn.holding_id
+LEFT JOIN folio_derived.holdings_ext  he ON hm.id = he.id
+LEFT JOIN folio_derived.holdings_statements hs ON hm.id = hs.holdings_id 
+LEFT JOIN folio_derived.holdings_notes hn ON hm.id = hn.holding_id
 WHERE (hs.holdings_statement NOT IN ('1 v.'))
 ;
 
@@ -239,7 +240,7 @@ DISTINCT he.item_id,
 he.item_hrid,
 hm.instance_id,
 hm.instance_hrid,
-hm.holdings_id,
+hm.id,
 hm.holdings_hrid,
 hm.permanent_location_name,
 hm.call_number,
@@ -253,7 +254,7 @@ hm.note,
 hm.discovery_suppress,
 hm.oclc_no
 FROM local_hathitrust.h_mv_8 hm
-LEFT JOIN folio_derived.item_ext he ON hm.holdings_id = he.holdings_record_id
+LEFT JOIN folio_derived.item_ext he ON hm.id = he.holdings_record_id
 ;
 
 ---9-------assigns statuses and conditions-----------
@@ -263,7 +264,7 @@ SELECT
 DISTINCT hs.item_id,
 hs.instance_hrid,
 hs.instance_id,
-hs.holdings_id,
+hs.id,
 hs.holdings_hrid,
 hs.permanent_location_name,
 hs.call_number,
@@ -294,7 +295,7 @@ FROM local_hathitrust.h_mv_8b hs
 GROUP BY 
 hs.instance_hrid,
 hs.instance_id,
-hs.holdings_id,
+hs.id,
 hs.holdings_hrid,
 hs.item_id,
 hs.oclc_no,
@@ -308,6 +309,7 @@ hs.damaged_status_name
 ;
 --10------------------------------selects value for government document from 008 ---------
 -- total number of records as of 12/07/2021 is 928,334 --------------
+-- total number of records as of 09/22/25 is 943,626
 DROP TABLE IF EXISTS local_hathitrust.h_mv_final;
 CREATE TABLE local_hathitrust.h_mv_final AS
 WITH gov_doc AS (
@@ -333,3 +335,14 @@ SELECT
    LEFT JOIN gov_doc AS gd ON hm.instance_hrid = gd.instance_hrid
    WHERE hm.status != 'NWD'
 ;
+DROP table IF EXISTS local_hathitrust.h_mv_1;
+DROP table IF EXISTS local_hathitrust.h_mv_1b;
+DROP table IF EXISTS local_hathitrust.h_mv_2;
+DROP table IF EXISTS local_hathitrust.h_mv_3;
+DROP table IF EXISTS local_hathitrust.h_mv_4;
+DROP table IF EXISTS local_hathitrust.h_mv_5;
+DROP table IF EXISTS local_hathitrust.h_mv_6;
+DROP table IF EXISTS local_hathitrust.h_mv_7;
+DROP table IF EXISTS local_hathitrust.h_mv_8;
+DROP table IF EXISTS local_hathitrust.h_mv_8b;
+DROP table IF EXISTS local_hathitrust.h_mv_9;
