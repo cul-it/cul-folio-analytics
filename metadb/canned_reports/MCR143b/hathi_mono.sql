@@ -1,4 +1,4 @@
---1----selects pull of records based on ldr type ans 008 publication status and filters certain locations-----------
+-------------------selects records based on type from a Leader/000------------------------------
 DROP table IF EXISTS local_hathitrust.h_mo_1;
 CREATE TABLE local_hathitrust.h_mo_1 AS
 SELECT
@@ -38,7 +38,7 @@ CREATE TABLE local_hathitrust.h_mo_2 AS
 SELECT 
     hm.instance_id,
     hm.instance_hrid,
-    he.holdings_id,
+    he.id,
     he.holdings_hrid,
     he.permanent_location_name,
     he.call_number,
@@ -76,7 +76,7 @@ SELECT
     SELECT 
     hm.instance_id,
     hm.instance_hrid,
-    hm.holdings_id,
+    hm.id,
     hm.holdings_hrid,
     hm.permanent_location_name,
     hm.call_number,
@@ -103,7 +103,7 @@ SELECT
     SELECT 
     hm.instance_id,
     hm.instance_hrid,
-    hm.holdings_id,
+    hm.id,
     hm.holdings_hrid,
     hm.permanent_location_name,
     hm.call_number,
@@ -137,7 +137,7 @@ WITH threehundred AS
     SELECT 
     hm.instance_id,
     hm.instance_hrid,
-    hm.holdings_id,
+    hm.id,
     hm.holdings_hrid,
     hm.permanent_location_name,
     hm.call_number,
@@ -155,7 +155,7 @@ SELECT
     hm.instance_id,
     hm.call_number,
     hm.permanent_location_name,
-    hm.holdings_id,
+    hm.id,
     hm.holdings_hrid,
     hm.discovery_suppress
     FROM local_hathitrust.h_mo_5 hm  
@@ -182,7 +182,7 @@ WITH oclc_no AS (
     SELECT 
     DISTINCT hm.instance_id,
     hm.instance_hrid,
-    hm.holdings_id,
+    hm.id,
     hm.holdings_hrid,
     hm.call_number,
     hm.permanent_location_name,
@@ -205,15 +205,15 @@ SELECT
      hm.instance_hrid,
      hs.holdings_statement,
      hm.instance_id,
-     hm.holdings_id,
+     hm.id,
      hm.holdings_hrid,
      hm.permanent_location_name,
      hm.call_number,
      he.type_name,
      hm.discovery_suppress 
      FROM local_hathitrust.h_mo_7 hm
-     LEFT JOIN folio_derived.holdings_ext he ON hm.holdings_id = he.holdings_id
-     LEFT JOIN folio_derived.holdings_statements hs ON hm.holdings_id = hs.holdings_id 
+     LEFT JOIN folio_derived.holdings_ext he ON hm.id = he.id
+     LEFT JOIN folio_derived.holdings_statements hs ON hm.id = hs.holdings_id 
      WHERE  (hs.holdings_statement IN ('1 v.')
      OR hs.holdings_statement IS NULL)
 ;
@@ -226,7 +226,7 @@ DISTINCT ie.item_id,
      hm.holdings_statement,
      hm.instance_hrid,
      hm.instance_id,
-     hm.holdings_id,
+     hm.id,
      hm.holdings_hrid,
      hm.permanent_location_name,
      hm.call_number,
@@ -237,9 +237,9 @@ DISTINCT ie.item_id,
      ie.status_name,
      ie.damaged_status_name
      FROM local_hathitrust.h_mo_8 hm
-     LEFT JOIN folio_derived.item_ext ie ON hm.holdings_id = ie.holdings_record_id
+     LEFT JOIN folio_derived.item_ext ie ON hm.id = ie.holdings_record_id
      LEFT JOIN folio_derived.holdings_notes hn ON hm.holdings_hrid=hn.holding_hrid
-     GROUP BY hm.holdings_statement, ie.item_id, hm.instance_hrid, hm.instance_id, hm.holdings_id, hm.holdings_hrid, hm.permanent_location_name,
+     GROUP BY hm.holdings_statement, ie.item_id, hm.instance_hrid, hm.instance_id, hm.id, hm.holdings_hrid, hm.permanent_location_name,
      hm.call_number, hn.note, ie.enumeration, ie.chronology, ie.status_name, hm.discovery_suppress, ie.damaged_status_name
 ;
 
@@ -251,7 +251,7 @@ SELECT
      hm.holdings_statement,
      hm.instance_hrid,
      hm.instance_id,
-     hm.holdings_id,
+     hm.id,
      hm.holdings_hrid,
      hm.permanent_location_name,
      hm.call_number,
@@ -311,4 +311,3 @@ DROP table IF EXISTS local_hathitrust.h_mo_7;
 DROP table IF EXISTS local_hathitrust.h_mo_8;
 DROP table IF EXISTS local_hathitrust.h_mo_8b;
 DROP table IF EXISTS local_hathitrust.h_mo_9;
-
