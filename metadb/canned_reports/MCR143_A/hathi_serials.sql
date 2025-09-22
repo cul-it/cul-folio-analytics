@@ -17,15 +17,6 @@ DISTINCT sm.instance_hrid,
     AND he.permanent_location_name !~~ 'Borrow Direct'
     AND he.permanent_location_name !~~* '%LTS%'
 ;
-CREATE INDEX ON local_hathitrust.h_s_1 (instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_1 (instance_id);
-CREATE INDEX ON local_hathitrust.h_s_1 (field);
-CREATE INDEX ON local_hathitrust.h_s_1 (bib_type);
-CREATE INDEX ON local_hathitrust.h_s_1 (permanent_location_name);
-CREATE INDEX ON local_hathitrust.h_s_1 (call_number);
-CREATE INDEX ON local_hathitrust.h_s_1 (discovery_suppress);
-
---VACUUM ANALYZE local_hathitrust.h_s_1;
 
 --2------------selects/deselects records with 945 (monoseries standing orders) and filters it from h_s_1 table-------------------------------------
 DROP TABLE IF EXISTS local_hathitrust.h_s_2;
@@ -47,10 +38,6 @@ WITH ninefortyfive AS
     LEFT JOIN ninefortyfive n ON hsr.instance_id = n.instance_id
     WHERE n.instance_id IS NULL
 ;
-CREATE INDEX ON local_hathitrust.h_s_2(instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_2(instance_id);
-CREATE INDEX ON local_hathitrust.h_s_2(permanent_location_name);
-CREATE INDEX ON local_hathitrust.h_s_2(call_number);
 
 --3------------------------selects/deselects records with 245 $h[electronic resource] and filters from h_s_2 tabe------------------------
 DROP TABLE IF EXISTS local_hathitrust.h_s_3;   
@@ -82,10 +69,7 @@ SELECT
     LEFT JOIN twofortyfive t ON h.instance_id::uuid= t.instance_id::uuid
     WHERE t.instance_id IS NULL
 ;
-CREATE INDEX ON local_hathitrust.h_s_3 (instance_id);
-CREATE INDEX ON local_hathitrust.h_s_3 (instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_3 (permanent_location_name);
-CREATE INDEX ON local_hathitrust.h_s_3 (call_number);
+
 
 --4---------------------selects/deselects records with 336 $aunmediated content and filters from h_s_3----------------  
 DROP TABLE IF EXISTS local_hathitrust.h_s_4;
@@ -110,10 +94,6 @@ SELECT
     LEFT JOIN threethirtysix t ON h.instance_id = t.instance_id
     WHERE t.instance_id IS NULL
 ;
-CREATE INDEX ON local_hathitrust.h_s_4 (instance_id);
-CREATE INDEX ON local_hathitrust.h_s_4 (instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_4 (permanent_location_name);
-CREATE INDEX ON local_hathitrust.h_s_4 (call_number);
 
 --5--------------------selects/deselects records with 300 $amap or maps and filters from h_s_4------------------ 
 DROP TABLE IF EXISTS local_hathitrust.h_s_5;
@@ -146,11 +126,6 @@ WITH threehundred AS
     left JOIN threehundred t ON h.instance_id::uuid = t.instance_id::uuid
     WHERE t.instance_id IS NULL
 ; 
-CREATE INDEX ON local_hathitrust.h_s_5 (instance_id);
-CREATE INDEX ON local_hathitrust.h_s_5 (instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_5 (permanent_location_name);
-CREATE INDEX ON local_hathitrust.h_s_5 (call_number);
-CREATE INDEX ON local_hathitrust.h_s_5 (discovery_suppress);
 
 --6-----------------------filters suppressed holding records with the note "decision - no"-----------
 DROP TABLE IF EXISTS local_hathitrust.h_s_6;
@@ -178,11 +153,6 @@ SELECT
     FROM local_hathitrust.h_s_5 h
     left JOIN holdings_note hn ON h.instance_id = hn.instance_id
     WHERE hn.instance_id IS NULL;
-CREATE INDEX ON local_hathitrust.h_s_6 (instance_id);
-CREATE INDEX ON local_hathitrust.h_s_6 (instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_6 (permanent_location_name);
-CREATE INDEX ON local_hathitrust.h_s_6 (call_number);
-CREATE INDEX ON local_hathitrust.h_s_6 (discovery_suppress);
 
 --7-----------------------filters records by certain values in call number from h_s_6-------------------
 DROP TABLE IF EXISTS local_hathitrust.h_s_7;
@@ -200,10 +170,6 @@ SELECT
     AND hhn.call_number !~~* '%fiche%'
     AND hhn.call_number !~~* 'On selector%'
 ;
-CREATE INDEX ON local_hathitrust.h_s_7 (instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_7 (instance_id);
-CREATE INDEX ON local_hathitrust.h_s_7 (call_number);
-CREATE INDEX ON local_hathitrust.h_s_7 (permanent_location_name);
 
 --8--------------------filters records for presents of oclc number------------------    
 DROP TABLE IF EXISTS local_hathitrust.h_s_8;
@@ -231,13 +197,6 @@ WITH oclc_no AS (
     FROM local_hathitrust.h_s_7 hsn 
     INNER JOIN oclc_no AS oclcno ON hsn.instance_id::uuid= oclcno.instance_id::uuid
 ;
-CREATE INDEX ON local_hathitrust.h_s_8 (instance_id);
-CREATE INDEX ON local_hathitrust.h_s_8 (instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_8 (call_number);
-CREATE INDEX ON local_hathitrust.h_s_8 (permanent_location_name);
-CREATE INDEX ON local_hathitrust.h_s_8 (id_type);
-CREATE INDEX ON local_hathitrust.h_s_8 (oclc_number2);
-CREATE INDEX ON local_hathitrust.h_s_8 (oclc_no);
 
 --9------------------------------selects issn number and value for government document from 008 --------------
 DROP TABLE IF EXISTS local_hathitrust.h_s_final;
@@ -279,8 +238,11 @@ SELECT
    LEFT JOIN issn_select AS issn ON ds.instance_hrid = issn.instance_hrid
    GROUP BY ds.oclc_no, ds.instance_hrid,  issn.issn_no, gd.gov_doc
 ;
-CREATE INDEX ON local_hathitrust.h_s_final (oclc_no);
-CREATE INDEX ON local_hathitrust.h_s_final (instance_hrid);
-CREATE INDEX ON local_hathitrust.h_s_final (issn_no);
-CREATE INDEX ON local_hathitrust.h_s_final (gov_doc);
-
+DROP table IF EXISTS local_hathitrust.h_s_1;
+DROP table IF EXISTS local_hathitrust.h_s_2;
+DROP table IF EXISTS local_hathitrust.h_s_3;
+DROP table IF EXISTS local_hathitrust.h_s_4;
+DROP table IF EXISTS local_hathitrust.h_s_5;
+DROP table IF EXISTS local_hathitrust.h_s_6;
+DROP table IF EXISTS local_hathitrust.h_s_7;
+DROP table IF EXISTS local_hathitrust.h_s_8;
