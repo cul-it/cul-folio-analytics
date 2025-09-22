@@ -1,3 +1,6 @@
+                   ---DO NOT USE---- needs to be deleted
+
+
 --1----selects pull of records based on ldr and filters certain locations-----------
 DROP TABLE IF EXISTS local_hathitrust.mdb_h_s_1; 
 CREATE TABLE local_hathitrust.mdb_h_s_1 AS
