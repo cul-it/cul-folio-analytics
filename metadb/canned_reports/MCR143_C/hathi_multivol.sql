@@ -1,5 +1,4 @@
-
-    -------------------selects records based on type from a Leader/000------------------------------
+-------------------selects records based on type from a Leader/000------------------------------
 DROP table IF EXISTS local_hathitrust.h_mv_1;
 CREATE TABLE local_hathitrust.h_mv_1 AS
 SELECT
@@ -285,7 +284,7 @@ CASE
 hs.damaged_status_name,
 CASE WHEN (hs.damaged_status_name = 'Damaged')
            THEN 'BRT'
-           ELSE '0' END AS "condition",
+           ELSE NULL END AS "condition",
 CASE WHEN (hs.enumeration IS NOT NULL)
             THEN hs.enumeration 
             WHEN hs.enumeration IS NULL 
@@ -309,7 +308,6 @@ hs.damaged_status_name
 ;
 --10------------------------------selects value for government document from 008 ---------
 -- total number of records as of 12/07/2021 is 928,334 --------------
--- total number of records as of 09/22/25 is 943,626
 DROP TABLE IF EXISTS local_hathitrust.h_mv_final;
 CREATE TABLE local_hathitrust.h_mv_final AS
 WITH gov_doc AS (
@@ -325,11 +323,11 @@ WITH gov_doc AS (
     sm.field = '008'
 )
 SELECT
-   hm.oclc_no AS "OCLC",
-   hm.instance_hrid AS "Bib_id",
-   hm.status AS "Status",
-   hm."condition" AS "Condition",
-   hm."Enum/Chron",
+   hm.oclc_no AS "oclc",
+   hm.instance_hrid AS "local_id",
+   hm.status AS "status",
+   hm."condition" AS "condition",
+   hm."Enum/Chron" AS "enum_chron",
    coalesce(gd.GovDoc::numeric,0) AS GovDoc
    FROM local_hathitrust.h_mv_9 AS hm
    LEFT JOIN gov_doc AS gd ON hm.instance_hrid = gd.instance_hrid
