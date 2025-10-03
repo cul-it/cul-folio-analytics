@@ -1,4 +1,4 @@
--------------------selects records based on type from a Leader/000------------------------------
+--1----selects pull of records based on ldr type ans 008 publication status and filters certain locations-----------
 DROP table IF EXISTS local_hathitrust.h_mo_1;
 CREATE TABLE local_hathitrust.h_mo_1 AS
 SELECT
@@ -270,7 +270,7 @@ SELECT
       CASE 
           WHEN (hm.damaged_status_name = 'Damaged')
           THEN 'BRT'
-               ELSE '0' END AS "Condition"
+               ELSE NULL END AS "Condition"
 FROM local_hathitrust.h_mo_8b hm;
 
 --9------------------------------selects value for government document from 008 --------------
@@ -290,11 +290,11 @@ WITH gov_doc AS (
     sm.field = '008'
 )
 SELECT
-   os.OCLC,
-   hm.instance_hrid AS "Bib Id",
+   os.OCLC AS "oclc",
+   hm.instance_hrid AS "Bib Id" AS local_id,
    gd.GovDoc,
-   hm."Status",
-   hm."Condition"
+   hm."Status" AS "status",
+   hm."Condition" AS "condition"
    FROM  local_hathitrust.h_mo_9 AS hm
    LEFT JOIN gov_doc AS gd ON hm.instance_hrid = gd.instance_hrid
    LEFT JOIN local_hathitrust.h_mo_7 AS os ON hm.instance_hrid = os.instance_hrid
