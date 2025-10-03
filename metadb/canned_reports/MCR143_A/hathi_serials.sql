@@ -39,6 +39,7 @@ WITH ninefortyfive AS
     WHERE n.instance_id IS NULL
 ;
 
+
 --3------------------------selects/deselects records with 245 $h[electronic resource] and filters from h_s_2 tabe------------------------
 DROP TABLE IF EXISTS local_hathitrust.h_s_3;   
 CREATE TABLE local_hathitrust.h_s_3 AS 
@@ -94,6 +95,10 @@ SELECT
     LEFT JOIN threethirtysix t ON h.instance_id = t.instance_id
     WHERE t.instance_id IS NULL
 ;
+CREATE INDEX ON local_hathitrust.h_s_4 (instance_id);
+CREATE INDEX ON local_hathitrust.h_s_4 (instance_hrid);
+CREATE INDEX ON local_hathitrust.h_s_4 (permanent_location_name);
+CREATE INDEX ON local_hathitrust.h_s_4 (call_number);
 
 --5--------------------selects/deselects records with 300 $amap or maps and filters from h_s_4------------------ 
 DROP TABLE IF EXISTS local_hathitrust.h_s_5;
@@ -127,6 +132,7 @@ WITH threehundred AS
     WHERE t.instance_id IS NULL
 ; 
 
+
 --6-----------------------filters suppressed holding records with the note "decision - no"-----------
 DROP TABLE IF EXISTS local_hathitrust.h_s_6;
 CREATE TABLE local_hathitrust.h_s_6 AS
@@ -154,6 +160,7 @@ SELECT
     left JOIN holdings_note hn ON h.instance_id = hn.instance_id
     WHERE hn.instance_id IS NULL;
 
+
 --7-----------------------filters records by certain values in call number from h_s_6-------------------
 DROP TABLE IF EXISTS local_hathitrust.h_s_7;
 CREATE TABLE local_hathitrust.h_s_7 AS
@@ -170,6 +177,7 @@ SELECT
     AND hhn.call_number !~~* '%fiche%'
     AND hhn.call_number !~~* 'On selector%'
 ;
+
 
 --8--------------------filters records for presents of oclc number------------------    
 DROP TABLE IF EXISTS local_hathitrust.h_s_8;
@@ -197,6 +205,7 @@ WITH oclc_no AS (
     FROM local_hathitrust.h_s_7 hsn 
     INNER JOIN oclc_no AS oclcno ON hsn.instance_id::uuid= oclcno.instance_id::uuid
 ;
+
 
 --9------------------------------selects issn number and value for government document from 008 --------------
 DROP TABLE IF EXISTS local_hathitrust.h_s_final;
@@ -229,10 +238,10 @@ dist_hrid_select AS (
    FROM local_hathitrust.h_s_8 AS ho
 )
 SELECT
-   ds.oclc_no,
-   ds.instance_hrid,
-   issn.issn_no,
-   gd.gov_doc
+   ds.oclc_no AS oclc,
+   ds.instance_hrid AS local_id,
+   issn.issn_no AS issn,
+   gd.gov_doc AS govdoc
    FROM dist_hrid_select AS ds
    LEFT JOIN gov_doc AS gd ON ds.instance_hrid = gd.instance_hrid
    LEFT JOIN issn_select AS issn ON ds.instance_hrid = issn.instance_hrid
