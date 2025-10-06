@@ -1,4 +1,8 @@
 --MRC192 – Volumes withdrawn or transferred
+
+--10/1/25: VS made a few additions; added date range and dfs college group for original location. 
+
+
 --3-26-25: this is an alternative to using derived tables for MCR192 - volumes withdrawn or transferred 
 --  This query gets the ttype code, date, number of pieces, and other information from the 'administrativeNotes' field of the holdings_record table. 
 --  This uses the "SPLIT_PART" function to parse out the components of the administrative note
