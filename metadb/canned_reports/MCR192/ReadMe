@@ -1,6 +1,9 @@
 MCR192
 Volumes withdrawn or transferred
 
+--10/1/25: VS made a few additions; added date range and dfs college group for original location. 
+
+
 This query extracts holdings administrative note data to allow counts of physical items withdrawn by location AND 
 to allow the identification of transfers that go from endowed to contract units, and vice-versa. These counts are 
 used by A&P for volumes added and withdrawn figures needed by the Division of Financial Services each quarter.
