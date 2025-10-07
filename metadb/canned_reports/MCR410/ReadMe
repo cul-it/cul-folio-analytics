@@ -1,0 +1,7 @@
+MCR410
+
+Annex transfer candidates
+This query finds candidates for transferring to the Annex by location, LC class, material type, holdings type, mode of issuance, size, circ history, pub date, year added to collection; 
+excludes bound-withs and titles with holdings at the Annex; "Available" item status only
+
+Posted on 10/7/25
