@@ -1,0 +1,10 @@
+MCR411
+Print serials with max payment date and last piece received 
+
+This query uses an input list of PO numbers providedby the report user to find serials that we get in print. 
+
+-- 8-27-25: find serials that we get in print from input list of PO's
+-- 8-29-25: removed receipt_status as a filter
+-- 9-2-25: find OCLC numbers for instances; aggregate instances by OCLC number and link to final result
+-- 9-24-25: use external list of po_numbers as data source for query; comment out Where conditions
+-- 9-29-25: updated input list of PO's
