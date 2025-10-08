@@ -1,0 +1,4 @@
+MCR412
+Print serials and cost by FY based on an input list of PO numbers 
+
+This query gets the payments for print serials (based on an input list of PO numbers) and shows finance group, fund, LC class, location
