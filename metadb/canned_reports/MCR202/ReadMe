@@ -1,6 +1,3 @@
-DO NOT USE, QUERY IS NOT RUNNING AND HAS ISSUES AS OF 3/5/2025. 
-USE MCR225 INSTEAD 
-
 MCR202
 
 This query finds purchase requests by fund code, location, library or fiscal year AND shows requester information, number of days FROM request DATE to receipt DATE, AND number of loans for that title (cannot get circulatiON informatiON at item level)
@@ -16,4 +13,11 @@ Changes from the LDP query:
   Added fiscal year filter
   Added the derivations for po_instance AND instance_subjects AS subqueries, because those derived tables are currently     
   incorrect in Metadb (AS of 7-15-24)
+
+-- 9-26-25 - fixed by eliminating null joins for instance ids; updated LC class extract (still not perfect)
+-- 10-15-25: corrected total paid calculation (depends on fund_distribution_type, which was not accounted for previously -- see line 124) and lc_class_number
+	-- sorting by title doesn't work for some reason - DBeaver deletes spaces between words and sorts the remaining characters alphabetically
+-- 10-16-25: deleted po_instance derivation and instance_subjects derivation; replaced with derived tables; deleted reference to receiving note; 
+	-- coalesced title occurrences (instance index title, instance title, po_instance title)
+
 
