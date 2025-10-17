@@ -1,6 +1,6 @@
 MCR202
 
-This query finds purchase requests by fund code, location, library or fiscal year AND shows requester information, number of days FROM request DATE to receipt DATE, AND number of loans for that title (cannot get circulatiON informatiON at item level)
+This query finds purchase requests by fund code, location, library or fiscal year AND shows requester information, number of days FROM request DATE to receipt DATE, AND number of loans for that title (cannot get circulation information at item level).
 
 Changes from the LDP query:
   Updated query to point to po_instance table in folio_reporting schema
