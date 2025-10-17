@@ -2,7 +2,7 @@
 --Active Patrons in Cornell Tech
 
 --Query writer: Joanne Leary (jl41)
---Query posted in: 9/9/25
+--Query posted on: 9/9/25
 
 -- This query finds all active patrons in Cornell Tech. 
 -- Because there is no standard department name or College code for Cornell Tech, we need to look at both fields and apply criteria.
