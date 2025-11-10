@@ -5,8 +5,9 @@
 --This query retrieves MARC field data that matches items with a particular text string in the call number.
 
 --The query spefically reports on the following MARC fields for all items with a call number that starts with "Disk," 
---and provides relevant inventory fields and the effective location name for items in the results. 
---Replace 'Disk' and the MARC fields indicated below to adjust query for similar purpose.
+--and provides relevant inventory fields and the effective location name for items in the results:
+--MARC fields '035','041','245','260','300','500','538', and'546'.
+--Replace 'Disk' and the MARC fields indicated below to adjust query for a similar purpose.
 
 --Written by: Sharon Marcus, Reviewed by: Joanne Leary
 
