@@ -8,7 +8,8 @@
 --Historical snapshots are created for budget, fund, and ledger amounts.
 --The fiscal year, currently set to FY2026, can be changed in the WHERE clause.
 --8-15-25: added or subtracted credits into the YTD_expenditures and cash_balance calculations
---Example below uses “yesterday at 6:00 PM ET”. Replace if you know the exact timestamp.
+--Example below captures snapshots for “yesterday at 6:00 PM ET.” 
+--Change TIME value to change time snapshots are taken.
 
 WITH params AS (
   SELECT (date_trunc('day', (CURRENT_TIMESTAMP AT TIME ZONE 'America/New_York'))::timestamp
