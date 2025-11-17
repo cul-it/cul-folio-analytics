@@ -4,7 +4,7 @@
 
 This script, `remove_voyager_patron_ids.sql`, is designed to permanently remove patron identifiers and related data from specific tables in the **Metadb reporting database**. These tables were originally migrated from the **CUL Voyager legacy system** and contain static data.
 
-Since the data is not expected to change, this script will be executed **once only** by the hosting team.
+Since the data was not expected to change, this script was executed **once only** by the hosting team in October 2025.
 
 ---
 
