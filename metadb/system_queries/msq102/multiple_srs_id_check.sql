@@ -4,7 +4,7 @@
 --written by Joanne Leary, reviewed by Sharon Markus
 --This query finds instance_hrid records that are linked to multiple distinct srs_ids. 
 --For each instance_hrid in folio_source_record.marc__t, it counts the unique srs_id values and returns only 
---those instances where that count is greater than one, such as potential duplicates or one-to-many linkage anomalies. 
+--those instances where that count is greater than one, such as potential duplicates. 
 --The result includes the instance_hrid and the number of distinct srs_id records attached to it.
 
 SELECT
