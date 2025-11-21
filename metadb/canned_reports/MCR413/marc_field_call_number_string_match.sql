@@ -9,7 +9,7 @@
 --MARC fields '035','041','245','260','300','500','538', and'546'.
 --Replace 'Disk' and the MARC fields indicated below to adjust query for a similar purpose.
 
---Written by: Sharon Marcus, Reviewed by: Joanne Leary
+--Written by: Sharon Markus, Reviewed by: Joanne Leary
 
 
 SELECT DISTINCT
