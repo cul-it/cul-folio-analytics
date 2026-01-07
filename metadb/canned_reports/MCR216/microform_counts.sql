@@ -4,26 +4,36 @@
 --Query ported to Metadb by: Linda Miller (lm15)
 --Ported query reviewed by: Joanne Leary (jl41), Vandana Shah (vp25)
 --Date posted: 6/4/24
+--Revised 12/20/25 to include joins to the records.lb table to exclude duplicate instance_ids due to a metadb glitch that is keeping some old as well as new record rows. 
 
 --This query provides counts of microform titles, by format type. Note that, because of how we filter for microforms, it also includes any motion picture films with '%film%' in their call numbers. 
 
 --This query is primarily used to get counts for annual CUL reporting.
 
-WITH marc_formats AS
-       (SELECT DISTINCT 
-       marc__t.instance_id,
-       substring(marc__t."content", 7, 2) AS "leader0607"
-       FROM folio_source_record.marc__t  
-       WHERE  marc__t.field = '000'),
-       
+WITH marc_formats AS (
+     (SELECT DISTINCT sm.instance_id, 
+        COALESCE(SUBSTRING(sm.content, 7, 2), '--') AS leader0607
+    FROM folio_source_record.marc__t AS sm
+    LEFT JOIN folio_source_record.records_lb AS rl ON sm.instance_id=rl.external_id 
+    AND sm.srs_id  = rl.id
+    
+    WHERE rl.state = 'ACTUAL'
+    AND sm.field = '000')
+        ),
+        
 --Flagging microforms via 007 field 
 micros AS
        (SELECT DISTINCT 
-             marc__t.instance_id,
-             substring (marc__t."content",1,1) AS micro_by_007
-          FROM folio_source_record.marc__t
-          WHERE  marc__t.field = '007'  
-                ),
+             sm.instance_id, 
+             coalesce (substring (sm.content,1,1),'-') AS micro_by_007
+             
+       FROM folio_source_record.marc__t AS sm
+       LEFT JOIN folio_source_record.records_lb AS rl ON sm.instance_id=rl.external_id 
+    	AND sm.srs_id  = rl.id
+    	
+    	WHERE rl.state = 'ACTUAL'
+       	AND sm.field = '007' 
+),
        
 candidates AS 
 (SELECT DISTINCT 
