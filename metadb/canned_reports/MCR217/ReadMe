@@ -12,4 +12,4 @@ This query is primarily used to get counts for annual CUL reporting.
 
 --Adding the records.lb join to the subqueries would not allow the query to run as a whole, but the various sub-queries run without a problem, so this version of the query create tables in the metadb personal space, and the table with the final results can be exported as an Excel file directly from the personal schema. 
 
-NOTE: To run this query, all the tables that are created need to be created in a personal space on Metadb. For example, in all the 'Create Table' statements, change 'z_vp25' to your personal space name. 
+NOTE: To run this query, all the tables that are created need to be created in a personal space on Metadb. For example, in all the 'Create Table' statements, change 'z_vp25' to your personal space name. Each table has to created seperately; the query cannot be run as a whole. Run code for each 'Create Table' one at a time.
