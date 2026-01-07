@@ -4,42 +4,57 @@
 --Query ported to Metadb by: Linda Miller (lm15)
 --Ported query reviewed by: Joanne Leary (jl41), Vandana Shah (vp25)
 --Date posted: 6/4/24
+
+--Revised 12-18-25 to connect to records_lb in order to remove marc__t duplicates
 --Revised 9-11-25 to show owning library, endowed or contact college, and correct item counts; 
 	-- replaced derived tables with source tables, added Where condition "item__t.hrid is not null" (line 107), corrected join to location__t.library_id = loclibrary__id
+--Revised 12/20/25 to include joins to the records.lb table to exclude duplicate instance_ids due to a metadb glitch that is keeping some old as well as new record rows. 
 
 --This query provides item counts of physical materials, by format type. It excludes microforms,and, because of how we filter for microforms, any motion pictures with '%film%' in their call numbers. 
 --This query is primarily used to get counts for annual CUL reporting.
 
 
 
-WITH 
 
-marc_formats AS
-       (SELECT DISTINCT 
-             marc__t.instance_id, 
-             coalesce (substring(marc__t.content, 7, 2),'--') AS leader0607
-       FROM folio_source_record.marc__t 
-       WHERE marc__t.field = '000'
-),
+WITH marc_formats AS (
+     (SELECT DISTINCT sm.instance_id, 
+        COALESCE(SUBSTRING(sm.content, 7, 2), '--') AS leader0607
+    FROM folio_source_record.marc__t AS sm
+    LEFT JOIN folio_source_record.records_lb AS rl ON sm.instance_id=rl.external_id 
+    AND sm.srs_id  = rl.id
+    
+    WHERE rl.state = 'ACTUAL'
+    AND sm.field = '000')
+        ),
+
 
 micros AS
        (SELECT DISTINCT 
-             marc__t.instance_id, 
-             coalesce (substring (marc__t.content,1,1),'-') AS micro_by_007
+             sm.instance_id, 
+             coalesce (substring (sm.content,1,1),'-') AS micro_by_007
              
-       FROM folio_source_record.marc__t 
-       WHERE marc__t.field = '007' 
+       FROM folio_source_record.marc__t AS sm
+       LEFT JOIN folio_source_record.records_lb AS rl ON sm.instance_id=rl.external_id 
+    	AND sm.srs_id  = rl.id
+    	
+    	WHERE rl.state = 'ACTUAL'
+       	AND sm.field = '007' 
 ),
                 
 unpurch AS
        (SELECT DISTINCT 
-             marc__t.instance_id, 
-             string_agg(DISTINCT marc__t.content, ', ') AS unpurchased 
+             sm.instance_id, 
+             string_agg(DISTINCT sm.content, ', ') AS unpurchased 
              
-       FROM folio_source_record.marc__t  
-       WHERE marc__t.field = '899'
-       	AND marc__t.sf = 'a' 
-       GROUP BY marc__t.instance_id 
+       FROM folio_source_record.marc__t  AS sm
+       LEFT JOIN folio_source_record.records_lb AS rl ON sm.instance_id=rl.external_id 
+    	AND sm.srs_id  = rl.id
+    	
+    	WHERE rl.state = 'ACTUAL'
+        AND sm.field = '899'
+       	AND sm.sf = 'a' 
+       	
+       GROUP BY sm.instance_id 
 ),
 
                  
@@ -122,7 +137,7 @@ WHERE
        
 SELECT
        current_date::DATE,
-       --COUNT (DISTINCT recs.item_hrid) AS counDistinct_itemID,
+       COUNT (DISTINCT recs.item_hrid) AS counDistinct_itemID,
        recs.record_created_fiscal_year,
        recs.holdings_library_name,
        recs.holdings_permanent_location_name,
@@ -132,8 +147,8 @@ SELECT
        recs.leader0607description,
        recs.folio_format_type,
        recs.folio_format_type_adc_groups, 
-       recs.folio_format_type_acrl_nces_groups,
-       COUNT (recs.item_hrid) AS counDistinct_itemID
+       recs.folio_format_type_acrl_nces_groups
+       --COUNT (recs.item_hrid) AS counDistinct_itemID
        
     FROM recs
     WHERE (recs.unpurchased NOT ILIKE '%couttspdbappr%' OR recs.unpurchased IS null OR recs.unpurchased = '' OR recs.unpurchased = ' ') --moved down from above
@@ -144,7 +159,7 @@ SELECT
        current_date::DATE,
        recs.record_created_fiscal_year,
        recs.holdings_permanent_location_name,
-	recs.dfs_college_group,
+		recs.dfs_college_group,
        recs.holdings_adc_loc_translation,       
        recs.leader0607,
        recs.leader0607description,
@@ -152,5 +167,3 @@ SELECT
        recs.folio_format_type_adc_groups, 
        recs.folio_format_type_acrl_nces_groups        
        ;
-       
-      
