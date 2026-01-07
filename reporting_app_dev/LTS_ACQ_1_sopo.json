@@ -1,5 +1,5 @@
 {
-  "display_name": "List of PO with Standing Orders",
+  "displayName": "List of PO with Standing Orders",
   "description" : "Create PO with SO for date range",
   "instructions": "Choose your date range",
   "parameters": [
