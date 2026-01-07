@@ -10,7 +10,9 @@ This query links by location code instead of location name; automatically remove
 purchased; and was re-written to run faster, and to standardize and make more inclusive filtering values.
 
 --Revised 9-11-25 to show owning library, endowed or contact college, and correct item counts; 
-	-- replaced derived tables with source tables, added Where condition "item__t.hrid is not null" (line 107), corrected join to location__t.library_id = loclibrary__id
+-- replaced derived tables with source tables, added Where condition "item__t.hrid is not null" (line 107), corrected join to location__t.library_id = loclibrary__id
+
+--Revised 12/20/25 to include joins to the records.lb table to exclude duplicate instance_ids due to a metadb glitch that is keeping some old as well as new record rows. 
 
 --This query provides item counts of physical materials, by format type. It excludes microforms,and, because of how we filter for microforms, any motion pictures with '%film%' in their call numbers. 
 --This query is primarily used to get counts for annual CUL reporting.
