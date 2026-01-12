@@ -213,7 +213,7 @@ CASE
      WHEN ((hs.enumeration IS NULL and hs.chronology IS NULL)
                   AND (hs.discovery_suppress IS false))
              THEN 'NWD'    
-     WHEN hs.status_name IN ('Missing', 'Lost and paid', 'Aged to lost', 'Declared lost')
+     WHEN hs.status_name IN ('Missing', 'Lost and paid', 'Aged to lost', 'Declared lost', 'Long missing')
              THEN 'LM' 
              ELSE 'CH' END AS "status",
     hs.damaged_status_name,
