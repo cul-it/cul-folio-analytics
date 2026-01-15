@@ -1,5 +1,6 @@
 # MSQ103 — null_closed_loan_hist_userids.sql
 
+**Last updated:** 1-15-26
 **Written by:** Sharon Markus  
 **Tested by:** Joanne Leary  
 
