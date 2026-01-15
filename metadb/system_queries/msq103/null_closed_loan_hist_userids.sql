@@ -1,5 +1,6 @@
 --MSQ103
 --null_closed_loan_hist_userids.sql
+--last updated: 1-15-26
 --Written by: Sharon Markus
 --Tested by: Joanne Leary
 --This query is being run weekly by the hosting team supporting Cornell's Metadb reporting database. 
