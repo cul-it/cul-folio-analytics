@@ -2,7 +2,7 @@
 
 ## expense_transfer.sql
 
-**Last updated:** 1-24-25
+**Last updated:** 1-21-26
 
 This query is a customization of CR-134 (paid invoices with bib data) for the purpose of identifying expenditures that can be transferred from unrestricted funds to restricted funds.
 
@@ -13,6 +13,8 @@ This query is a customization of CR-134 (paid invoices with bib data) for the pu
 ### Revision History
 - **11-18-24:** Excluded restricted funds and certain funds that Ann indicated would never be used to transfer funds out of (line 203 and 204).
 - **1-24-25:** Added instance UUID and replaced the derived tables with primary tables (added derivation code for `po_lines_locations`, `finance_transaction_invoices`, and `instance_languages`; used `instance__t` instead of `instance_ext`).
+- **1-16-26:** Revised to use derived tables and simplify query, replaced the aliases with full table names; coalesced instance title with po_lines__t.title or package to get "title"; used Collate "C" for title sorting
+- **1-16-26:** runs in under 2 minutes for FY2026 as of 1-16-26 
 
 ### Notes from the LDP Query
 - **7-19-23:** Updated query to account for changes in subject extraction.
