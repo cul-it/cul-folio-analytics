@@ -1,0 +1,25 @@
+# MSQ104
+
+**Date:** 2026-01-22  
+**Created by:** Joanne Leary  
+
+## Purpose
+
+This tester query:
+
+- Selects the correct `srs_id` from the `marc__t` table.
+- Checks whether multiple `srs_id` values appear in the results.
+
+## Performance Notes
+
+- Takes approximately **11 minutes** to run as of 2026-01-22.  
+- Runs **much faster** if a `WHERE` condition is added in the `recs` subquery to specify a `marc__t.field`.
+
+## Logic Summary
+
+1. Retrieve the `marc__t.srs_id` associated with the **greatest row number** in the `records_lb` table for each `instance_hrid`.
+
+## Usage Notes
+
+- This is a **tester query**.  
+- To run only the
