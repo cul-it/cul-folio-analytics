@@ -8,6 +8,7 @@
 --The result includes the instance_hrid and the number of distinct srs_id records attached to it.
 
 SELECT
+CURRENT_DATE::timestamp,
 -- The instance identifier (one output row per instance after GROUP BY)
 sm.instance_hrid,
 -- Aggregate: count unique SRS record IDs associated with the instance
