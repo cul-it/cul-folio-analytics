@@ -23,6 +23,7 @@ WITH recs AS
 -- 2. Check for multiple srs_ids in the results; should return zero entries
 	
 SELECT
+	CURRENT_DATE::timestamp,
 	recs.instance_hrid,
 	COUNT (DISTINCT recs.srs_id)
 FROM recs
