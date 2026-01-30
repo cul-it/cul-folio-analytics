@@ -29,6 +29,7 @@ AS $$
     ON ii.hrid = marc.instance_hrid 
   WHERE marc.field IN ('490','830') 
     AND poi.created_date::DATE BETWEEN start_date AND end_date
+    AND poi.bill_to = 'LTS Acquisitions'
   GROUP BY 
     poi.pol_instance_hrid,
     marc.instance_hrid,
