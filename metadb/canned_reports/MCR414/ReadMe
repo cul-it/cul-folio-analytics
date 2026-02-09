@@ -1,0 +1,11 @@
+MCR414
+Materials circulated in Folio
+
+This query finds all item records created after a given start date at a given library, and shows circ counts by year circulated (Folio loans only).
+Note that all records migrated from Voyager will show a June 2021 create date. If you enter a begin date before June 21, 2021, all records in Folio (that meet the other criteria) will be displayed.
+Results include LC class and class number, year of publication, publisher, language, subject and vendor (when known).
+Lines 88 - 91 show holdings types and material types to exclude; query as written will show just books if more than just books are needed, comment out the necessary lines, so the other holdings and material types will be included.
+This query is useful for analyzing collection usage over time. Export results to Excel and create pivot tables for analysis.
+
+Query writer: Joanne Leary (jl41)
+Posted on: 2/9/26
