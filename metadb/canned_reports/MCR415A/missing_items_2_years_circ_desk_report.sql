@@ -54,5 +54,5 @@ group by
 	concat ('Original missing date: ',(ie.status_date::date)::varchar),
 	item__t.effective_shelving_order
 
-order by ie.effective_location_name, item__t.effective_shelving_order collate "C"
+order by loclibraryy__t.name, ie.effective_location_name, item__t.effective_shelving_order collate "C"
 ;
