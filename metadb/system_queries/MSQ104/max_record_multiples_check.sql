@@ -1,5 +1,5 @@
 -- MSQ104
--- 1-22-26
+-- 3-3-26
 -- Created by: Joanne Leary
 -- This tester query selects the correct srs_id from the marc__t table, and then checks to see if there are any multiple srs_id's in the results.
 -- takes about 11 minutes to run, as of 1-22-26 (NB: runs much faster with a Where condition in the recs subquery that specifies a marc__t.field)
@@ -15,6 +15,7 @@ WITH recs AS
 	FROM folio_source_record.marc__t
 		INNER JOIN folio_source_record.records_lb
 		ON marc__t.srs_id = records_lb.matched_id
+	WHERE records_lb.external_id IS NOT NULL
 	
 	GROUP BY
 		marc__t.instance_hrid,
