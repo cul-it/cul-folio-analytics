@@ -9,7 +9,8 @@ WITH recs AS
        records_lb.external_id,
        MAX (records_lb.__id) AS max_record
 
-FROM folio_source_record.records_lb
+FROM folio_source_record.records_lb 
+     WHERE records_lb.external_id IS NOT NULL
 
 GROUP BY records_lb.external_id
 
@@ -26,4 +27,6 @@ INNER JOIN folio_source_record.records_lb
    ON marc__t.srs_id = records_lb.id
 INNER JOIN recs
    ON records_lb.__id = recs.max_record    -- join the records_lb table to the max_record from the recs result
+   WHERE records_lb.external.id IS NOT NULL
+     
 ;
