@@ -1,7 +1,13 @@
 --MSQ105
---last updated: 3/3/26
+--last updated: 3/4/26
 --written by: Joanne Leary
 --This query fixes the marc__t table so it has only the most recent srs_id
+--2/9/26: adapted by Sharon Markus to publish marc__t table in local_derived
+--3/4/26: added WHERE clauses to exclude NULL records
+
+DROP TABLE IF EXISTS local_derived.marc__t;
+
+CREATE TABLE local_derived.marc__t AS
 
 -- 1. Find the max record in the records_lb table for every external_id
 WITH recs AS
@@ -9,8 +15,8 @@ WITH recs AS
        records_lb.external_id,
        MAX (records_lb.__id) AS max_record
 
-FROM folio_source_record.records_lb 
-     WHERE records_lb.external_id IS NOT NULL
+FROM folio_source_record.records_lb
+   WHERE records_lb.external_id IS NOT NULL
 
 GROUP BY records_lb.external_id
 
@@ -20,13 +26,12 @@ GROUP BY records_lb.external_id
 -- which is inner joined by srs_id to the marc__t table
 
 SELECT
-    marc__t.*    -- get all marc__t fields
+    mt.*    -- get all marc__t fields
 
-FROM folio_source_record.marc__t
+FROM folio_source_record.marc__t as mt
 INNER JOIN folio_source_record.records_lb
-   ON marc__t.srs_id = records_lb.id
+   ON mt.srs_id = records_lb.id
 INNER JOIN recs
    ON records_lb.__id = recs.max_record    -- join the records_lb table to the max_record from the recs result
-   WHERE records_lb.external.id IS NOT NULL
-     
+   WHERE records_lb.external_id IS NOT NULL
 ;
