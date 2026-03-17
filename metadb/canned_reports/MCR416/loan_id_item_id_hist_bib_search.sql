@@ -3,7 +3,7 @@
 --created 3/17/26
 --written by: Sharon Markus
 --This query takes a `loan_id` and `item_id` as inputs and returns the matching bibliographic and location data for that loaned item.
---This is useful when the item no longer appears in current tables, but can still be traced through historical inventory tables.
+--This is useful when the item no longer appears in current source or derived tables, but can still be traced through historical inventory tables.
 
 WITH parameters AS (
     SELECT
