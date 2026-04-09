@@ -1,8 +1,8 @@
 MCR233
 locations_libraries
 
-Creates a table in local_static consisting of locations and corresponding libraries, whether contract or endowed unit, location status (active or inactive), and whether or not to include item and instance counts from each location for annual data collection purposes.
-All inactive locations are excluded from annual data count locations.
+Creates a table in local_static consisting of locations and corresponding libraries, library financil group (contract or endowed unit), location status (active or inactive), and whether or not to include item and instance counts from each location for annual data collection purposes.
+Locations excluded from the annual data counts for agency reporting purposes: all locations with non-discoverable materials, or materials that need to be excluded such as duplcates. All inactive locations are excluded from annual data count locations.
 
 
 
