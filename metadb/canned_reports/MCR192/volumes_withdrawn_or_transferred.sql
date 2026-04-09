@@ -1,10 +1,9 @@
 --MRC192 – Volumes withdrawn or transferred
 
+--04/9/26 - Query updated to account for information (piece count, original location) that was not always caputured in the earlier version due to non-uniform data entry in Folio.
+
 --10/1/25: VS made a few additions; added date range and dfs college group for original location. 
-
-
---3-26-25: this is an alternative to using derived tables for MCR192 - volumes withdrawn or transferred 
---  This query gets the ttype code, date, number of pieces, and other information from the 'administrativeNotes' field of the holdings_record table. 
+--3-26-25: This query gets the ttype code, date, number of pieces, and other information from the 'administrativeNotes' field of the holdings_record table. 
 --  This uses the "SPLIT_PART" function to parse out the components of the administrative note
 --  The query takes about 3 minutes to run, but gets up-to-the-minute results. The query with the derived tables takes about 30 seconds to run.
 --Date?: JL updated the query to account for the possible blank spaces in the piece count calculation, 
@@ -13,12 +12,9 @@
 --July 2025: LM added location code so those removed in MCR214 could be removed (manually, not to slow query down more).
 --  Also started to add SQL to remove microforms, but then commented out so as not to slow down, so must address this in results through call nubmers and titles.
 --  Similarly need to address location codes that are removed in MCR214 and address bound-withs through holdings notes.
---7-16-25: JL updated pieces formula to capture piece counts from split_parts 5, 6 or 7
---  added "distinct" to the last subquery*; commented out admin_notes ordinality(LM added this back).
---  JL found the first run took 22 minutes, and subsequent runs 3 minutes.
---  (JL determined that keeping the admin notes ordinality does not cause duplication, so it’s OK to keep it in.
---  *JL still doens't know what caused the one duplicate record I found in the FY25 run (no longer included), but she says it probably 
---   had something to do with the holdings notes (aggregated) and the holdings administrative notes (not aggregated).)
+
+
+
  
 
 --change date parameters for correct quarter
