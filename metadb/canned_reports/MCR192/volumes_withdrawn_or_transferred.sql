@@ -1,28 +1,14 @@
 --MRC192 – Volumes withdrawn or transferred
+--Query writers: Joanne Leary (jl41), Vandana Shah(vp25)
 
 --04/9/26 - Query updated to account for information (piece count, original location) that was not always caputured in the earlier version due to non-uniform data entry in Folio.
 
---10/1/25: VS made a few additions; added date range and dfs college group for original location. 
---3-26-25: This query gets the ttype code, date, number of pieces, and other information from the 'administrativeNotes' field of the holdings_record table. 
---  This uses the "SPLIT_PART" function to parse out the components of the administrative note
---  The query takes about 3 minutes to run, but gets up-to-the-minute results. The query with the derived tables takes about 30 seconds to run.
---Date?: JL updated the query to account for the possible blank spaces in the piece count calculation, 
---  and cast the piece count “Case when” statement as Integer; added a location__t.name != ’serv,remo’
---  in the WHERE clause to get rid of those stragglers. 
---July 2025: LM added location code so those removed in MCR214 could be removed (manually, not to slow query down more).
---  Also started to add SQL to remove microforms, but then commented out so as not to slow down, so must address this in results through call nubmers and titles.
---  Similarly need to address location codes that are removed in MCR214 and address bound-withs through holdings notes.
-
-
-
- 
-
---change date parameters for correct quarter
+--CHANGE DATE PARAMETERS AS NEEDED
  WITH parameters AS 
 (
     SELECT 
-        '20250701' AS start_date, 
-        '20251001' AS end_date
+        '20260101' AS start_date,
+        '20260401' AS end_date
 ),
 
 admin_notes AS 
@@ -35,7 +21,8 @@ admin_notes AS
         TO_DATE((SELECT end_date FROM parameters), 'YYYYMMDD') AS end_date
         FROM folio_inventory.holdings_record
         CROSS JOIN LATERAL jsonb_array_elements (jsonb_extract_path (holdings_record.jsonb,'administrativeNotes'))
-        WITH ordinality AS adminnotes (jsonb)
+        WITH ordinality AS adminnotes (jsonb, ordinality)
+
 ),
 
 hlgsnotes AS 
@@ -43,14 +30,63 @@ hlgsnotes AS
         holdings_record.id AS holdings_id,
         holdings_record.jsonb#>>'{hrid}' AS holdings_hrid,
         STRING_AGG (holdnotes.jsonb#>>'{note}',' | ' ORDER BY holdnotes.ordinality) AS holdings_notes
+         
         
         FROM folio_inventory.holdings_record 
         CROSS JOIN LATERAL jsonb_array_elements (jsonb_extract_path (holdings_record.jsonb,'notes')) 
-        WITH ordinality AS holdnotes (jsonb)
+        WITH ordinality AS holdnotes (jsonb, ordinality)
+        
+        
         
         GROUP BY 
         holdings_record.id,
         holdings_record.jsonb#>>'{hrid}'
+        ),
+        
+ --  select text that follows 'orig'
+ 
+ notes_details AS  ( 
+ 
+SELECT
+        admin_notes.holdings_hrid,
+
+ CASE
+            WHEN holdings_admin_notes ILIKE '%ttype:t%' THEN 'transferred'
+            WHEN holdings_admin_notes ILIKE '%ttype:w%' THEN 'withdrawn'
+            ELSE NULL
+        END AS ttype,
+
+CASE
+    WHEN holdings_admin_notes ILIKE '%orig:%'
+        THEN TRIM(SPLIT_PART(LOWER(holdings_admin_notes), 'orig:', 2))
+    ELSE NULL
+END AS location_source_segment,
+            
+--  original location code (derived from 'orig', max 2 words, change to lowercase, seperate by comma, no spaces) 
+            LOWER(REGEXP_REPLACE(SPLIT_PART(TRIM(SPLIT_PART(LOWER(holdings_admin_notes),  'orig', 2)),
+            ' ', 1), '[:0-9]', '', 'g')) AS original_location_code
+
+--COALESCE(NULLIF((regexp_match(holdings_admin_notes, 'pcs:\s*([0-9]+)', 'i'))[1], '')::int, 1) AS pieces
+
+FROM admin_notes
+),    
+   
+pieces_count AS (
+SELECT 
+       holdings_hrid,
+        administrative_note,
+        substring (administrative_note,'\d{8}') as date,
+        case 
+                when substring (split_part (administrative_note,'pcs',2),'\d{1,3}')::int is null then 1
+                when substring (split_part (administrative_note,'pcs',2),'\d{1,3}')::int > 500 then 1 
+                else substring (split_part (administrative_note,'pcs',2),'\d{1,3}')::int 
+                end as pieces
+
+FROM folio_derived.holdings_administrative_notes as han
+WHERE
+        (han.administrative_note like '%ttype:t%' or han.administrative_note like '%ttype:w%')
+       -- and substring (han.administrative_note,'\d{8}') >='20260101' and substring (han.administrative_note,'\d{8}') <'20260404'
+
 )
 
 SELECT DISTINCT
@@ -64,12 +100,13 @@ SELECT DISTINCT
     admin_notes.holdings_hrid,
     location__t.name AS holdings_location_name,
     location__t.code AS holdings_location_code,
-    adclt.dfs_college_group,
-    adclt1.adc_invloc_location_name AS original_holdings_location_name,
-    TRIM(LOWER(SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 7), '\s{0,1}[a-zA-Z]{1,}[,]{0,1}\s{0,}[a-zA-Z]{0,}'))) AS original_holdings_location_code,
-    admin_notes.admin_notes_ordinality,
-    adclt1.dfs_college_group AS original_dfs_college_group,
-    TRIM(CONCAT(
+    loclib.college_financial_group,
+    notes_details.location_source_segment,
+   	loclib1.college_financial_group AS original_financial_group,
+    notes_details.original_location_code,
+    loclib1.location_name AS original_location_name,
+    pieces_count.pieces,
+        TRIM(CONCAT(
         holdings_record__t.call_number_prefix, ' ',
         holdings_record__t.call_number, ' ',
         holdings_record__t.call_number_suffix,
@@ -81,61 +118,44 @@ SELECT DISTINCT
     hlgsnotes.holdings_notes,
     admin_notes.holdings_admin_notes,
     CASE 
-        WHEN date_part('month', SUBSTRING(admin_notes.holdings_admin_notes, '\d{1,}')::date) > 6
-            THEN CONCAT('FY ', date_part('year', SUBSTRING(admin_notes.holdings_admin_notes, '\d{1,}')::date) + 1)
-        ELSE CONCAT('FY ', date_part('year', SUBSTRING(admin_notes.holdings_admin_notes, '\d{1,}')::date))
+        WHEN date_part('month', SUBSTRING(admin_notes.holdings_admin_notes, '\d{8}')::date) > 6
+            THEN CONCAT('FY ', date_part('year', SUBSTRING(admin_notes.holdings_admin_notes, '\d{8}')::date) + 1)
+        ELSE CONCAT('FY ', date_part('year', SUBSTRING(admin_notes.holdings_admin_notes, '\d{8}')::date))
     END AS fiscal_year,
-    SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 2), '\d{8}') AS note_date,
-    SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 3), '[a-z]{1}') AS ttype_code,
+
+    SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 2), '\d{8}')::date AS note_date,
     SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 4), '[a-z]{2,3}\d{1,3}') AS netid,
     SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 5), '[a-z]{3,4}') AS unit,
-    (
-        TRIM(CASE 
-            WHEN SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 5), '\d{1,}') IS NULL 
-                AND SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 6), '\d{1,}') IS NULL 
-                AND SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 7), '\d{1,}') IS NULL
-                THEN '1'
-            WHEN SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 5), '\d{1,}') IS NULL 
-                AND SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 6), '\d{1,}') IS NULL 
-                AND SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 7), '\d{1,}') IS NOT NULL
-                THEN SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 7), '\d{1,}')
-            WHEN SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 5), '\d{1,}') IS NULL 
-                AND SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 6), '\d{1,}') IS NOT NULL
-                THEN (
-                    CASE 
-                        WHEN SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 6), '\d{0,}') > ' %'
-                            THEN SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 6), '\d{1,}')
-                        ELSE SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 6), '\s{0,}\d{0,4}')
-                    END
-                )
-            ELSE SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 5), '\d{1,}')
-        END)
-    )::int AS pieces
-
-FROM admin_notes
+    notes_details.ttype
+    
+    FROM admin_notes
 LEFT JOIN folio_inventory.holdings_record__t 
     ON admin_notes.holdings_id = holdings_record__t.id
 LEFT JOIN hlgsnotes 
     ON holdings_record__t.id = hlgsnotes.holdings_id
-LEFT JOIN folio_inventory.location__t 
+LEFT JOIN notes_details
+    ON admin_notes.holdings_hrid = notes_details.holdings_hrid
+LEFT JOIN pieces_count
+	ON pieces_count.holdings_hrid = admin_notes.holdings_hrid
+LEFT JOIN folio_inventory.location__t AS location__t
     ON holdings_record__t.permanent_location_id = location__t.id
 LEFT JOIN folio_inventory.instance__t 
     ON holdings_record__t.instance_id = instance__t.id 
-LEFT JOIN folio_source_record.marc__t 
+LEFT JOIN local_derived.marc__t 
     ON instance__t.hrid = marc__t.instance_hrid 
-LEFT JOIN local_static.lm_adc_location_translation_table AS adclt 
-    ON holdings_record__t.permanent_location_id = adclt.inv_loc_id::UUID
-LEFT JOIN local_static.lm_adc_location_translation_table AS adclt1
-    ON TRIM(LOWER(SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 7), '\s{0,1}[a-zA-Z]{1,}[,]{0,1}\s{0,}[a-zA-Z]{0,}'))) = adclt1.adc_invloc_location_code        
-
-WHERE admin_notes.holdings_admin_notes ILIKE '%ttype%'
-    AND SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 3), '[a-z]{1}') IN ('t', 'w')
-    AND (marc__t.field = '000' AND SUBSTRING(marc__t."content", 7, 1) IN ('a', 't', 'c', 'd'))
-    AND SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 2), '\d{8}') >= (SELECT start_date FROM parameters)
-    AND SUBSTRING(SPLIT_PART(admin_notes.holdings_admin_notes, ':', 2), '\d{8}') < (SELECT end_date FROM parameters)
-    AND location__t.name != 'serv,remo'
-
-ORDER BY title, holdings_hrid, note_date
-;
-
-
+LEFT JOIN local_static.vs_locations_libraries AS loclib
+     ON holdings_record__t.permanent_location_id = loclib.location_id::UUID
+LEFT JOIN local_static.vs_locations_libraries AS loclib1
+ON NULLIF (notes_details.original_location_code, '') = loclib1.location_code
+WHERE notes_details.ttype IN ('transferred', 'withdrawn')
+ AND location__t.name != 'serv,remo'
+ AND (marc__t.field = '000' AND SUBSTRING(marc__t."content", 7, 1) IN ('a', 't', 'c', 'd'))
+  
+AND SUBSTRING(
+            SPLIT_PART(admin_notes.holdings_admin_notes, ':', 2),
+            '\d{8}'
+        )::date >= TO_DATE((SELECT start_date FROM parameters), 'YYYYMMDD')
+    AND SUBSTRING(
+            SPLIT_PART(admin_notes.holdings_admin_notes, ':', 2),
+            '\d{8}'
+        )::date < TO_DATE((SELECT end_date FROM parameters), 'YYYYMMDD');
