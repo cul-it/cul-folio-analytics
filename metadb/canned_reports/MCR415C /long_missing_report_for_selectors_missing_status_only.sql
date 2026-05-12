@@ -1,9 +1,9 @@
--- MCR415C - Long missing report for Selectors (Missing status only)
--- written by Joanne Leary
+-- MCR415C - Long missing report for Selectors
 -- 11-19-25: Long missings for selectors 
 -- based on MCR210 (which looks at many items statuses) but is revised to look only at "Long Missing" and uses derived tables rather than source table extracts
 -- shows other copies on campus with their item statuses and dates
 -- 12-5-25: added catalog URLs
+-- 5-7-26: broke out whole call number into components; added instance_ext mode_of_issuane_name
 
 WITH orig_miss AS 
 	(SELECT DISTINCT
@@ -65,8 +65,14 @@ recs AS
      he.permanent_location_name as holdings_location_name,
      ii.title,
      STRING_AGG (DISTINCT ic.contributor_name, CHR(10)) AS contributors,
-     TRIM (CONCAT_WS (' ', he.call_number_prefix, he.call_number, he.call_number_suffix, itemext.enumeration, itemext.chronology,
-          CASE WHEN itemext.copy_number >'1' THEN concat ('c.', itemext.copy_number) ELSE '' END)) AS whole_call_number,
+     he.call_number_prefix,
+     he.call_number,
+     he.call_number_suffix,
+     itemext.enumeration,
+     itemext.chronology,
+     itemext.copy_number,
+     --TRIM (CONCAT_WS (' ', he.call_number_prefix, he.call_number, he.call_number_suffix, itemext.enumeration, itemext.chronology,
+          --CASE WHEN itemext.copy_number >'1' THEN concat ('c.', itemext.copy_number) ELSE '' END)) AS whole_call_number,
      CASE WHEN he.call_number_type_name = 'Library of Congress classification' then SUBSTRING (he.call_number,'[A-Z]{1,3}')
           ELSE '' END AS lc_class,
      (TRIM ('.' FROM REPLACE (SUBSTRING (he.call_number,'\d{1,}\s{0,}\.{0,}\d{0,}'),' ','')))::NUMERIC AS lc_class_number,     
@@ -76,7 +82,8 @@ recs AS
      itemext.barcode,
      orig_miss.item_status_date AS original_missing_date,
      ii.discovery_suppress AS instance_suppress,
-     he.discovery_suppress::boolean AS holdings_suppress,     
+     he.discovery_suppress::boolean AS holdings_suppress,
+     instance_ext.mode_of_issuance_name,
      he.type_name AS holdings_type_name, 
      itemext.material_type_name,     
      TRIM (' | ' FROM STRING_AGG (DISTINCT ip.publisher,' | ')) AS publisher,
@@ -100,7 +107,10 @@ recs AS
                 
 FROM folio_inventory.instance__t AS ii  
      LEFT JOIN folio_derived.holdings_ext AS he 
-     ON ii.id = he.instance_id::UUID               
+     ON ii.id = he.instance_id::UUID
+     
+     left join folio_derived.instance_ext 
+     on ii.id = instance_ext.instance_id
                 
      LEFT JOIN folio_derived.item_ext AS itemext 
      ON he.id = itemext.holdings_record_id 
@@ -140,12 +150,12 @@ FROM folio_inventory.instance__t AS ii
                 
      LEFT JOIN folio_circs 
      ON itemext.item_id = folio_circs.item_id
-    
+     
      LEFT JOIN folio_derived.holdings_notes AS hn 
-	   ON he.id = hn.holding_id
+	 ON he.id = hn.holding_id
 	 
-	   LEFT JOIN folio_derived.holdings_administrative_notes AS han 
-	   ON he.id = han.holdings_id
+	 LEFT JOIN folio_derived.holdings_administrative_notes AS han 
+	 ON he.id = han.holdings_id
 
 WHERE itemext.status_name = 'Long missing' 
 	AND itemext.material_type_name NOT IN ('Supplies','Peripherals','Laptop','Keys','Locker Keys','Equipment','Room Keys','Umbrella','ILL MATERIAL','BD MATERIAL')
@@ -155,8 +165,14 @@ GROUP BY
 	 ll.library_name,
      he.permanent_location_name,
      ii.title,
-     TRIM (CONCAT_WS (' ', he.call_number_prefix, he.call_number, he.call_number_suffix, itemext.enumeration, itemext.chronology,
-          CASE WHEN itemext.copy_number >'1' THEN CONCAT ('c.', itemext.copy_number) ELSE '' END)),
+     he.call_number_prefix,
+     he.call_number,
+     he.call_number_suffix,
+     itemext.enumeration,
+     itemext.chronology,
+     itemext.copy_number,
+     --TRIM (CONCAT_WS (' ', he.call_number_prefix, he.call_number, he.call_number_suffix, itemext.enumeration, itemext.chronology,
+          --CASE WHEN itemext.copy_number >'1' THEN CONCAT ('c.', itemext.copy_number) ELSE '' END)),
      CASE WHEN he.call_number_type_name = 'Library of Congress classification' THEN SUBSTRING (he.call_number,'[A-Z]{1,3}')
           ELSE '' END,
      (TRIM ('.' FROM REPLACE (SUBSTRING (he.call_number,'\d{1,}\s{0,}\.{0,}\d{0,}'),' ','')))::NUMERIC,
@@ -170,6 +186,7 @@ GROUP BY
      isbns.isbn_number,
      issns.issn_number,
      itemext.material_type_name,
+     instance_ext.mode_of_issuance_name,
      he.type_name,               
      itemext.status_name,
      TO_CHAR (itemext.status_date::DATE,'mm/dd/yyyy'),
@@ -222,6 +239,8 @@ otherlibs AS
 	
 	WHERE  
 		(instance__t.discovery_suppress = FALSE OR instance__t.discovery_suppress IS NULL)
+		--and item__t.hrid != recs.item_hrid
+		--and hrt.hrid != recs.holdings_hrid
 	
 	GROUP BY instance__t.hrid, instance__t.title, loclibrary__t.name
 )
@@ -235,7 +254,13 @@ SELECT
      recs.holdings_hrid,
      recs.item_hrid,
      recs.barcode,
-     recs.whole_call_number,
+     recs.call_number_prefix,
+     recs.call_number,
+     recs.call_number_suffix,
+     recs.enumeration,
+     recs.chronology,
+     recs.copy_number,
+     --recs.whole_call_number,
      recs.lc_class,
      recs.lc_class_number,    
      recs.item_status_name,
@@ -243,7 +268,8 @@ SELECT
      recs.original_missing_date, 
      recs.contributors, 
      recs.instance_suppress,
-     recs.holdings_suppress,     
+     recs.holdings_suppress,
+     recs.mode_of_issuance_name,
      recs.holdings_type_name, 
      recs.material_type_name,
      recs.holdings_notes,
@@ -277,7 +303,13 @@ GROUP BY
      recs.holdings_hrid,
      recs.item_hrid,
      recs.barcode,
-     recs.whole_call_number,
+     recs.call_number_prefix,
+     recs.call_number,
+     recs.call_number_suffix,
+     recs.enumeration,
+     recs.chronology,
+     recs.copy_number,
+    -- recs.whole_call_number,
      recs.lc_class,
      recs.lc_class_number,    
      recs.item_status_name,
@@ -285,7 +317,8 @@ GROUP BY
      recs.original_missing_date, 
      recs.contributors, 
      recs.instance_suppress,
-     recs.holdings_suppress,     
+     recs.holdings_suppress,
+     recs.mode_of_issuance_name,
      recs.holdings_type_name, 
      recs.material_type_name,
      recs.holdings_notes,
@@ -297,13 +330,13 @@ GROUP BY
      recs.issn_number,
      recs.item_notes,
      recs.item_create_date,
-	   recs.total_voyager_checkouts + recs.total_folio_checkouts,
-	   CASE WHEN recs.total_voyager_checkouts > 0 AND COALESCE (recs.most_recent_folio_checkout, recs.most_recent_voyager_checkout, ' - ') = ' - ' 
-		  THEN 'pre-Voyager' 
-		  ELSE COALESCE (recs.most_recent_folio_checkout, recs.most_recent_voyager_checkout, ' - ') 
-		 END,
-	   recs.catalog_url,
-	   recs.effective_shelving_order
+	 recs.total_voyager_checkouts + recs.total_folio_checkouts,
+	 CASE WHEN recs.total_voyager_checkouts > 0 AND COALESCE (recs.most_recent_folio_checkout, recs.most_recent_voyager_checkout, ' - ') = ' - ' 
+		THEN 'pre-Voyager' 
+		ELSE COALESCE (recs.most_recent_folio_checkout, recs.most_recent_voyager_checkout, ' - ') 
+		END,
+	 recs.catalog_url,
+	 recs.effective_shelving_order
      
 ORDER BY recs.library_name, recs.holdings_location_name, recs.effective_shelving_order COLLATE "C"
 ;
