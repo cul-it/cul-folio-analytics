@@ -1,0 +1,19 @@
+{
+  "displayName": "LTS_Holdings_Admin_Notes",
+  "description": "Identify holdings with administrative notes indicating withdrawal or transfer activity within a date range",
+  "instructions": "Choose a maintenance date range to retrieve holdings administrative notes",
+  "parameters": [
+    {
+      "name": "start_date",
+      "displayName": "Earliest maintenance date",
+      "type": "date",
+      "required": false
+    },
+    {
+      "name": "end_date",
+      "displayName": "Latest maintenance date",
+      "type": "date",
+      "required": false
+    }
+  ]
+}
