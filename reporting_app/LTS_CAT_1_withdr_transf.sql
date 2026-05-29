@@ -1,7 +1,7 @@
 --metadb:function LTS_Holdings_Admin_Notes
 
 DROP FUNCTION IF EXISTS LTS_Holdings_Admin_Notes;
-CREATE FUNCTION z_reporting.LTS_Holdings_Admin_Notes(
+CREATE FUNCTION LTS_Holdings_Admin_Notes(
     start_date DATE DEFAULT '2021-07-01',
     end_date   DATE DEFAULT '2050-01-01'
 )
