@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION local_automation.LTS_holdings_admin_notes(
+CREATE OR REPLACE FUNCTION z_reporting.LTS_holdings_admin_notes(
     start_date DATE DEFAULT '2021-07-01',
     end_date   DATE DEFAULT '2050-01-01'
 )
@@ -61,7 +61,7 @@ all_notes AS (
             )
         ) AS administrative_note_clean
     FROM get_candidates t1
-    LEFT JOIN local_derived.marc__t mt
+    LEFT JOIN folio_source_record.marc__t mt
         ON t1.instance_id = mt.instance_id
     WHERE t1.administrative_note ILIKE 'date:%'
       AND mt.field = '008'
