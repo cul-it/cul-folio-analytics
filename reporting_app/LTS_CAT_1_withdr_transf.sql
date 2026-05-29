@@ -1,4 +1,4 @@
-CREATE OR REPLACE FUNCTION z_reporting.LTS_holdings_admin_notes(
+CREATE OR REPLACE FUNCTION z_reporting.LTS_Holdings_Admin_Notes(
     start_date DATE DEFAULT '2021-07-01',
     end_date   DATE DEFAULT '2050-01-01'
 )
