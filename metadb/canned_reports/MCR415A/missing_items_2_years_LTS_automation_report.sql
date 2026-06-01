@@ -75,15 +75,11 @@ from folio_derived.item_ext as ie
 
                 on location__t.library_id = loclibrary__t.id
 
- 
-
 where
 
                 ie.status_name = 'Missing'
 
-                and ie.status_date::date < '2024-01-01'
-
- 
+                and ie.status_date::date < current_date::date - 730   --this captures items given a status of missing less than 2 years ago
 
 group by
 
