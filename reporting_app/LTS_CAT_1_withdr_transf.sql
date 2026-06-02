@@ -3,7 +3,8 @@
 DROP FUNCTION IF EXISTS LTS_Holdings_Admin_Notes;
 CREATE FUNCTION LTS_Holdings_Admin_Notes(
     start_date DATE DEFAULT '2021-07-01',
-    end_date   DATE DEFAULT '2050-01-01'
+    end_date   DATE DEFAULT '2050-01-01',
+    note_type  TEXT DEFAULT 'all'
 )
 RETURNS TABLE (
     holdings_hrid TEXT,
@@ -25,9 +26,23 @@ WITH get_candidates AS (
     CROSS JOIN LATERAL
         jsonb_array_elements(
             jsonb_extract_path(h.jsonb, 'administrativeNotes')
-        ) WITH ORDINALITY AS admin_notes(jsonb)
-    WHERE admin_notes.jsonb #>> '{}' ILIKE '%ttype:w%'
-       OR admin_notes.jsonb #>> '{}' ILIKE '%ttype:t%'
+        ) WITH ORDINALITY AS admin_notes(jsonb, ordinality)
+    WHERE
+        (
+            LOWER(note_type) = 'all'
+            AND (
+                admin_notes.jsonb #>> '{}' ILIKE '%ttype:w%'
+                OR admin_notes.jsonb #>> '{}' ILIKE '%ttype:t%'
+            )
+        )
+        OR (
+            LOWER(note_type) IN ('transfer', 'transferred', 't')
+            AND admin_notes.jsonb #>> '{}' ILIKE '%ttype:t%'
+        )
+        OR (
+            LOWER(note_type) IN ('withdrawal', 'withdrawals', 'w')
+            AND admin_notes.jsonb #>> '{}' ILIKE '%ttype:w%'
+        )
 ),
 all_notes AS (
     SELECT 
