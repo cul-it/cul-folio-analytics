@@ -14,6 +14,12 @@
       "displayName": "Latest maintenance date",
       "type": "date",
       "required": false
+    },
+    {
+      "name": "note_keyword",
+      "displayName": "Admin note transaction filter",
+      "type": "string",
+      "required": false
     }
   ]
 }
