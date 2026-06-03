@@ -1,7 +1,7 @@
 {
   "displayName": "LTS_CAT_1_Holdings_Admin_Notes",
   "description": "Identify holdings with administrative notes indicating withdrawal or transfer activity within a date range",
-  "instructions": "Choose a maintenance date range to retrieve holdings administrative notes",
+  "instructions": "Choose a maintenance date range and optionally select a transaction type (transferred or withdrawal). Note: This report may take up to 10 minutes to generate results."
   "parameters": [
     {
       "name": "start_date",
