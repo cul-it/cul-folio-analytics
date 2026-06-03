@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS LTS_Holdings_Admin_Notes;
 CREATE FUNCTION LTS_Holdings_Admin_Notes(
     start_date DATE DEFAULT '2021-07-01',
     end_date   DATE DEFAULT '2050-01-01',
-    note_type  TEXT DEFAULT 'all'
+    cat_stat   TEXT DEFAULT 'all'
 )
 RETURNS TABLE (
     holdings_hrid TEXT,
@@ -29,18 +29,18 @@ WITH get_candidates AS (
         ) WITH ORDINALITY AS admin_notes(jsonb, ordinality)
     WHERE
         (
-            LOWER(note_type) = 'all'
+            LOWER(cat_stat) = 'all'
             AND (
                 admin_notes.jsonb #>> '{}' ILIKE '%ttype:w%'
                 OR admin_notes.jsonb #>> '{}' ILIKE '%ttype:t%'
             )
         )
         OR (
-            LOWER(note_type) IN ('transfer', 'transferred', 't')
+            LOWER(cat_stat) IN ('transfer', 'transferred', 't')
             AND admin_notes.jsonb #>> '{}' ILIKE '%ttype:t%'
         )
         OR (
-            LOWER(note_type) IN ('withdrawal', 'withdrawals', 'w')
+            LOWER(cat_stat) IN ('withdrawal', 'withdrawals', 'w')
             AND admin_notes.jsonb #>> '{}' ILIKE '%ttype:w%'
         )
 ),
@@ -100,7 +100,6 @@ date_notes AS (
             'YYYYMMDD'
         ) AS maint_date
     FROM all_notes an
-    WHERE an.administrative_note_clean ILIKE 'date:%'
 ),
 notes_loc AS (
     SELECT
@@ -113,21 +112,25 @@ notes_loc AS (
     LEFT JOIN folio_derived.holdings_ext he
         ON he.instance_id::uuid = dn.instance_id::uuid
     WHERE dn.maint_date BETWEEN start_date AND end_date
-      AND he.permanent_location_name NOT ILIKE '%rmc%'
-      AND he.permanent_location_name NOT ILIKE '%rare%'
-      AND he.permanent_location_name NOT ILIKE '%law%'
+      --AND he.permanent_location_name NOT ILIKE '%rmc%'
+      --AND he.permanent_location_name NOT ILIKE '%rare%'
+      --AND he.permanent_location_name NOT ILIKE '%law%'
+),
+final AS (
+    SELECT
+        nl.*,
+        CASE 
+            WHEN nl.administrative_note_clean ILIKE '%ttype:t%' THEN 'transferred'
+            WHEN nl.administrative_note_clean ILIKE '%ttype:w%' THEN 'withdrawal'
+            ELSE NULL
+        END AS derived_cat_stat
+    FROM notes_loc nl
 )
-SELECT DISTINCT
-    nl.holdings_hrid,
-    nl.instance_id,
-    nl.administrative_note_clean,
-    nl.maint_date,
-    nl.perm_loc_name,
-    CASE 
-        WHEN nl.administrative_note_clean ILIKE '%ttype:t%' THEN 'transferred'
-        WHEN nl.administrative_note_clean ILIKE '%ttype:w%' THEN 'withdrawal'
-    END AS cat_stat
-FROM notes_loc nl;
+SELECT *
+FROM final
+WHERE
+    LOWER(cat_stat) = 'all'
+    OR LOWER(derived_cat_stat) = LOWER(cat_stat);
 $$
 LANGUAGE SQL
 STABLE
