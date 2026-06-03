@@ -17,9 +17,14 @@
     },
     {
       "name": "cat_stat",
-      "displayName": "Transaction type (transferred or withdrawal)",
+      "displayName": "Transaction type",
       "type": "string",
-      "required": false
+      "required": false,
+      "allowedValues": [
+        "all",
+        "transferred",
+        "withdrawal"
+      ]
     }
   ]
 }
