@@ -106,7 +106,7 @@ notes_loc AS (
         dn.holdings_hrid,
         dn.instance_id,
         dn.administrative_note_clean,
-        dn.maint_date,
+        dn.maint_date::date,
         he.permanent_location_name AS perm_loc_name
     FROM date_notes dn
     LEFT JOIN folio_derived.holdings_ext he
