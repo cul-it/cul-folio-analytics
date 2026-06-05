@@ -4,7 +4,7 @@ DROP FUNCTION IF EXISTS LTS_Holdings_Admin_Notes(date,date,text);
 CREATE OR REPLACE FUNCTION LTS_Holdings_Admin_Notes(
     start_date DATE DEFAULT NULL,
     end_date DATE DEFAULT NULL,
-    cat_stat_filter TEXT DEFAULT NULL
+    cat_stat TEXT DEFAULT NULL  -- Changed from cat_stat_filter
 )
 RETURNS TABLE (
     instance_id UUID,
@@ -25,12 +25,12 @@ AS $$
             WHEN LOWER(admin_notes.value) ~ 'date:\d{8}'
             THEN TO_DATE(SUBSTRING(admin_notes.value FROM 'date:(\d{8})'),'YYYYMMDD')
             ELSE NULL
-        END AS maintnance_date,
-        he.permanent_location_name AS "location",
+        END AS maint_date,  -- Fixed column name
+        he.permanent_location_name AS perm_loc_name,  -- Fixed column name
         CASE 
             WHEN LOWER(admin_notes.value) LIKE '%ttype:t%' THEN 'transferred'
             WHEN LOWER(admin_notes.value) LIKE '%ttype:w%' THEN 'withdrawal'
-        END AS cataloging_stat
+        END AS cat_stat  -- Fixed column name
     FROM folio_inventory.holdings_record h
     CROSS JOIN LATERAL
     jsonb_array_elements_text( jsonb_extract_path(h.jsonb, 'administrativeNotes')) AS admin_notes(value)
@@ -52,11 +52,11 @@ AS $$
             ELSE NULL
             END <= end_date)
     -- Category status filter
-    AND (cat_stat_filter IS NULL OR 
+    AND (cat_stat IS NULL OR  -- Changed from cat_stat_filter
         CASE 
             WHEN LOWER(admin_notes.value) LIKE '%ttype:t%' THEN 'transferred'
             WHEN LOWER(admin_notes.value) LIKE '%ttype:w%' THEN 'withdrawal'
-            END = LOWER(cat_stat_filter));
+            END = LOWER(cat_stat));  -- Changed from cat_stat_filter
 $$
 LANGUAGE SQL
 STABLE
