@@ -1,136 +1,62 @@
 --metadb:function LTS_Holdings_Admin_Notes
 
 DROP FUNCTION IF EXISTS LTS_Holdings_Admin_Notes;
-CREATE FUNCTION LTS_Holdings_Admin_Notes(
-    start_date DATE DEFAULT '2021-07-01',
-    end_date   DATE DEFAULT '2050-01-01',
-    cat_stat   TEXT DEFAULT 'all'
+CREATE OR REPLACE FUNCTION get_holdings_by_filters(
+    start_date DATE DEFAULT NULL,
+    end_date DATE DEFAULT NULL,
+    cat_stat_filter TEXT DEFAULT NULL
 )
 RETURNS TABLE (
-    holdings_hrid TEXT,
     instance_id UUID,
-    administrative_note_clean TEXT,
+    holdings_id UUID,
+    holdings_hrid TEXT,
+    administrative_note TEXT,
     maint_date DATE,
     perm_loc_name TEXT,
     cat_stat TEXT
 )
 AS $$
-WITH get_candidates AS (
     SELECT 
         h.instanceid AS instance_id,
         h.id AS holdings_id,
         jsonb_extract_path_text(h.jsonb, 'hrid') AS holdings_hrid,
-        admin_notes.jsonb #>> '{}' AS administrative_note,
-        admin_notes.ordinality AS administrative_note_ordinality
+        admin_notes.value AS administrative_note,
+        CASE 
+            WHEN LOWER(admin_notes.value) ~ 'date:\d{8}'
+            THEN TO_DATE(SUBSTRING(admin_notes.value FROM 'date:(\d{8})'),'YYYYMMDD')
+            ELSE NULL
+        END AS maintnance_date,
+        he.permanent_location_name AS "location",
+        CASE 
+            WHEN LOWER(admin_notes.value) LIKE '%ttype:t%' THEN 'transferred'
+            WHEN LOWER(admin_notes.value) LIKE '%ttype:w%' THEN 'withdrawal'
+        END AS cataloging_stat
     FROM folio_inventory.holdings_record h
     CROSS JOIN LATERAL
-        jsonb_array_elements(
-            jsonb_extract_path(h.jsonb, 'administrativeNotes')
-        ) WITH ORDINALITY AS admin_notes(jsonb, ordinality)
-    WHERE
-        (
-            LOWER(cat_stat) = 'all'
-            AND (
-                admin_notes.jsonb #>> '{}' ILIKE '%ttype:w%'
-                OR admin_notes.jsonb #>> '{}' ILIKE '%ttype:t%'
-            )
-        )
-        OR (
-            LOWER(cat_stat) IN ('transfer', 'transferred', 't')
-            AND admin_notes.jsonb #>> '{}' ILIKE '%ttype:t%'
-        )
-        OR (
-            LOWER(cat_stat) IN ('withdrawal', 'withdrawals', 'w')
-            AND admin_notes.jsonb #>> '{}' ILIKE '%ttype:w%'
-        )
-),
-all_notes AS (
-    SELECT 
-        t1.instance_id,
-        t1.holdings_id,
-        t1.holdings_hrid,
-        t1.administrative_note_ordinality,
-        LOWER(
-            REGEXP_REPLACE(
-                REGEXP_REPLACE(
-                    REGEXP_REPLACE(
-                        REGEXP_REPLACE(
-                            REGEXP_REPLACE(
-                                REGEXP_REPLACE(
-                                    REGEXP_REPLACE(
-                                        REGEXP_REPLACE(
-                                            t1.administrative_note,
-                                            '([^ ])ploc', '\1 ploc'
-                                        ),
-                                        'c ttype', ' ttype'
-                                    ),
-                                    'user:', 'userid:'
-                                ),
-                                'date:c', 'date:'
-                            ),
-                            ': ', ':', 'g'
-                        ),
-                        '&nbsp; ', ' ', 'g'
-                    ),
-                    '\r|\n|-', '', 'g'
-                ),
-                '.*(date:\d{8} ttype:[a-z]{1,5} userid:[a-z0-9]{1,7} ploc:[a-z0-9]{1,7}).*',
-                '\1'
-            )
-        ) AS administrative_note_clean
-    FROM get_candidates t1
-    LEFT JOIN folio_source_record.marc__t mt
-        ON t1.instance_id = mt.instance_id
-    WHERE t1.administrative_note ILIKE 'date:%'
-      AND mt.field = '008'
-    GROUP BY
-        t1.instance_id,
-        t1.holdings_id,
-        t1.holdings_hrid,
-        t1.administrative_note_ordinality,
-        t1.administrative_note
-),
-date_notes AS (
-    SELECT
-        an.instance_id,
-        an.holdings_hrid,
-        an.administrative_note_clean,
-        TO_DATE(
-            substring(an.administrative_note_clean, 6, 8),
-            'YYYYMMDD'
-        ) AS maint_date
-    FROM all_notes an
-),
-notes_loc AS (
-    SELECT
-        dn.holdings_hrid,
-        dn.instance_id,
-        dn.administrative_note_clean,
-        dn.maint_date::date,
-        he.permanent_location_name AS perm_loc_name
-    FROM date_notes dn
-    LEFT JOIN folio_derived.holdings_ext he
-        ON he.instance_id::uuid = dn.instance_id::uuid
-    WHERE dn.maint_date BETWEEN start_date AND end_date
-      --AND he.permanent_location_name NOT ILIKE '%rmc%'
-      --AND he.permanent_location_name NOT ILIKE '%rare%'
-      --AND he.permanent_location_name NOT ILIKE '%law%'
-),
-final AS (
-    SELECT
-        nl.*,
+    jsonb_array_elements_text( jsonb_extract_path(h.jsonb, 'administrativeNotes')) AS admin_notes(value)
+    LEFT JOIN folio_derived.holdings_ext he ON he.id = h.id
+    WHERE jsonb_extract_path(h.jsonb, 'administrativeNotes') IS NOT NULL
+    AND (LOWER(admin_notes.value) LIKE '%ttype:t%' 
+    OR LOWER(admin_notes.value) LIKE '%ttype:w%')
+    -- Date range filter
+    AND (start_date IS NULL OR 
         CASE 
-            WHEN nl.administrative_note_clean ILIKE '%ttype:t%' THEN 'transferred'
-            WHEN nl.administrative_note_clean ILIKE '%ttype:w%' THEN 'withdrawal'
+            WHEN LOWER(admin_notes.value) ~ 'date:\d{8}'
+            THEN TO_DATE(SUBSTRING(admin_notes.value FROM 'date:(\d{8})'),'YYYYMMDD')
             ELSE NULL
-        END AS derived_cat_stat
-    FROM notes_loc nl
-)
-SELECT *
-FROM final
-WHERE
-    LOWER(cat_stat) = 'all'
-    OR LOWER(derived_cat_stat) = LOWER(cat_stat);
+        END >= start_date)
+    AND (end_date IS NULL OR 
+        CASE 
+            WHEN LOWER(admin_notes.value) ~ 'date:\d{8}'
+            THEN TO_DATE(SUBSTRING(admin_notes.value FROM 'date:(\d{8})'),'YYYYMMDD')
+            ELSE NULL
+            END <= end_date)
+    -- Category status filter
+    AND (cat_stat_filter IS NULL OR 
+        CASE 
+            WHEN LOWER(admin_notes.value) LIKE '%ttype:t%' THEN 'transferred'
+            WHEN LOWER(admin_notes.value) LIKE '%ttype:w%' THEN 'withdrawal'
+            END = LOWER(cat_stat_filter));
 $$
 LANGUAGE SQL
 STABLE
