@@ -1,7 +1,7 @@
 --metadb:function LTS_Holdings_Admin_Notes
 
-DROP FUNCTION IF EXISTS LTS_Holdings_Admin_Notes;
-CREATE OR REPLACE FUNCTION get_holdings_by_filters(
+DROP FUNCTION IF EXISTS LTS_Holdings_Admin_Notes(date,date,text);
+CREATE OR REPLACE FUNCTION LTS_Holdings_Admin_Notes(
     start_date DATE DEFAULT NULL,
     end_date DATE DEFAULT NULL,
     cat_stat_filter TEXT DEFAULT NULL
