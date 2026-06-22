@@ -1,0 +1,27 @@
+
+# MCR 419: Materials Counts (2) - Primary Formats
+
+**Date Posted:** June 22, 2026
+
+## Overview
+
+This query is the second of four queries used to support annual materials count reporting. It applies format classification logic to the data preparation table created by MCR 418 and assigns one or more material formats to each record.
+
+
+## Notes
+
+- Records may have multiple formats assigned.
+- Format assignments are stored in arrays, allowing multiple classifications for a single bibliographic record.
+- Because array-based structures can complicate counting and reporting, the output of this query is further processed by MCR 420.
+
+## Workflow
+
+```text
+MCR 418 (Data Prep)
+        ↓
+MCR 419 (Primary Formats)
+        ↓
+MCR 420 (Flattened Formats)
+        ↓
+MCR 421 (Materials Counts)
+
