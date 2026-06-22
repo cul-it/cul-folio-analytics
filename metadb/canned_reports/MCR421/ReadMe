@@ -1,0 +1,35 @@
+# MCR 421: Materials Counts (4) - Materials Counts
+
+**Date Posted:** June 22, 2026
+
+## Overview
+
+This query is the final step in the materials count reporting process. It produces report-ready materials counts using the flattened formats table created by MCR 420.
+
+The query is designed to provide annual reporting statistics and may be modified to support changing reporting requirements.
+
+## Notes
+
+Inactive locations and supressed instances are filtered out in MCR418, as are supressed records. Wood locations and suppressed holdingsa re filtered out in this query. 
+
+Any custom reporting should generally occur at this stage rather than modifying the underlying format-classification logic.
+
+
+
+## Workflow
+
+MCR 418 (Data Prep)
+        ↓
+MCR 419 (Primary Formats)
+        ↓
+MCR 420 (Flattened Formats)
+        ↓
+MCR 421 (Materials Counts)
+
+
+## Annual Reporting Process
+
+1. Create the data preparation table using MCR 418.
+2. Apply format classifications using MCR 419.
+3. Flatten format arrays using MCR 420.
+4. Generate final counts using MCR 421.
