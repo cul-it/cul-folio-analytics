@@ -11,21 +11,21 @@ This query is the first of four queries used to support annual materials count r
 ### 1. MCR 418 — Materials Counts (1): Data Prep
 Creates the underlying data preparation table based on MARC bibliographic and holdings data.
 
-### 2. MCR 219 — Primary Formats
+### 2. MCR 419 — Primary Formats
 Builds the primary formats table by applying format classification logic to the data preparation table created in MCR 418.
 
-### 3. MCR 220 — Flattened Formats
+### 3. MCR 420 — Flattened Formats
 Creates a flattened version of the primary formats table to facilitate counting and reporting. This step is necessary because the primary formats table contains array-based fields that are not conducive to straightforward aggregation.
 
-### 4. MCR 221 — Materials Counts
+### 4. MCR 421 — Materials Counts
 Generates the final materials counts used for annual reporting. This query can be modified as needed to support specific reporting requirements.
 
 ## Workflow
 
 MCR 418 (Data Prep)
         ↓
-MCR 219 (Primary Formats)
+MCR 419 (Primary Formats)
         ↓
-MCR 220 (Flattened Formats)
+MCR 420 (Flattened Formats)
         ↓
-MCR 221 (Materials Counts)
+MCR 421 (Materials Counts)
