@@ -1,11 +1,20 @@
 -- MCR415C - Long missing report for Selectors
+-- looks for items marked "Long missing" where the original missing date was before the date specified (at least two years ago)
+
 -- 11-19-25: Long missings for selectors 
 -- based on MCR210 (which looks at many items statuses) but is revised to look only at "Long Missing" and uses derived tables rather than source table extracts
 -- shows other copies on campus with their item statuses and dates
 -- 12-5-25: added catalog URLs
 -- 5-7-26: broke out whole call number into components; added instance_ext mode_of_issuane_name
+-- 6-17-26: had to add "max missing date" as a parameter for the original missing date, in order to eliminate the items marked Long Missing that were newer than two years old (applied independently by circ desks or previous batch jobs)
+	-- changed item status date to "date" format to make the download sortable as a true date
 
-WITH orig_miss AS 
+WITH parameters as 
+(select 
+'2024-06-01' as max_missing_date 
+),
+
+orig_miss AS 
 	(SELECT DISTINCT
 		item__.id,
 		item__.jsonb#>>'{hrid}' AS item_hrid,
@@ -95,7 +104,8 @@ recs AS
      STRING_AGG (DISTINCT han.administrative_note,CHR(10)) AS holdings_admin_notes,
      STRING_AGG (DISTINCT itemnotes.note,CHR(10)) AS item_notes,
      itemext.status_name AS item_status_name,
-     TO_CHAR (itemext.status_date::DATE,'mm/dd/yyyy') AS item_status_date,
+     --TO_CHAR (itemext.status_date::DATE,'mm/dd/yyyy') AS item_status_date,
+     itemext.status_date::date as item_status_date,
      TO_CHAR ((CASE WHEN item.create_date::date < itemext.created_date::date THEN item.create_date::date 
                     ELSE itemext.created_date::date END)::date,'mm/dd/yyyy') AS item_create_date,
      TO_CHAR (voycircs.most_recent_voyager_checkout::date,'mm/dd/yyyy') AS most_recent_voyager_checkout,
@@ -159,6 +169,13 @@ FROM folio_inventory.instance__t AS ii
 
 WHERE itemext.status_name = 'Long missing' 
 	AND itemext.material_type_name NOT IN ('Supplies','Peripherals','Laptop','Keys','Locker Keys','Equipment','Room Keys','Umbrella','ILL MATERIAL','BD MATERIAL')
+	--and (orig_miss.item_status_date < '2024-06-01' or orig_miss.item_status_date is null)
+	--and (orig_miss.item_status_date < (select max_missing_date from parameters) or orig_miss.item_status_date is null)
+	and ((case 
+		when (select max_missing_date from parameters) =''  
+		then orig_miss.item_status_date::date < (current_date::date - 730)
+		else orig_miss.item_status_date::date < (select max_missing_date from parameters)::date
+		end) or orig_miss.item_status_date is null)
 
 GROUP BY 
 	 CURRENT_DATE::DATE, 
@@ -189,7 +206,8 @@ GROUP BY
      instance_ext.mode_of_issuance_name,
      he.type_name,               
      itemext.status_name,
-     TO_CHAR (itemext.status_date::DATE,'mm/dd/yyyy'),
+     --TO_CHAR (itemext.status_date::DATE,'mm/dd/yyyy'),
+     itemext.status_date::date,
      TO_CHAR ((CASE WHEN item.create_date::DATE < itemext.created_date::DATE THEN item.create_date::DATE 
                     ELSE itemext.created_date::DATE END)::DATE,'mm/dd/yyyy'),
      TO_CHAR (voycircs.most_recent_voyager_checkout::DATE,'mm/dd/yyyy'),
@@ -340,3 +358,4 @@ GROUP BY
      
 ORDER BY recs.library_name, recs.holdings_location_name, recs.effective_shelving_order COLLATE "C"
 ;
+
