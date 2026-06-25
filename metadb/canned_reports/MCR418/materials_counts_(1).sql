@@ -4,9 +4,14 @@
 --Date posted: 6/22/26
 --NOTE: TABLES CAN BE CREATED IN INDIVIDUAL SCHEMAS; the local_statistics schema is restricted.
 
---Table 1
+--First DROP all tables (for all three queries - MCR418, 419, and 420) before running automated queries, else if a table does not get created,the final counts will be based on an older version of a table.
 
 DROP TABLE IF EXISTS local_statistics.vs_marc_data_prep;
+DROP TABLE IF EXISTS local_statistics.vs_primary_formats;
+DROP TABLE IF EXISTS local_statistics.vs_primary_formats_flattened;
+
+
+--Table 1
 CREATE TABLE local_statistics.vs_marc_data_prep AS
 WITH bibliographic_data AS (
     -- Extract bibliographic-level MARC data (one record per instance)
@@ -25,17 +30,12 @@ WITH bibliographic_data AS (
         -- Bibliographic fields that can have multiple occurrences
         array_agg(DISTINCT content) FILTER (WHERE field = '245' AND sf = 'h') as marc_245h,
         array_agg(DISTINCT content) FILTER (WHERE field = '948' AND sf = 'f') as marc_948f,
-        
-        -- ADD: 653$a field (research guides)
-        array_agg(DISTINCT content) FILTER (WHERE field = '653' AND sf = 'a') as marc_653a,
-        
-        -- ADD: 502 field (thesis detection)
-        CASE WHEN COUNT(*) FILTER (WHERE field = '502') > 0 THEN true ELSE false END as is_thesis
-        
+                     
     FROM local_derived.marc__t 
+    WHERE field IN ('000', '007', '008', '245', '502', '948')  
+      AND (sf IN ('h', 'f') OR sf IS NULL)  
     GROUP BY instance_id
 ),
-
 
 holdings_data AS (
     SELECT 
@@ -84,17 +84,16 @@ statistical_codes AS (
     GROUP BY instance_id
 )
 
--- Final combination with new fields
+-- Final combination
 SELECT 
+	CURRENT_DATE AS table_create_date,
     b.instance_id,
     b.record_type_06,
     b.bib_level_07,
     b.field_007_00,
     b.field_008_21,
     b.marc_245h,
-    b.marc_948f,
-    b.marc_653a,        
-    b.is_thesis,        
+    b.marc_948f,         
     h.location_codes as location_code,
     h.call_numbers as call_number,
     h.library_names as library_name,
@@ -110,3 +109,4 @@ LEFT JOIN statistical_codes sc ON b.instance_id = sc.instance_id;
 -- Create indexes
 CREATE INDEX idx_vs_marc_data_prep_instance ON local_statistics.vs_marc_data_prep(instance_id);
 CREATE INDEX idx_vs_marc_data_prep_gin_locations ON local_statistics.vs_marc_data_prep USING gin(location_code);
+
