@@ -6,7 +6,7 @@
 
 --Table 2
 
-DROP TABLE IF EXISTS local_statistics.vs_primary_formats;
+--DROP TABLE IF EXISTS local_statistics.vs_primary_formats;
 CREATE TABLE local_statistics.vs_primary_formats AS
 WITH instance_formats AS (
     SELECT 
@@ -17,8 +17,6 @@ WITH instance_formats AS (
         ibd.field_008_21,
         ibd.marc_245h,
         ibd.marc_948f,
-        ibd.marc_653a,
-        ibd.is_thesis,
         ibd.title,
         ibd.instance_stat_codes,
         ibd.special_format_codes,
@@ -39,29 +37,11 @@ WITH instance_formats AS (
                      OR 'webfeatdb' = ANY(ibd.marc_948f::text[])
                  )) THEN 'Database'
                  
-            -- Step 2: Electronic journal  (245h + stat code 'j')
-            WHEN (ibd.marc_245h IS NOT NULL AND EXISTS(
-                     SELECT FROM unnest(ibd.marc_245h) AS h 
-                     WHERE lower(h) LIKE '%electronic resource%'
-                 )) 
-                 AND ((ibd.instance_stat_codes IS NOT NULL AND 'j' = ANY(ibd.instance_stat_codes::text[]))
-                      OR (ibd.marc_948f IS NOT NULL AND 'j' = ANY(ibd.marc_948f::text[]))) THEN 'Journal/Serial'
+            -- Step 2: Electronic journal (updated criteria)
+            WHEN ('j' = ANY(ibd.marc_948f::text[]) OR 'j' = ANY(ibd.instance_stat_codes::text[]))
+                 AND (ibd.location_code IS NOT NULL AND 'serv,remo' = ANY(ibd.location_code::text[])) THEN 'Journal/Serial'
             
-            -- Step 3: Research guide (653$a)
-           /*WHEN ibd.marc_653a IS NOT NULL AND EXISTS(
-                SELECT FROM unnest(ibd.marc_653a) AS guide_term
-                WHERE lower(guide_term) = 'research guide'
-            ) THEN 'Research Guide'
-            WHEN ibd.marc_653a IS NOT NULL AND EXISTS(
-                SELECT FROM unnest(ibd.marc_653a) AS guide_term
-                WHERE lower(guide_term) = 'course guide'
-            ) THEN 'Course Guide'
-            WHEN ibd.marc_653a IS NOT NULL AND EXISTS(
-                SELECT FROM unnest(ibd.marc_653a) AS guide_term
-                WHERE lower(guide_term) = 'library guide'
-            ) THEN 'Library Guide'*/
-            
-            -- Step 4: MAIN FORMAT LOGIC (if format == null in Java)
+            -- Step 3: MAIN FORMAT LOGIC (if format == null in Java)
             
             -- Language materials (record_type = 'a')
             WHEN ibd.record_type_06 = 'a' AND ibd.bib_level_07 IN ('a','m','d','c') THEN 'Book'
@@ -126,7 +106,7 @@ WITH instance_formats AS (
             -- Objects (record_type = 'r')
             WHEN ibd.record_type_06 = 'r' THEN 'Object'
             
-            -- Step 5: FALLBACK LOGIC (if format == null after main logic)
+            -- Step 4: FALLBACK LOGIC (if format == null after main logic)
             
             -- Remaining manuscript text (record_type = 't', non-monographic)
             WHEN ibd.record_type_06 = 't' THEN 'Manuscript/Archive'
@@ -140,7 +120,7 @@ WITH instance_formats AS (
             
         END as calculated_format,
         
-        -- Microform logic (Java's category.equals("h"))
+        -- Microform logic
         COALESCE(
             (ibd.field_007_00 = 'h' 
              OR (ibd.title IS NOT NULL AND (
@@ -156,9 +136,11 @@ WITH instance_formats AS (
             false
         ) as is_microform,
         
-        -- Electronic logic 
+        -- Electronic logic (updated with location requirement)
         COALESCE(
-            ((ibd.marc_245h IS NOT NULL AND EXISTS(
+            ((ibd.location_code IS NOT NULL AND 'serv,remo' = ANY(ibd.location_code::text[]))
+             AND
+             ((ibd.marc_245h IS NOT NULL AND EXISTS(
                  SELECT FROM unnest(ibd.marc_245h) AS h 
                  WHERE lower(h) LIKE '%electronic resource%'
              ))
@@ -187,7 +169,7 @@ WITH instance_formats AS (
                  WHERE sc ILIKE ANY (ARRAY['%webfeatdb%','%imagedb%','%ebk%','%j%',
                                           '%evideo%','%eaudio%','%escore%','%ewb%','%emap%','%emisc%'])
              ))
-            ),
+            )),
             false
         ) as is_electronic
         
@@ -204,8 +186,6 @@ WITH instance_formats AS (
         ibd.field_008_21,
         ibd.marc_245h,
         ibd.marc_948f,
-        ibd.marc_653a,
-        ibd.is_thesis,
         ibd.title,
         ibd.instance_stat_codes,
         ibd.special_format_codes,
@@ -247,7 +227,10 @@ WITH instance_formats AS (
         
     FROM local_statistics.vs_marc_data_prep ibd
     WHERE 
-        (ibd.instance_stat_codes IS NOT NULL AND (
+        -- Only include additional electronic formats with serv,remo location
+        (ibd.location_code IS NOT NULL AND 'serv,remo' = ANY(ibd.location_code::text[]))
+        AND
+        ((ibd.instance_stat_codes IS NOT NULL AND (
             'evideo' = ANY(ibd.instance_stat_codes::text[]) 
             OR 'eaudio' = ANY(ibd.instance_stat_codes::text[])
             OR 'escore' = ANY(ibd.instance_stat_codes::text[])
@@ -260,24 +243,12 @@ WITH instance_formats AS (
             OR 'escore' = ANY(ibd.marc_948f::text[])
             OR 'emap' = ANY(ibd.marc_948f::text[])
             OR 'ebk' = ANY(ibd.marc_948f::text[])
-        ))
-),
-
-final_formats AS (
-    SELECT 
-        *
-        -- Apply thesis override to ALL theses (not just manuscripts)  
-       /* CASE 
-            WHEN is_thesis = true THEN 'Thesis'  -- ← This change
-            ELSE calculated_format
-      as primary_format*/
-      
-      
-    FROM instance_formats
+        )))
 )
 
--- Final output
+-- Final output 
 SELECT DISTINCT
+	CURRENT_DATE AS table_create_date,
     instance_id,
     record_type_06,
     bib_level_07,
@@ -285,7 +256,6 @@ SELECT DISTINCT
     field_008_21,
     marc_245h,
     marc_948f,
-    marc_653a,
     instance_stat_codes,
     special_format_codes,
     location_code,
@@ -294,10 +264,9 @@ SELECT DISTINCT
     call_number_status,
     title,
     calculated_format AS primary_format,
-    is_thesis,
     is_microform,
     is_electronic
-FROM final_formats
+FROM instance_formats
 WHERE calculated_format IS NOT NULL;
 
 -- Create indexes
@@ -307,4 +276,4 @@ CREATE INDEX idx_vs_primary_formats_combo ON local_statistics.vs_primary_formats
 CREATE INDEX idx_vs_primary_formats_gin_locations ON local_statistics.vs_primary_formats USING gin(location_code);
 CREATE INDEX idx_vs_primary_formats_electronic ON local_statistics.vs_primary_formats(is_electronic);
 CREATE INDEX idx_vs_primary_formats_microform ON local_statistics.vs_primary_formats(is_microform);
-CREATE INDEX idx_vs_primary_formats_thesis ON local_statistics.vs_primary_formats(is_thesis);
+
