@@ -16,7 +16,6 @@ WITH fiscal_year_data AS (
         pf.instance_id,
         pf.primary_format,
         pf.is_microform,
-        pf.is_thesis,
         lib.name as library_name,
         loc.code as location_code,
         CASE       
@@ -45,29 +44,25 @@ WITH fiscal_year_data AS (
 )
 
 SELECT 
+	CURRENT_DATE AS todays_date,
     record_created_fiscal_year,
     primary_format,
     library_name,
     location_code,
     is_microform,
-    is_thesis,
     COUNT(DISTINCT item_id) as total_physical_items
-    /*COUNT(DISTINCT CASE 
-        WHEN is_microform = true 
-        THEN item_id 
-    END) as physical_microform_items*/
-    
+       
 FROM fiscal_year_data
-GROUP BY record_created_fiscal_year, primary_format, is_microform, is_thesis, library_name, location_code
+GROUP BY current_date, record_created_fiscal_year, primary_format, is_microform, library_name, location_code
 ORDER BY record_created_fiscal_year, library_name, location_code, primary_format;
 
 /*===============================================================
 Query 2: Count of all unique instances, physical and electronic 
 =================================================================*/
 
-SELECT primary_format, COUNT(DISTINCT instance_id) as instance_count,
+SELECT CURRENT_DATE AS todays_date, primary_format, COUNT(DISTINCT instance_id) as instance_count,
 location_code, library_name, is_microform, is_electronic
 FROM local_statistics.vs_primary_formats_flattened
 WHERE library_name NOT ILIKE '%Wood%'
   AND library_name NOT ILIKE '%WCM%'
-  GROUP BY primary_format,is_microform, is_electronic, location_code, library_name;
+  GROUP BY current_date, primary_format,is_microform, is_electronic, location_code, library_name;
