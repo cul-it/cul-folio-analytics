@@ -55,6 +55,7 @@ CREATE INDEX idx_vs_primary_formats_flattened_combo ON local_statistics.vs_prima
 CREATE INDEX idx_vs_primary_formats_flattened_lib_format ON local_statistics.vs_primary_formats_flattened(library_name, primary_format);
 
 -- Add GIN indexes for the array fields that are preserved
+CREATE INDEX idx_vs_primary_formats_flattened_gin_007 ON local_statistics.vs_primary_formats_flattened USING gin(field_007_00);
 CREATE INDEX idx_vs_primary_formats_flattened_gin_245h ON local_statistics.vs_primary_formats_flattened USING gin(marc_245h);
 CREATE INDEX idx_vs_primary_formats_flattened_gin_948f ON local_statistics.vs_primary_formats_flattened USING gin(marc_948f);
 CREATE INDEX idx_vs_primary_formats_flattened_gin_stat_codes ON local_statistics.vs_primary_formats_flattened USING gin(instance_stat_codes);
