@@ -111,18 +111,18 @@ WITH instance_formats AS (
             -- Remaining manuscript text (record_type = 't', non-monographic)
             WHEN ibd.record_type_06 = 't' THEN 'Manuscript/Archive'
             
-            -- 007 field fallbacks
-            WHEN ibd.field_007_00 = 'q' THEN 'Musical Score'
-            WHEN ibd.field_007_00 = 'v' THEN 'Video'
+            -- 007 field fallbacks - UPDATED FOR ARRAY
+            WHEN ibd.field_007_00 IS NOT NULL AND 'q' = ANY(ibd.field_007_00) THEN 'Musical Score'
+            WHEN ibd.field_007_00 IS NOT NULL AND 'v' = ANY(ibd.field_007_00) THEN 'Video'
             
             -- Ultimate fallback
             ELSE 'Miscellaneous'
             
         END as calculated_format,
         
-        -- Microform logic
+        -- Microform logic - UPDATED FOR ARRAY
         COALESCE(
-            (ibd.field_007_00 = 'h' 
+            ((ibd.field_007_00 IS NOT NULL AND 'h' = ANY(ibd.field_007_00))
              OR (ibd.title IS NOT NULL AND (
                  ibd.title ~* '\[microform\]'           
                  OR ibd.title ~* '\[micro\]'            
@@ -208,8 +208,9 @@ WITH instance_formats AS (
                  OR (ibd.marc_948f IS NOT NULL AND 'ebk' = ANY(ibd.marc_948f::text[])) THEN 'Book'
         END as calculated_format,
         
+        -- Microform logic - UPDATED FOR ARRAY
         COALESCE(
-            (ibd.field_007_00 = 'h' 
+            ((ibd.field_007_00 IS NOT NULL AND 'h' = ANY(ibd.field_007_00))
              OR (ibd.title IS NOT NULL AND (
                  ibd.title ~* '\[microform\]'           
                  OR ibd.title ~* '\[micro\]'            
@@ -248,7 +249,7 @@ WITH instance_formats AS (
 
 -- Final output 
 SELECT DISTINCT
-	CURRENT_DATE AS table_create_date,
+    CURRENT_DATE AS table_create_date,
     instance_id,
     record_type_06,
     bib_level_07,
@@ -276,4 +277,3 @@ CREATE INDEX idx_vs_primary_formats_combo ON local_statistics.vs_primary_formats
 CREATE INDEX idx_vs_primary_formats_gin_locations ON local_statistics.vs_primary_formats USING gin(location_code);
 CREATE INDEX idx_vs_primary_formats_electronic ON local_statistics.vs_primary_formats(is_electronic);
 CREATE INDEX idx_vs_primary_formats_microform ON local_statistics.vs_primary_formats(is_microform);
-
