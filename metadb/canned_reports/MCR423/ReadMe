@@ -1,0 +1,5 @@
+--MCR423
+--Count of Loans by date range 
+
+This query provides counts of loans by date range specifically for annual data collection purposes. 
+It excludes ILL and BD counts, as well as some material types. See query for details of exclusions. 
