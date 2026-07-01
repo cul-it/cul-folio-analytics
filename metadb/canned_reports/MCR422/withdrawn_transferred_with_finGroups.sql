@@ -12,7 +12,7 @@ CREATE TABLE  local_statistics.vs_transf_and_withdr AS
 WITH parameters AS
 ( SELECT
         '20250701' AS start_date,
-        '20260630' AS end_date
+        '202607010' AS end_date
 ),
 admin_notes AS
 (SELECT
@@ -91,33 +91,38 @@ ORDER BY nd.holdings_hrid, nd.transaction_date, nd.admin_notes_ordinality;
 DROP TABLE IF EXISTS local_statistics.vs_counts_withdr_transf;
 CREATE TABLE local_statistics.vs_counts_withdr_transf AS
 WITH financial_groups AS (
-    SELECT location_name,
+    SELECT location_code,
         CASE
             -- Handle NULL locations
-            WHEN location_name IS NULL THEN 'Unassigned'
+            WHEN location_code IS NULL THEN 'Unassigned'
             
-            -- Contract colleges - pattern-based
-            WHEN location_name ~ '^(gnva|ilr|mann|mnsc|orni|vet|Ent)' THEN 'Contract'
+            -- Contract colleges - pattern-based on location code
+            WHEN location_code ~* '^(gnva|ilr|mann|mnsc|orni|vet|ent)' THEN 'Contract'
             
-            -- WCM - pattern-based  
-            WHEN location_name ILIKE '%wood%' OR location_name ILIKE '%medical%' THEN 'WCM'
+            -- WCM - pattern-based on location code
+            WHEN location_code ILIKE '%wood%' OR location_code ILIKE '%medical%' THEN 'WCM'
             
-            -- Endowed colleges - pattern-based
-            WHEN location_name ~ '^(afr|asia|cons|cts|dcap|ech|engr|fine|hote|jgsm|law|lawr|maps|math|mus|oclc|olin|phys|rmc|sasa|uris|was)' THEN 'Endowed'
+            -- Endowed colleges - pattern-based on location code
+            WHEN location_code ~* '^(afr|asia|cons|cts|dcap|ech|engr|fine|hote|jgsm|law|lawr|maps|math|mus|oclc|olin|phys|rmc|sasa|uris|was)' THEN 'Endowed'
             
             -- Everything else is unassigned
             ELSE 'Unassigned'
         END AS financial_group
     FROM (
         SELECT DISTINCT 
-            CASE WHEN ttype = 'transferred' THEN original_location_name
-                 WHEN ttype = 'withdrawn' THEN current_holdings_location_name END AS location_name
+            CASE WHEN ttype = 'transferred' THEN original_location_code
+                 WHEN ttype = 'withdrawn' THEN 
+                    (SELECT location_code FROM local_static.vs_locations_libraries 
+                     WHERE location_name = current_holdings_location_name LIMIT 1) 
+            END AS location_code
         FROM local_statistics.vs_transf_and_withdr
         UNION
-        SELECT DISTINCT current_holdings_location_name 
+        SELECT DISTINCT 
+            (SELECT location_code FROM local_static.vs_locations_libraries 
+             WHERE location_name = current_holdings_location_name LIMIT 1)
         FROM local_statistics.vs_transf_and_withdr 
         WHERE ttype = 'transferred'
-    ) locations
+    ) location_codes
 )
 
 SELECT
@@ -146,12 +151,16 @@ holdings_hrid,
     SUM(pieces) AS total_pieces
 
 FROM local_statistics.vs_transf_and_withdr t
-LEFT JOIN financial_groups from_fg ON from_fg.location_name = 
-    CASE WHEN ttype = 'transferred' THEN original_location_name
-         WHEN ttype = 'withdrawn' THEN current_holdings_location_name END
-LEFT JOIN financial_groups to_fg ON to_fg.location_name = current_holdings_location_name 
+LEFT JOIN financial_groups from_fg ON from_fg.location_code = 
+    CASE WHEN ttype = 'transferred' THEN original_location_code
+         WHEN ttype = 'withdrawn' THEN 
+            (SELECT location_code FROM local_static.vs_locations_libraries 
+             WHERE location_name = current_holdings_location_name LIMIT 1)
+    END
+LEFT JOIN financial_groups to_fg ON to_fg.location_code = 
+    (SELECT location_code FROM local_static.vs_locations_libraries 
+     WHERE location_name = current_holdings_location_name LIMIT 1)
     AND ttype = 'transferred'
 
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9
 ORDER BY ttype, from_location, to_location;
-
