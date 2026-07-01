@@ -7,8 +7,8 @@
 --NOTE: This query creates tables, which can be created in individual schemas. 
 --CHANGE DATES IN PARAMETERS AS NEEDED
 
-DROP TABLE IF EXISTS local_statistics.vs_transf_and_withdr;
-CREATE TABLE  local_statistics.vs_transf_and_withdr AS
+DROP TABLE IF EXISTS local_statistics.vs_counts_withdr_transf;
+CREATE TABLE local_statistics.vs_counts_withdr_transf AS
 WITH parameters AS
 ( SELECT
         '20250701' AS start_date,
@@ -29,7 +29,6 @@ WHERE location__t.name != 'serv,remo' and location__t.name NOT ilike 'wood%'
   AND SUBSTRING(SPLIT_PART(adminnotes.jsonb#>>'{}', 'date:', 2), '\d{8}')::date >= TO_DATE((SELECT start_date FROM parameters), 'YYYYMMDD')
   AND SUBSTRING(SPLIT_PART(adminnotes.jsonb#>>'{}', 'date:', 2), '\d{8}')::date < TO_DATE((SELECT end_date FROM parameters), 'YYYYMMDD')
 ),
--- Extract details from each admin note with better parsing
 notes_details AS (
 SELECT
         admin_notes.holdings_id,
@@ -40,14 +39,12 @@ SELECT
              WHEN holdings_admin_notes ILIKE '%ttype:w%' THEN 'withdrawn'
              ELSE NULL
         END AS ttype,
-        -- Better parsing of original location - get everything after "orig:" until space or end
         CASE WHEN holdings_admin_notes ILIKE '%orig:%'
              THEN LOWER(TRIM(REGEXP_REPLACE(
                  SPLIT_PART(holdings_admin_notes, 'orig:', 2),
                  '[^a-zA-Z,.]', '', 'g')))
              ELSE NULL
         END AS original_location_code,
-        -- Better parsing of piece count - get digits after "pcs:"
         COALESCE(
             CASE WHEN holdings_admin_notes ILIKE '%pcs:%'
                  THEN (REGEXP_MATCH(holdings_admin_notes, 'pcs:(\d+)', 'i'))[1]::int
@@ -55,11 +52,11 @@ SELECT
             END,
             1
         ) AS pieces,
-        -- Extract date for verification
         SUBSTRING(SPLIT_PART(holdings_admin_notes, 'date:', 2), '\d{8}') as transaction_date
 FROM admin_notes
 WHERE (holdings_admin_notes ILIKE '%ttype:t%' OR holdings_admin_notes ILIKE '%ttype:w%')
-)
+),
+base_data AS (
 SELECT
     CURRENT_DATE::DATE as report_date,
     instance__t.hrid AS instance_hrid,
@@ -83,29 +80,14 @@ WHERE nd.ttype IN ('transferred', 'withdrawn')
   AND location__t.name != 'serv,remo'
   AND location__t.name NOT ilike 'wood%'
   AND SUBSTRING(marc__t."content", 7, 1) IN ('a', 't', 'c', 'd')
-ORDER BY nd.holdings_hrid, nd.transaction_date, nd.admin_notes_ordinality;
- 
---Add financial group and get counts
---Can also set up this section as an automated report (additionally)
-
-DROP TABLE IF EXISTS local_statistics.vs_counts_withdr_transf;
-CREATE TABLE local_statistics.vs_counts_withdr_transf AS
-WITH financial_groups AS (
+),
+financial_groups AS (
     SELECT location_code,
         CASE
-            -- Handle NULL locations
             WHEN location_code IS NULL THEN 'Unassigned'
-            
-            -- Contract colleges - pattern-based on location code
             WHEN location_code ~* '^(gnva|ilr|mann|mnsc|orni|vet|ent)' THEN 'Contract'
-            
-            -- WCM - pattern-based on location code
             WHEN location_code ILIKE '%wood%' OR location_code ILIKE '%medical%' THEN 'WCM'
-            
-            -- Endowed colleges - pattern-based on location code
             WHEN location_code ~* '^(afr|asia|cons|cts|dcap|ech|engr|fine|hote|jgsm|law|lawr|maps|math|mus|oclc|olin|phys|rmc|sasa|uris|was)' THEN 'Endowed'
-            
-            -- Everything else is unassigned
             ELSE 'Unassigned'
         END AS financial_group
     FROM (
@@ -115,12 +97,12 @@ WITH financial_groups AS (
                     (SELECT location_code FROM local_static.vs_locations_libraries 
                      WHERE location_name = current_holdings_location_name LIMIT 1) 
             END AS location_code
-        FROM local_statistics.vs_transf_and_withdr
+        FROM base_data
         UNION
         SELECT DISTINCT 
             (SELECT location_code FROM local_static.vs_locations_libraries 
              WHERE location_name = current_holdings_location_name LIMIT 1)
-        FROM local_statistics.vs_transf_and_withdr 
+        FROM base_data 
         WHERE ttype = 'transferred'
     ) location_codes
 )
@@ -150,7 +132,7 @@ holdings_hrid,
     
     SUM(pieces) AS total_pieces
 
-FROM local_statistics.vs_transf_and_withdr t
+FROM base_data t
 LEFT JOIN financial_groups from_fg ON from_fg.location_code = 
     CASE WHEN ttype = 'transferred' THEN original_location_code
          WHEN ttype = 'withdrawn' THEN 
