@@ -41,6 +41,11 @@ WITH fiscal_year_data AS (
             lib.name NOT ILIKE '%Wood%' AND lib.name NOT ILIKE '%WCM%'
         ))
         AND (item_raw.jsonb#>>'{metadata,createdDate}') IS NOT NULL
+	
+	/*FOR QUARTERLY COUNTS ONLY: set dates as needed
+	  AND (item_raw.jsonb#>>'{metadata,createdDate}')::date >= '2026-04-01'
+        AND (item_raw.jsonb#>>'{metadata,createdDate}')::date < '2026-07-01'
+	*/
 )
 
 SELECT 
@@ -50,19 +55,19 @@ SELECT
     library_name,
     location_code,
     is_microform,
+    is_microform,
+            CASE
+            WHEN location_code IS NULL THEN 'Unassigned'
+            WHEN location_code ~* '^(gnva|ilr|mann|mnsc|orni|vet|ent)' THEN 'Contract'
+            WHEN location_code ILIKE '%wood%' OR location_code ILIKE '%medical%' THEN 'WCM'
+            WHEN location_code ~* '^(afr|asia|cons|cts|dcap|ech|engr|fine|hote|jgsm|law|lawr|maps|math|mus|oclc|olin|phys|rmc|sasa|uris|was)' THEN 'Endowed'
+            ELSE 'Unassigned'
+        END AS financial_group,
     COUNT(DISTINCT item_id) as total_physical_items
        
 FROM fiscal_year_data
-GROUP BY current_date, record_created_fiscal_year, primary_format, is_microform, library_name, location_code
+GROUP BY current_date, record_created_fiscal_year, primary_format, is_microform, financial_group, library_name, location_code
 ORDER BY record_created_fiscal_year, library_name, location_code, primary_format;
 
-/*===============================================================
-Query 2: Count of all unique instances, physical and electronic 
-=================================================================*/
-
-SELECT CURRENT_DATE AS todays_date, primary_format, COUNT(DISTINCT instance_id) as instance_count,
-location_code, library_name, is_microform, is_electronic
-FROM local_statistics.vs_primary_formats_flattened
-WHERE library_name NOT ILIKE '%Wood%'
   AND library_name NOT ILIKE '%WCM%'
   GROUP BY current_date, primary_format,is_microform, is_electronic, location_code, library_name;
