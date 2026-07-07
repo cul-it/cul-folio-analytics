@@ -1,8 +1,7 @@
 --MCR423
 --Count of Loans by date range 
 
---This query provides counts of loans by date range specifically for annual data collection purposes. 
---It excludes ILL and BD counts, as well as some material types. See query for details of exclusions. 
+--This query provides counts of loans by date range specifically for annual data collection purposes. It excludes materials that are not relevant for reporting purposes such as ILL and BD counts, as well as equipment. The query includes college financial group (contract or endowed). 
 --Query writer: Vandana Shah(vp25). Original query written by Joanne Leary (jl41)
 --Date posted: 6/30/26
 --Updated on 7/7/26 to include college financial group and to exclude loans with 3 hr policies (equipment) 
