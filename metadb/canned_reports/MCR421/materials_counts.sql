@@ -4,11 +4,13 @@
 --Date posted: 6/22/26
 --NOTE: TABLES CAN BE CREATED IN INDIVIDUAL SCHEMAS; the local_statistics schema is restricted.
 
---Note: there are two separate queries for counts Items and instances). Run them individually. 
+--Note: there are three separate queries for counts: items, instances, and Hathi instance counts. Run them individually. 
+--For Hathi counts, need to vpn and then log in to the Hathi database. 
 
 /*==========================================================================
  Query 1: Physical Items Count
 ============================================================================*/
+--ADJUST DATES AS NEEDED
 
 WITH fiscal_year_data AS (
     SELECT 
@@ -81,3 +83,21 @@ ORDER BY record_created_fiscal_year, library_name, location_code, primary_format
 
   AND library_name NOT ILIKE '%WCM%'
   GROUP BY current_date, primary_format,is_microform, is_electronic, location_code, library_name;
+
+/*==============================================================================================================================================
+Query 3: Count of all unique Hathi instances of titles belonging to CUL 
+============================================================================================================================================*/
+--ADJUST DATE AS NEEDED
+SELECT
+              source,
+              collection_code,
+              access,
+              bib_format,
+              count(distinct UofM_Record_Number) as title_count
+FROM hathifiles.raw_hathi
+WHERE source like 'COO%'
+              AND collection_code ='google'
+              AND access like 'allow'
+              AND date_last_update < '2026-07-01'
+GROUP BY source, collection_code, access, bib_format
+;
