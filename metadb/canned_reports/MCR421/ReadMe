@@ -5,8 +5,10 @@
 ## Overview
 
 This query is the final step in the materials count reporting process. It produces report-ready materials counts using the flattened formats table created by MCR 420.
-
 The query is designed to provide annual reporting statistics and may be modified to support changing reporting requirements.
+
+--Note: there are three separate queries for counts: items, instances, and Hathi instance counts. Run them individually. 
+--For Hathi counts, need to vpn and then log in to the Hathi database. 
 
 ## Notes
 
