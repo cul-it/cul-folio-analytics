@@ -69,7 +69,7 @@ FROM fiscal_year_data
 GROUP BY current_date, record_created_fiscal_year, primary_format, is_microform, financial_group, library_name, location_code
 
 /*==============================================================================================================================================
-QUERY 2: INSTANCE COUNTS
+Query 2: Count of all unique instances, physical and electronic 
 ============================================================================================================================================*/
 	SELECT primary_format, COUNT(DISTINCT instance_id) as instance_count,
 location_code, library_name, is_microform, is_electronic
