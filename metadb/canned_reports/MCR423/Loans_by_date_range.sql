@@ -5,11 +5,12 @@
 --It excludes ILL and BD counts, as well as some material types. See query for details of exclusions. 
 --Query writer: Vandana Shah(vp25). Original query written by Joanne Leary (jl41)
 --Date posted: 6/30/26
+--Updated on 7/7/26 to include college financial group and to exclude loans with 3 hr policies (equipment) 
 
 WITH PARAMETERS AS (
     SELECT
         '2025-07-01'::date AS start_date,
-        '2026-06-30'::date AS end_date
+        '2026-07-01'::date AS end_date
 )
 
 SELECT 
@@ -29,7 +30,9 @@ SELECT
     loans_items.item_effective_location_name_at_check_out,
     loans_items.patron_group_name,
     loans_items.material_type_name,
-    
+    loans_items.loan_policy_name,
+    loans_items.lost_item_policy_name,
+   
     -- Count DISTINCT loan_ids
     COUNT(DISTINCT loans_items.loan_id) AS total_loans
                 
@@ -41,17 +44,20 @@ WHERE loans_items.loan_date >= (SELECT start_date FROM parameters)
   AND loans_items.loan_date < (SELECT end_date FROM parameters)
   
   -- Material type filter
-  AND loans_items.material_type_name IN (
-      'Book', 'Carrel Keys', 'Map', 'Microform', 'Music (score)', 
+  AND ((loans_items.material_type_name IN (
+      'Book', 'Computfile', 'Map', 'Microform', 'Music (score)', 
       'Newspaper', 'Object', 'Periodical', 'Serial', 'Soundrec', 
       'Textual resource', 'Unbound', 'unspecified', 'Visual'
-  )
+  ) OR loans_items.material_type_name IS NULL))
   
   -- Patron group filter  
   AND loans_items.patron_group_name IN (
-      'Carrel', 'Faculty', 'Graduate', 'Library Card', 
-      'Proxy Borrower', 'Staff', 'Undergraduate'
+      'Borrow Direct', 'Carrel', 'Faculty', 'Graduate', 'Interlibrary Loan', 
+      'Library Card', 'Proxy Borrower', 'Staff', 'Undergraduate'
   )
+  
+  -- Exclude 3 hour loan policies so as to weed out equipment loans in the case of loans during the fiscal year whose item records have since been deleted (their material type will be NULL).
+   AND loans_items.lost_item_policy_name IN ('General Collection repl (default)','Reserves replacement','No Replacement')
 
 GROUP BY 
     calendar_year, 
@@ -59,11 +65,16 @@ GROUP BY
     library_name, 
     item_effective_location_name_at_check_out,
     patron_group_name, 
-    material_type_name
+    material_type_name,
+    loans_items.loan_policy_name,
+    loans_items.lost_item_policy_name
         
 ORDER BY 
     fiscal_year, 
     calendar_year, 
     library_name, 
     patron_group_name, 
-    material_type_name;
+    material_type_name,
+    loans_items.loan_policy_name,
+    loans_items.lost_item_policy_name
+;
