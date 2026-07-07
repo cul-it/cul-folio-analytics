@@ -2,4 +2,4 @@
 --Count of Loans by date range 
 
 This query provides counts of loans by date range specifically for annual data collection purposes. 
-It excludes ILL and BD counts, as well as some material types. See query for details of exclusions. 
+It excludes materials that are not relevant for reporting purposes such as ILL and BD counts, as well as equipment. The query includes college financial group (contract or endowed). 
