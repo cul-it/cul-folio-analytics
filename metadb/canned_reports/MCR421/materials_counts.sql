@@ -4,7 +4,7 @@
 --Date posted: 6/22/26
 --NOTE: TABLES CAN BE CREATED IN INDIVIDUAL SCHEMAS; the local_statistics schema is restricted.
 
---Note: there are two separate queries for counts. Run them individually. 
+--Note: there are two separate queries for counts Items and instances). Run them individually. 
 
 /*==========================================================================
  Query 1: Physical Items Count
@@ -67,6 +67,16 @@ SELECT
        
 FROM fiscal_year_data
 GROUP BY current_date, record_created_fiscal_year, primary_format, is_microform, financial_group, library_name, location_code
+
+/*==============================================================================================================================================
+QUERY 2: INSTANCE COUNTS
+============================================================================================================================================*/
+	SELECT primary_format, COUNT(DISTINCT instance_id) as instance_count,
+location_code, library_name, is_microform, is_electronic
+FROM local_statistics.vs_primary_formats_flattened
+WHERE library_name NOT ILIKE '%Wood%'
+  AND library_name NOT ILIKE '%WCM%'
+  GROUP BY primary_format,is_microform, is_electronic, location_code, library_name;
 ORDER BY record_created_fiscal_year, library_name, location_code, primary_format;
 
   AND library_name NOT ILIKE '%WCM%'
