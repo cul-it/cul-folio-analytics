@@ -146,3 +146,14 @@ LEFT JOIN financial_groups to_fg ON to_fg.location_code =
 
 GROUP BY 1, 2, 3, 4, 5, 6, 7, 8, 9
 ORDER BY ttype, from_location, to_location;
+
+/*============================================================================================================
+COUNTS BASED ON CREATED TABLE
+==============================================================================================================*/
+/*ANNUAL COUNTS - set as database task to putput as Excel file*/
+SELECT * from local_statistics.vs_counts_withdr_transf;
+
+/*QUARTERLY COUNTS - set as database task to putput as Excel file*/
+SELECT * 
+FROM local_statistics.vs_counts_withdr_transf 
+WHERE transaction_date >= '20260401' AND transaction_date < '20260701';
