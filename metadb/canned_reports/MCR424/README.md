@@ -18,8 +18,7 @@ The query:
 - Excludes suppressed instances.
 - Excludes suppressed holdings records.
 - Excludes holdings in the following locations:
-  - `serv`
-  - `remo`
+  - `serv, remo`
 - Excludes holdings with notes indicating:
   - Bound-with relationships
   - Filmed-with relationships
