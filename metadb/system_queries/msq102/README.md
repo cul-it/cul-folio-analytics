@@ -1,21 +1,20 @@
-**MSQ106**
+# MSQ102: Multiple SRS ID Check
 
-- **Created:** 2/16/26  
-- **Written by:** Joanne Leary and Sharon Markus  
+**Last updated:** 11/17/25  
+**File:** multiple_srs_id_check.sql  
+**Written by:** Joanne Leary  
+**Reviewed by:** Sharon Markus
 
----
+## Purpose
 
-### Description
-This query counts distinct `id` values on the `records_lb` table that are associated with `external_hrid` values on the same table.  
-It is intended to provide an additional check related to the count performed by the **MSQ102** query.
+This query finds instance_hrid records that are linked to multiple distinct srs_ids.
 
----
+For each instance_hrid in `folio_source_record.marc__t`, it counts the unique srs_id values and returns only those instances where that count is greater than one (potential duplicates).
 
-### Assumptions
-- `instance_hrid` on `marc__t` = `external_hrid` on `records_lb`  
-- `id` on `records_lb` = `srs_id` on `marc__t`
-- `instance_hrid` on `marc__t` = `external_hrid` on `records.lb 
-- `instance_id` on `marc__t` = `external_id` on `records.lb` 
+## Output
+
+- instance_hrid
+- Count of distinct srs_id records attached to it
 
 
 
