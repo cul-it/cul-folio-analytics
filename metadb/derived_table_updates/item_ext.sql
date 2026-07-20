@@ -6,17 +6,11 @@
 --CREATE TABLE item_ext AS
 
 WITH items AS (
-
     SELECT
-
         i.id,
-
         it.hrid,
-
         jsonb_extract_path_text(i.jsonb, 'accessionNumber') AS accession_number,
-
         it.barcode,
-
         jsonb_extract_path_text(i.jsonb, 'chronology') AS chronology,
 
         jsonb_extract_path_text(i.jsonb, 'copyNumber') AS copy_number,
@@ -63,9 +57,9 @@ WITH items AS (
 
         jsonb_extract_path_text(i.jsonb, 'metadata', 'updatedByUserId')::uuid AS updated_by_user_id,
 
-        jsonb_extract_path_text(i.jsonb, 'metadata', 'updatedDate') AS updated_date,
+        (jsonb_extract_path_text(i.jsonb, 'metadata', 'updatedDate'))::timestamptz AS updated_date,
 
-      (jsonb_extract_path_text(i.jsonb, 'metadata', 'updatedDate'))::timestamptz AS updated_date_timezone,
+      --(jsonb_extract_path_text(i.jsonb, 'metadata', 'updatedDate'))::timestamptz AS updated_date_timezone,
 
         jsonb_extract_path_text(i.jsonb, 'descriptionOfPieces') AS description_of_pieces,
 
