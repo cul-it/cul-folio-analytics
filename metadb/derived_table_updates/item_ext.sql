@@ -53,7 +53,7 @@ WITH items AS (
 
         i.effectivelocationid AS effective_location_id,
 
-        i.creation_date AS created_date,
+        i.creation_date::timestamptz AS created_date,
 
         jsonb_extract_path_text(i.jsonb, 'metadata', 'updatedByUserId')::uuid AS updated_by_user_id,
 
@@ -63,9 +63,9 @@ WITH items AS (
 
         jsonb_extract_path_text(i.jsonb, 'descriptionOfPieces') AS description_of_pieces,
 
-        jsonb_extract_path_text(i.jsonb, 'status', 'date') AS status_date,      
+        (jsonb_extract_path_text(i.jsonb, 'status', 'date'))::timestamptz AS status_date,      
 
-      (jsonb_extract_path_text(i.jsonb, 'status', 'date'))::timestamptz AS status_date_timezone,
+      --(jsonb_extract_path_text(i.jsonb, 'status', 'date'))::timestamptz AS status_date_timezone,
 
         jsonb_extract_path_text(i.jsonb, 'status', 'name') AS status_name,
 
@@ -159,7 +159,7 @@ SELECT
 
     items.status_date,
 
-  items.status_date_timezone,
+  --items.status_date_timezone,
 
     items.status_name,
 
@@ -173,7 +173,7 @@ SELECT
 
     items.updated_date,
 
-  items.updated_date_timezone,
+  --items.updated_date_timezone,
 
     items.effective_shelving_order
 
