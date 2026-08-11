@@ -1,4 +1,4 @@
- --1----selects pull of records based on ldr type ans 008 publication status and filters certain locations-----------
+  --1----selects pull of records based on ldr type ans 008 publication status and filters certain locations-----------
 DROP table IF EXISTS local_hathitrust.h_mo_1;
 CREATE TABLE local_hathitrust.h_mo_1 AS
 SELECT
@@ -7,11 +7,9 @@ SELECT
     sm.field,
     sm."content" AS ct1,
     substring(sm."content", 7, 2) AS "type_m"
-FROM folio_source_record.marc__t sm 
-LEFT JOIN folio_source_record.records_lb__ rl on sm.matched_id=rl.matched_id
-WHERE (sm.field = '000' AND substring(sm."content", 7, 2) IN ('aa', 'am', 'cm', 'dm', 'em', 'tm'))
-       and rl.state ='ACTUAL'
-  ;
+FROM local_derived.marc__t sm 
+WHERE (sm.field = '000' AND substring(sm."content", 7, 2) IN ('aa', 'am', 'cm', 'dm', 'em', 'tm'));
+
 --2--------filter locations-------------------------------
 DROP TABLE IF EXISTS local_hathitrust.h_mo_2; 
 CREATE TABLE local_hathitrust.h_mo_2 AS 
@@ -27,8 +25,8 @@ FROM  local_hathitrust.h_mo_1 hm
 LEFT JOIN  folio_derived.holdings_ext he ON hm.instance_id::uuid=he.instance_id::uuid
 WHERE he.permanent_location_name NOT ILIKE ALL (ARRAY[
       'serv,remo', 'Borrow Direct', 'Interlibrary Loan - Olin','%LTS%', '%A/V', 'No Library', 
-      '%inactive%', '%Olin A/V%', '%micro%'])
-;
+      '%inactive%', '%Olin A/V%', '%micro%', 'wood%']);
+
 --3------------------------selects records with 245 $h[electronic resource] and filter------------------------
 DROP TABLE IF EXISTS local_hathitrust.h_mo_3;   
 CREATE TABLE local_hathitrust.h_mo_3 AS
@@ -42,14 +40,11 @@ SELECT
     he.holdings_hrid,
     he.permanent_location_name,
     he.call_number
-FROM folio_source_record.marc__t sm
-LEFT JOIN folio_source_record.records_lb__ rl on sm.matched_id=rl.matched_id
+FROM local_derived.marc__t sm
 LEFT JOIN folio_derived.holdings_ext he ON rl.external_id::uuid = he.instance_id::uuid
 WHERE ((sm.field = '245' AND sm.sf ='h' AND sm.CONTENT like '%[electronic resource]%')
       OR (sm.field = '245' AND sm.sf ='h' AND sm.CONTENT like '%[microform]%'))
-      AND he.permanent_location_name !~~ 'serv,remo'
-      AND rl.state='ACTUAL'
-)
+      AND he.permanent_location_name !~~ 'serv,remo')
 SELECT 
     hm.instance_id,
     hm.instance_hrid,
@@ -60,8 +55,8 @@ SELECT
     hm.discovery_suppress
 FROM local_hathitrust.h_mo_2 hm
 LEFT JOIN twofortyfive t ON hm.instance_id::uuid = t.instance_id::uuid
-WHERE t.instance_id IS NULL
-;
+WHERE t.instance_id IS NULL;
+
 ---4--------gets rid of some call numbers-------------------------------------------
 DROP TABLE IF EXISTS local_hathitrust.h_mo_4;
 CREATE TABLE local_hathitrust.h_mo_4 AS
@@ -86,8 +81,8 @@ WHERE hm.call_number !~~*'On Order%'and hm.call_number !~~*'In Process'
       and hm.call_number !~~*'%cancelled%'and hm.call_number !~~*'Gussman Box'
       and hm.call_number !~~*'online'and hm.call_number !~~*'test'
       and hm.call_number !~~* 'order cancelled'and hm.call_number !~~* '%disk%'
-      and hm.call_number !~~*'%disc%'
-  ;
+      and hm.call_number !~~*'%disc%';
+
 --5--------------------filters records for presents of oclc number------------------    
 DROP TABLE IF EXISTS local_hathitrust.h_mo_5;
 CREATE TABLE local_hathitrust.h_mo_5 AS
@@ -112,20 +107,15 @@ SELECT
     hm.discovery_suppress,
     oclcno.id_type,
     oclcno.oclc_number2,
-CASE 
-    WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocm%' THEN SUBSTRING(oclcno.oclc_number2, 11)
-    WHEN oclcno.oclc_number2 LIKE '(OCoLC)ocn%' THEN SUBSTRING(oclcno.oclc_number2, 11)
-    WHEN oclcno.oclc_number2 LIKE '(OCoLC)%' THEN SUBSTRING(oclcno.oclc_number2, 8)
-        ELSE oclcno.oclc_number2 END AS oclc
+    regexp_replace(oclcno.oclc_number2, '^\(OCoLC\)(ocm|ocn|on)?', '') AS oclc_no
 FROM local_hathitrust.h_mo_4 hm
-INNER JOIN oclc_no AS oclcno ON hm.instance_id::uuid = oclcno.instance_id::uuid
-;
+INNER JOIN oclc_no AS oclcno ON hm.instance_id::uuid = oclcno.instance_id::uuid;
 
 ----------6 cleares statements ----------
 DROP TABLE IF EXISTS local_hathitrust.h_mo_6;
 CREATE TABLE local_hathitrust.h_mo_6 AS 
 SELECT
-     hm.instance_hrid,hm.oclc,
+     hm.instance_hrid, hm.oclc_no,
      hs.holdings_statement,
      hm.instance_id,
      hm.hold_id,
@@ -139,15 +129,16 @@ FROM local_hathitrust.h_mo_5 hm
 LEFT JOIN folio_derived.holdings_ext he ON hm.hold_id = he.id
 LEFT JOIN folio_derived.holdings_statements hs ON hm.hold_id = hs.holdings_id 
 LEFT JOIN folio_derived.holdings_administrative_notes han on hm.hold_id=han.holdings_id
-WHERE  (hs.holdings_statement IN ('1 v.') OR hs.holdings_statement IS NULL)
-;
+WHERE  (hs.holdings_statement IN ('1 v.') OR hs.holdings_statement IS NULL);
+
+
 ---7-------assigns statuses and conditions-----------
 DROP TABLE IF EXISTS local_hathitrust.h_mo_7;
 CREATE TABLE local_hathitrust.h_mo_7 AS 
 SELECT
   ie.item_id,
   hm.holdings_statement,
-  hm.instance_hrid,hm.oclc,
+  hm.instance_hrid,hm.oclc_no,
   hm.instance_id,
   hm.hold_id,
   hm.holdings_hrid,
@@ -168,17 +159,16 @@ WHERE NOT (
    OR COALESCE(ie.chronology,  '') ~* '(disk|disc|cd|dvd)'
 )
 GROUP BY
-  ie.item_id, hm.holdings_statement, hm.instance_hrid,hm.oclc,hm.instance_id,
+  ie.item_id, hm.holdings_statement, hm.instance_hrid,hm.oclc_no,hm.instance_id,
   hm.hold_id,hm.holdings_hrid,hm.permanent_location_name,hm.call_number,hm.discovery_suppress,
-  hm.administrative_note,ie.enumeration,ie.chronology,ie.status_name,ie.damaged_status_name
-;
+  hm.administrative_note,ie.enumeration,ie.chronology,ie.status_name,ie.damaged_status_name;
 
 DROP TABLE IF EXISTS local_hathtrust.h_mo_8;
 CREATE TABLE local_hathitrust.h_mo_8 AS
 SELECT
     hm.item_id,
     hm.holdings_statement,
-    hm.instance_hrid,hm.oclc,
+    hm.instance_hrid,hm.oclc_no,
     hm.instance_id,
     hm.holdings_hrid,
     hm.permanent_location_name,
@@ -202,8 +192,7 @@ SELECT
         ELSE 'CH'
     END AS "Status",
     CASE WHEN hm.damaged_status_name = 'Damaged' THEN 'BRT' ELSE NULL END AS "Condition"
-FROM local_hathitrust.h_mo_7 hm
-;
+FROM local_hathitrust.h_mo_7 hm;
 
 DROP TABLE IF EXISTS local_hathitrust.h_mo_final;
 CREATE TABLE local_hathitrust.h_mo_final AS
@@ -215,20 +204,19 @@ WITH gov_doc AS (
              AND substring(sm.content, 29, 1) IN ('f')
              THEN '1'
              ELSE '0' END AS GovDoc
-FROM folio_source_record.marc__t sm
-LEFT JOIN folio_source_record.records_lb rl on sm.matched_id=rl.matched_id
-WHERE sm.field = '008' and rl.state='ACTUAL'
-)
+FROM local_derived.marc__t sm
+WHERE sm.field = '008' )
 SELECT
-   hm.oclc,
+   hm.oclc_no,
    hm.instance_hrid AS local_id,
    gd.GovDoc,
    hm."Status" AS "status",
    hm."Condition" AS "condition"
 FROM  local_hathitrust.h_mo_8 AS hm
 LEFT JOIN gov_doc AS gd ON hm.instance_hrid = gd.instance_hrid
-WHERE hm.oclc NOT IN ('','NEW')
-;
+WHERE hm.oclc_no NOT IN ('','NEW');
+
+
 DROP table IF EXISTS local_hathitrust.h_mo_1;
 DROP table IF EXISTS local_hathitrust.h_mo_2;
 DROP table IF EXISTS local_hathitrust.h_mo_3;
