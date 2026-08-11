@@ -15,7 +15,7 @@ LEFT JOIN folio_derived.holdings_ext he ON sm.instance_id = he.instance_id::uuid
 WHERE (sm.field = '000' AND substring(sm.content, 7, 2) = 'as')
   AND (he.permanent_location_name IS NULL OR he.permanent_location_name NOT ILIKE ALL (ARRAY[
             'serv,remo', 'Borrow Direct', 'Interlibrary Loan - Olin', '%LTS%', '%A/V',
-            'No Library', '%inactive%', '%Olin A/V%', '%micro%']));
+            'No Library', '%inactive%', '%Olin A/V%', '%micro%', 'wood%']));
 
 --2------------selects/deselects records with 945 (monoseries standing orders) and filters it from h_s_1 table-------------------------------------
 DROP TABLE IF EXISTS local_hathitrust.h_s_2;
