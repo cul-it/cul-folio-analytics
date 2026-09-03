@@ -15,3 +15,7 @@ can be limited to just requested purchases (un-comment out lines 108-109).
 -- 1-23-24: changed the calculation for days till recd at LTS to use the po_created_date instead of the item_created_date
 -- 12-9-24: added po_line_number in last query; updated fund sort; restricted to requested items; converted to Metadb
 -- 09/03/26: made revisions for the fund/finance group sort and various other updates
+          -- added receiving note, fund distribution type and value 
+	        -- updated requester and receiving note conditions; updated fund/finance group for FY2025-FY2027; updated Order By fields
+	        -- added "OR" condition for vendor code in orders subquery: pi2.vendor_code in ('AmazonBus', 'AMAZON-ILL') 
+
