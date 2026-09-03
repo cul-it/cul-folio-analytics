@@ -4,10 +4,11 @@
 
 -- Query writer: Joanne Leary (jl41)
 -- Date posted: 12/6/24
+-- Date updated: 09/03/26
 
 WITH parameters AS 
 (SELECT 
-'371102'::varchar as instance_hrid_filter
+'15298140'::varchar as instance_hrid_filter
 ),
 
 items AS 
@@ -58,8 +59,8 @@ SELECT
         items.permanent_location_name,
         items.whole_call_number,
         COUNT (items.item_hrid) AS number_of_items,
-        SUM (items.folio_circs) + SUM (items.voyager_circs) AS total_circs
-
+        SUM (coalesce (items.folio_circs,0) + coalesce (items.voyager_circs,0)) AS total_circs
+        
 FROM items 
 
 GROUP BY 
@@ -69,3 +70,4 @@ GROUP BY
         items.permanent_location_name,
         items.whole_call_number
 ;
+
