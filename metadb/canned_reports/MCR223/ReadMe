@@ -1,0 +1,21 @@
+ MCR223
+Approvals_and_firm_orders 
+
+This query finds all orders (not just approvals) showing the "bill to" and "ship to" locations in the purchase order or invoice. 
+It also includes the purchase order location, workflow status, order type, order format, vendor name, fund, and fiscal year. 
+-- 10-12-23: added po_instance to get location
+-- 1-4-24: revised to get call number, LC class and class numbers, holdings hrids, holdings locations, holdings type name, mode of issuance name, 
+--   instance and holdings suppress, finance group; commented out order type at Kizer's request 
+-- 1-5-24: added publisher, publication_date, language, primary subject
+-- 1-9-24: put "order type" back in; added bill-to and ship-to for purchase orders and invoices
+-- 1-10-24: aggregated the results in a final query at the end to get rid of combinatorial duplicates
+-- 1-11-24: added filters for po_bill_to, inv_bill_to, po_ship_to and order type
+-- 1-16-24: added sorting for Firm orders and Approvals, with categories for print and electronic books and serials
+-- 1-23-24: added format translation from the Header (folio_format_type)
+-- 1-24-24: resequences the fields in the order preferred by Kizer
+-- 1-29-24: per Natalya, changed the sorting algorithm to include 'LTS Standing Orders','LTS Documents' in Ongoing with 'Serials' result
+-- 8-17-26: modified to get ebook firm orders for all Folio fiscal years
+	-- updated fund/finance group sorting statement for changes in FY2025 - FY2027
+-- 8-31-26 (posted on 9/3/26): reinstated Series; now points to local_derived.instance_series
+	-- added receipt status and excluded "Cancelled". Added instance_publication derived table and used coalesce (po_line__t.publisher, instance_publisher.publisher) to get fewer blanks
+
