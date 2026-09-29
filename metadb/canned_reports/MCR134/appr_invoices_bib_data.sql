@@ -1,4 +1,3 @@
-
 --MCR134
 --Approved Invoices with bib data 
 --Lastupdated: 8-20-26
@@ -12,6 +11,7 @@
 -- 8-19-26: removed instance_subjects_extract subquery and substituted instance_subjects derived table; updated regular expression for LC class from (0,} to {1,3})
 -- corrected WHERE section for parameters values: transaction ledger name, format name, expense class, LC class, language
 -- 8-20-26: updated WHERE section again to allow for null values
+-- 9-29-26: updated to include publisher (lines 131, 181, 217, 229)
 
 WITH parameters AS (
     select
@@ -127,6 +127,7 @@ SELECT               -- combines all the information from above subqueries and r
     ftie.effective_transaction_amount/fq.fixed_quantity AS transaction_amount_per_qty,
     ftie.effective_transaction_amount,
     ftie.transaction_type,
+    ip.publisher,
     ftie.invoice_vendor_name,
     inv.vendor_invoice_no,
     invl.invoice_line_number,
@@ -176,6 +177,7 @@ FROM
     LEFT JOIN field050 ON iext.instance_hrid = field050.instance_hrid
     LEFT JOIN folio_derived.instance_languages AS lang ON lang.instance_id = pol.instance_id
     LEFT JOIN folio_derived.instance_subjects as inssub on iext.instance_id = inssub.instance_id
+    left join folio_derived.instance_publication as ip on iext.instance_id = ip.instance_id
     LEFT JOIN fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
     LEFT JOIN format_extract AS formatt ON pol.instance_id::UUID = formatt.instance_id
     LEFT JOIN folio_derived.po_lines_locations on ftie.po_line_id::UUID = po_lines_locations.pol_id::UUID
@@ -211,6 +213,7 @@ WHERE
     AND (lang.language_ordinality = 1 OR lang.instance_id is null or language_ordinality ISNULL)
     AND (((formatt.bib_format_display ilike (SELECT format_name FROM parameters) OR (SELECT format_name FROM parameters) = '')) or formatt.bib_format_display is null)
     AND (((field050.lc_class = (SELECT lc_class_filter FROM parameters) OR (SELECT lc_class_filter FROM parameters) ='')) or field050.lc_class is null)
+	and (ip.publication_ordinality = 1 or ip.instance_id is null)
 GROUP BY
     ftie.transaction_id,
     coalesce (replace(replace (iext.index_title, chr(13), ''),chr(10),''), replace(replace (iext.title, chr(13), ''),chr(10),''),' - '),
@@ -222,6 +225,7 @@ GROUP BY
     ftie.effective_transaction_amount/fq.fixed_quantity,
     ftie.effective_transaction_amount,
     ftie.transaction_type,
+    ip.publisher,
     ftie.invoice_vendor_name,
     inv.vendor_invoice_no,
     invl.invoice_line_number,
