@@ -1,3 +1,4 @@
+--NOTE: need to find missing fields and add them if possible
 --metadb:table finance_funds
 
 -- This derived table shows data of the funds from the finance app,
