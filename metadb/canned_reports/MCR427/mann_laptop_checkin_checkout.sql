@@ -104,6 +104,7 @@ combined AS (
         checkin_actions
 )
 SELECT
+    to_char(NOW(), 'MM-DD-YYYY HH12:MI AM') AS "report generated",
     service_point_name,
     action_date,
     day_of_week,
@@ -111,9 +112,7 @@ SELECT
     action_type,
     item_effective_location_name_at_check_out,
     item_status,
-    SUM(ct) AS total_date_count,
-    SUM(CASE WHEN hour_of_day >= 7 AND hour_of_day < 15 THEN ct ELSE 0 END) AS "7amto3pm_count",
-    SUM(CASE WHEN hour_of_day >= 15 AND hour_of_day < 24 THEN ct ELSE 0 END) AS "3pmto12am_count"
+    SUM(ct) AS total_date_count
 FROM
     combined
 WHERE
@@ -135,4 +134,6 @@ ORDER BY
     action_type,
     item_effective_location_name_at_check_out,
     item_status;
+
+
 
