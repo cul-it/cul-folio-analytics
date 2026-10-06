@@ -1,0 +1,128 @@
+--MCR428
+--circ_analysis_selected_LC_class.sql
+--9-28-26: CUL circulation analysis of selected LC classes (generalized)
+-- his query finds CUL-wide circulation statistics for selected LC classes
+    --finds the item count for items in circulating collections across CUL (based on loan type, material type and location)
+    --find circ counts in the time period specified
+    --joins the two results to show total circulating items, total items circulated, most recent loan, and percentages of loaned items
+    --excludes non-LC call numbers, "No call number" and "Zoom" call numbers
+WITH parameters AS
+(SELECT
+    UNNEST (ARRAY ['N','NB','NC','ND','NE','NK','NX','TR','TT','Z']) AS lc_class, -- enter each LC class in single quotes, separated by commas
+    '2021-01-01' AS start_loan_date -- enter a date in format 'yyyy-mm-dd'; if left blank, will give all loans in Folio, including migrations from Voyager
+),
+
+-- 1. Get item counts for circulating materials
+
+itemcounts AS
+(SELECT
+    ll.library_name,
+    ll.location_name,
+    SUBSTRING (item_ext.effective_call_number,'[A-Z]{1,3}') AS lc_class,
+    COUNT (DISTINCT item_ext.item_id) AS count_of_items_in_circulating_collection
+
+FROM folio_derived.locations_libraries AS ll
+    INNER JOIN folio_derived.item_ext
+    ON ll.location_id = item_ext.effective_location_id
+
+WHERE
+    item_ext.effective_call_number_type_name = 'Library of Congress classification'
+    AND item_ext.permanent_loan_type_name NOT SIMILAR TO '%(Non-circulating|ILL|Keys|BD)%'
+    AND ll.location_name NOT SIMILAR TO '%(Rare|Ref|Tech|Locked|Kheel|Nest|Archiv)%'
+    AND ll.library_name NOT SIMILAR TO '%(RMC|Rare|Removed|Kheel|No Library)%'
+    AND ll.library_name IS NOT NULL
+    AND item_ext.material_type_name NOT IN
+        ('Equipment','Peripherals','Laptop','Supplies','Carrel Keys','Locker Keys','Room Keys','Umbrella','ILL MATERIAL','BD MATERIAL')
+    AND ll.location_name != 'serv,remo'
+    AND (item_ext.discovery_suppress = false OR item_ext.discovery_suppress IS NULL)
+    AND item_ext.effective_call_number NOT ILIKE '%No call number%'
+    AND item_ext.effective_call_number NOT ILIKE '%Zoom%'
+    AND SUBSTRING (item_ext.effective_call_number,'[A-Z]{1,3}') IN (SELECT lc_class FROM parameters)
+
+GROUP BY
+    ll.library_name,
+    ll.location_name,
+    SUBSTRING (item_ext.effective_call_number,'[A-Z]{1,3}')
+),
+
+-- 2. Get loan counts
+
+loans AS
+(SELECT
+    parameters.start_loan_date AS loans_starting_date,
+    ll.library_name,
+    ll.location_name,
+    SUBSTRING (item_ext.effective_call_number,'[A-Z]{1,3}') AS lc_class,
+    itemcounts.count_of_items_in_circulating_collection,
+    COALESCE (COUNT (DISTINCT li.item_id),0) AS count_of_distinct_items_loaned,
+    COALESCE (COUNT (DISTINCT li.loan_id),0) AS count_of_loans,
+    MAX (li.loan_date::date) AS most_recent_loan
+
+FROM folio_derived.item_ext
+    LEFT JOIN folio_derived.loans_items AS li
+    ON item_ext.item_id = li.item_id
+
+    LEFT JOIN folio_derived.locations_libraries AS ll
+    ON item_ext.permanent_location_id = ll.location_id
+
+    LEFT JOIN itemcounts
+    ON ll.library_name = itemcounts.library_name
+        AND ll.location_name = itemcounts.location_name
+        AND SUBSTRING (item_ext.effective_call_number,'[A-Z]{1,3}') = itemcounts.lc_class
+
+CROSS JOIN parameters
+
+WHERE
+    item_ext.effective_call_number_type_name = 'Library of Congress classification'
+    AND item_ext.permanent_loan_type_name NOT SIMILAR TO '%(Non-circulating|ILL LOAN|Keys|BD LOAN)%'
+    AND ll.location_name NOT SIMILAR TO '%(Rare|Ref|Tech|Locked|Kheel|Nest|Archiv)%'
+    AND ll.library_name NOT SIMILAR TO '%(RMC|Rare|Removed|Kheel|No Library)%'
+    AND ll.library_name IS NOT NULL
+    AND item_ext.material_type_name NOT IN
+        ('Equipment','Peripherals','Laptop','Supplies','Carrel Keys','Locker Keys','Room Keys','Umbrella','ILL MATERIAL','BD MATERIAL')
+    AND ll.location_name != 'serv,remo'
+    AND (item_ext.discovery_suppress = false OR item_ext.discovery_suppress IS NULL)
+    AND item_ext.effective_call_number NOT ILIKE '%No call number%'
+    AND item_ext.effective_call_number NOT ILIKE '%Zoom%'
+    AND SUBSTRING (item_ext.effective_call_number,'[A-Z]{1,3}') = parameters.lc_class
+
+GROUP BY
+    parameters.start_loan_date,
+    ll.library_name,
+    ll.location_name,
+    SUBSTRING (item_ext.effective_call_number,'[A-Z]{1,3}'),
+    itemcounts.count_of_items_in_circulating_collection
+)
+
+-- 3. Join item counts to loan counts
+
+SELECT
+    loans.loans_starting_date,
+    itemcounts.library_name,
+    itemcounts.location_name,
+    itemcounts.lc_class,
+    itemcounts.count_of_items_in_circulating_collection,
+    SUM (loans.count_of_distinct_items_loaned) AS count_of_distinct_items_loaned,
+    SUM (loans.count_of_loans) AS count_of_loans,
+    loans.most_recent_loan,
+    (SUM (loans.count_of_distinct_items_loaned)/itemcounts.count_of_items_in_circulating_collection)::NUMERIC (12,4) AS percent_circulated
+
+FROM itemcounts
+    LEFT JOIN loans
+    ON itemcounts.library_name = loans.library_name
+        AND itemcounts.location_name = loans.location_name
+        AND itemcounts.lc_class = loans.lc_class
+
+GROUP BY
+    loans.loans_starting_date,
+    loans.most_recent_loan,
+    itemcounts.library_name,
+    itemcounts.location_name,
+    itemcounts.lc_class,
+    itemcounts.count_of_items_in_circulating_collection
+
+ORDER BY
+    itemcounts.library_name,
+    itemcounts.location_name,
+    itemcounts.lc_class
+;
