@@ -1,5 +1,11 @@
--- 10-20-26: get patron notes
+--metadb:table patron_notes
 
+
+-- 10-20-26: This query derives patron notes from the users table and creates the local_derived.patron_notes table.
+
+DROP TABLE IF EXISTS local_derived.patron_notes;
+
+CREATE TABLE local_derived.patron_notes AS
 SELECT 
 	users.id as user_id,
 	users.jsonb#>>'{personal,lastName}' AS last_name,
