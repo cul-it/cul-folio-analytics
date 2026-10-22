@@ -1,7 +1,6 @@
 --metadb:table patron_notes
 
-
--- 10-20-26: This query derives patron notes from the users table and creates the local_derived.patron_notes table.
+-- 10-20-26: This query derives patron notes from the folio_users table and creates the patron_notes table in the local_derived schema.
 
 DROP TABLE IF EXISTS local_derived.patron_notes;
 
