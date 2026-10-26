@@ -13,5 +13,6 @@ This query does not use the derived table "users_groups" because that table is w
 	-- updated size grouping formula to include "#" symbols, and for cases where the word "Oversize" appears without "+" symbols
 **Updated:** 3-20-25  
 **Date Posted:** 6-7-24  
+-- 10-22-26: added "distinct" to final query and recs.shelving order collate “C” to the Select section
 
 
