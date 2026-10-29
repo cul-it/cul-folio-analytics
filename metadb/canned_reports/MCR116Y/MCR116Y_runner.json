@@ -1,0 +1,44 @@
+{
+  "id": "MCR116Y",
+  "enabled": true,
+  "metadata": {
+    "name": "Payables invoices not fed to accounting (yesterday)",
+    "description": "Daily list of paid voucher lines from the previous day that were not sent to accounting (manuals), per account number.",
+    "owner": "FOLIO Reporting Team",
+    "tags": [
+      "mcr116y",
+      "finance",
+      "invoices"
+    ]
+  },
+  "reports": [
+    {
+      "enabled": true,
+      "database": "METADB",
+      "sql_file": "payables_inv_not_fed_notes_yesterday.sql",
+      "schedule": {
+        "type": "daily",
+        "time": "12:00"
+      },
+      "params": null,
+      "outputs": [
+        {
+          "service": "box",
+          "location": "372737442926",
+          "filename": "{id}_{current_datetime}",
+          "file_extension": "xlsx"
+        }
+      ],
+      "email_notifications": [
+        {
+          "recipients": [
+            "kowalski@cornell.edu"
+          ],
+          "subject": "{id} {metadata_name} is ready in Box",
+          "message": "Your report is ready in Box.\n\n{box_urls}",
+          "notify_on": "all"
+        }
+      ]
+    }
+  ]
+}
