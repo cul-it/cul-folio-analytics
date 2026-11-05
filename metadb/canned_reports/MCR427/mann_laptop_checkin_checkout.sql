@@ -18,72 +18,64 @@ WITH
 checkout_actions AS (
     SELECT
         service_point__t.name AS service_point_name,
-        (loan__t.loan_date::timestamptz)::date AS transaction_date,--loans_items.loan_date::date AS action_date,
-        to_char (loan__t.loan_date::timestamptz, 'FMDay') AS day_of_week, --to_char(loans_items.loan_date, 'FMDay') AS day_of_week,
-        CAST (EXTRACT (hour FROM loan__t.loan_date::timestamptz) AS integer) AS hour_of_day,--CAST(extract(hour FROM loans_items.loan_date) AS integer) AS hour_of_day,
-        material_type__t.name AS material_type_name,--loans_items.material_type_name,
+        (loan__t.loan_date::timestamptz)::date AS transaction_date,
+        to_char (loan__t.loan_date::timestamptz, 'FMDay') AS day_of_week,
+        CAST (EXTRACT (hour FROM loan__t.loan_date::timestamptz) AS integer) AS hour_of_day,
+        material_type__t.name AS material_type_name,
         'Checkout' AS transaction_type,
-        location__t.name AS item_effective_location_name_at_check_out,--loans_items.item_effective_location_name_at_check_out,
-        item.jsonb#>>'{status,name}' AS item_status,--loans_items.item_status,
-        COUNT (DISTINCT loan__t.id) AS ct --COUNT(DISTINCT loans_items.loan_id) AS ct
+        location__t.name AS item_effective_location_name_at_check_out,
+        item.jsonb#>>'{status,name}' AS item_status,
+        item__t.barcode AS barcode,
+        COUNT (DISTINCT loan__t.id) AS ct
     FROM
         folio_circulation.loan__t
         LEFT JOIN folio_inventory.service_point__t
-        ON loan__t.checkout_service_point_id = service_point__t.id --loans_items.checkout_service_point_id = service_point__t.id
-               
+            ON loan__t.checkout_service_point_id = service_point__t.id
         LEFT JOIN folio_inventory.item__t
-                ON loan__t.item_id = item__t.id
-               
-                LEFT JOIN folio_inventory.item
-                ON item__t.id = item.id
-               
-                LEFT JOIN folio_inventory.material_type__t
-                ON item__t.material_type_id = material_type__t.id
-               
-                LEFT JOIN folio_inventory.location__t
-                ON loan__t.item_effective_location_id_at_check_out = location__t.id
-           
+            ON loan__t.item_id = item__t.id
+        LEFT JOIN folio_inventory.item
+            ON item__t.id = item.id
+        LEFT JOIN folio_inventory.material_type__t
+            ON item__t.material_type_id = material_type__t.id
+        LEFT JOIN folio_inventory.location__t
+            ON loan__t.item_effective_location_id_at_check_out = location__t.id
     WHERE
-        loan__t.loan_date::timestamptz >= now() - interval '24 hours' --loans_items.loan_date >= NOW() - INTERVAL '24 hours'
-    GROUP by
-                service_point__t.name,
-        (loan__t.loan_date::timestamptz)::date,--loans_items.loan_date::date AS action_date,
-        to_char (loan__t.loan_date::timestamptz, 'FMDay'), --to_char(loans_items.loan_date, 'FMDay') AS day_of_week,
-        CAST (EXTRACT (hour FROM loan__t.loan_date::timestamptz) AS integer),--CAST(extract(hour FROM loans_items.loan_date) AS integer) AS hour_of_day,
-        material_type__t.name,--loans_items.material_type_name,
-        location__t.name,--loans_items.item_effective_location_name_at_check_out,
-        item.jsonb#>>'{status,name}'
+        loan__t.loan_date::timestamptz >= now() - interval '24 hours'
+    GROUP BY
+        service_point__t.name,
+        (loan__t.loan_date::timestamptz)::date,
+        to_char (loan__t.loan_date::timestamptz, 'FMDay'),
+        CAST (EXTRACT (hour FROM loan__t.loan_date::timestamptz) AS integer),
+        material_type__t.name,
+        location__t.name,
+        item.jsonb#>>'{status,name}',
+        item__t.barcode
 ),
 simple_return_dates AS (
     SELECT
-        service_point__t.name AS service_point_name,--loans_items.checkin_service_point_name AS service_point_name,
+        service_point__t.name AS service_point_name,
         COALESCE (
-            loan__t.system_return_date::timestamptz AT TIME ZONE 'UTC',--loans_items.system_return_date::timestamptz AT TIME ZONE 'UTC',
-            loan__t.return_date::timestamptz AT TIME ZONE 'UTC'--loans_items.loan_return_date::timestamptz AT TIME ZONE 'UTC'
+            loan__t.system_return_date::timestamptz AT TIME ZONE 'UTC',
+            loan__t.return_date::timestamptz AT TIME ZONE 'UTC'
         ) AS transaction_date,
-        material_type__t.name AS material_type_name,--loans_items.material_type_name,
+        material_type__t.name AS material_type_name,
         'Checkin' AS transaction_type,
-        location__t.name AS item_effective_location_name_at_check_out,--loans_items.item_effective_location_name_at_check_out,
-        item.jsonb#>>'{status,name}' AS item_status,--loans_items.item_status,
-        loan__t.id AS loan_id -- loans_items.loan_id
-       
+        location__t.name AS item_effective_location_name_at_check_out,
+        item.jsonb#>>'{status,name}' AS item_status,
+        item__t.barcode AS barcode,
+        loan__t.id AS loan_id
     FROM        
         folio_circulation.loan__t 
         LEFT JOIN folio_inventory.service_point__t
-        ON loan__t.checkout_service_point_id = service_point__t.id --loans_items.checkout_service_point_id = service_point__t.id
-               
+            ON loan__t.checkout_service_point_id = service_point__t.id
         LEFT JOIN folio_inventory.item__t
-                ON loan__t.item_id = item__t.id
-               
-                LEFT JOIN folio_inventory.item
-                ON item__t.id = item.id
-               
-                LEFT JOIN folio_inventory.material_type__t
-                ON item__t.material_type_id = material_type__t.id
-               
-                LEFT JOIN folio_inventory.location__t
-                ON loan__t.item_effective_location_id_at_check_out = location__t.id
-            
+            ON loan__t.item_id = item__t.id
+        LEFT JOIN folio_inventory.item
+            ON item__t.id = item.id
+        LEFT JOIN folio_inventory.material_type__t
+            ON item__t.material_type_id = material_type__t.id
+        LEFT JOIN folio_inventory.location__t
+            ON loan__t.item_effective_location_id_at_check_out = location__t.id
 ),
 checkin_actions AS (
     SELECT
@@ -95,6 +87,7 @@ checkin_actions AS (
         simple_return_dates.transaction_type,
         simple_return_dates.item_effective_location_name_at_check_out,
         simple_return_dates.item_status,
+        simple_return_dates.barcode,
         COUNT(DISTINCT simple_return_dates.loan_id) AS ct
     FROM simple_return_dates
     WHERE
@@ -107,7 +100,8 @@ checkin_actions AS (
         material_type_name,
         transaction_type,
         item_effective_location_name_at_check_out,
-        item_status
+        item_status,
+        barcode
 ),
 combined AS (
     SELECT
@@ -118,7 +112,8 @@ combined AS (
         material_type_name,
         transaction_type,
         item_effective_location_name_at_check_out,
-       item_status,
+        item_status,
+        barcode,
         ct
     FROM
         checkout_actions
@@ -132,6 +127,7 @@ combined AS (
         transaction_type,
         item_effective_location_name_at_check_out,
         item_status,
+        barcode,
         ct
     FROM
         checkin_actions
@@ -144,8 +140,9 @@ SELECT
     transaction_date,
     day_of_week,   
     item_effective_location_name_at_check_out,
-    item_status as current_item_status, -- item_status
-    SUM(ct) AS count_of_transactions_in_24_hours --total_date_count
+    item_status as current_item_status,
+    barcode,
+    SUM(ct) AS count_of_transactions_in_24_hours
 FROM
     combined
 WHERE
@@ -159,7 +156,8 @@ GROUP BY
     transaction_date,
     day_of_week,
     item_effective_location_name_at_check_out,
-    item_status
+    item_status,
+    barcode
 ORDER BY
     service_point_name,
     material_type_name,
@@ -167,8 +165,10 @@ ORDER BY
     transaction_date,
     day_of_week,
     item_effective_location_name_at_check_out,
-    item_status
-    ;
+    item_status,
+    barcode
+;
+
 
 
 
