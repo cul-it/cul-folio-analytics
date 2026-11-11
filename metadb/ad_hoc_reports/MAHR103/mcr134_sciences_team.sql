@@ -36,7 +36,7 @@ WITH parameters AS (
         '%%'::VARCHAR AS expense_class,-- NOTE: Ex: Physical Res - one-time perpetual, One time Electronic Res - Perpetual etc.
         ''::VARCHAR AS lc_class_filter -- NOTE: Ex: NA, PE, QA, TX, S, KFN, etc.
 ),
-field050 AS (-- NOTE: gets the LC classification
+field050 AS (     -- NOTE: gets the LC classification
     SELECT
         sm.instance_hrid,
         sm.content AS lc_classification,
@@ -47,7 +47,7 @@ field050 AS (-- NOTE: gets the LC classification
     --folio_source_record.marc__t AS sm
     WHERE sm.field = '050' AND sm.sf = 'a'
 ),
-format_extract AS ( -- NOTE: gets the format code from the marc leader and links to the local translation table
+format_extract AS (         -- NOTE: gets the format code from the marc leader and links to the local translation table
     SELECT
         sm.instance_id::uuid,
         substring(sm.content,7,2) AS bib_format_code,
@@ -59,7 +59,7 @@ format_extract AS ( -- NOTE: gets the format code from the marc leader and links
         ON substring (sm.content,7,2) = vs.leader0607
     WHERE sm.field = '000'
 ),
-finance_transaction_invoices_ext AS ( -- NOTE: gets details of the finance transactions and converts Credits to negative values
+finance_transaction_invoices_ext AS (          -- NOTE: gets details of the finance transactions and converts Credits to negative values
     SELECT
         fti.transaction_id AS transaction_id,
         fti.invoice_date::date,
@@ -149,7 +149,7 @@ DISTINCT current_date AS current_date,
     replace(replace (invl.description, chr(13), ''),chr(10),'') AS invoice_line_description,
     replace(replace (invl.comment, chr(13), ''),chr(10),'') AS invoice_line_comment,
     ftie.finance_ledger_name,
-    CASE -- NOTE: selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
+    CASE         -- NOTE: selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
         WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
         WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
         WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
