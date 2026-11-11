@@ -2,7 +2,7 @@
   "id": "MAHR103",
   "enabled": true,
   "metadata": {
-    "name": "MCR134_sciences_team_auto",
+    "name": "MCR134_sciences_team_auto.psql",
     "description": "A version of MAHR103 that outputs to CSV tab-delimited format",
     "owner": "slm5",
     "tags": []
@@ -33,7 +33,8 @@
             "slm5@cornell.edu"
           ],
           "subject": "Report Ready - {id}",
-          "message": "Your MAHR103 report is ready. See this box folder: {box_urls}\n{error_msg}",
+          "message": "Your MAHR103 report is ready. 
+           See this box folder: {box_urls}\n{error_msg}",
           "notify_on": "all"
         }
       ],
