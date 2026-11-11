@@ -1,0 +1,43 @@
+{
+  "id": "MAHR103",
+  "enabled": true,
+  "metadata": {
+    "name": "MCR134_sciences_team_auto",
+    "description": "A version of MAHR103 that outputs to CSV tab-delimited format",
+    "owner": "slm5",
+    "tags": []
+  },
+  "reports": [
+    {
+      "enabled": true,
+      "database": "METADB",
+      "sql_file": "MCR134_sciences_team_auto.psql",
+      "schedule": {
+        "type": "daily",
+        "time": "09:00",
+        "timezone": "America/New_York"
+      },
+      "timeout_minutes": 60,
+      "params": null,
+      "outputs": [
+        {
+          "service": "box",
+          "location": "https://cornell.box.com/s/sgfbim51vjwhi2fx3h9sh5sqoe0baw4o",
+          "filename": "MAHR103{current_datetime}",
+          "file_extension": "tsv"
+        }
+      ],
+      "email_notifications": [
+        {
+          "recipients": [
+            "slm5@cornell.edu"
+          ],
+          "subject": "Report Ready - {id}",
+          "message": "Your MAHR103 report is ready. See this box folder: {box_urls}\n{error_msg}",
+          "notify_on": "all"
+        }
+      ],
+      "name": "MAHR103"
+    }
+  ]
+}
