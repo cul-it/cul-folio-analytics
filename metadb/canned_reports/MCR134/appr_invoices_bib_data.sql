@@ -40,8 +40,8 @@ field050 AS (-- gets the LC classification
         sm.content AS lc_classification,
         substring (sm.content,'[A-Za-z]{1,3}') as lc_class,
         trim (trailing '.' from SUBSTRING (sm.content, '\d{1,}\.{0,}\d{0,}')) AS lc_class_number
-    FROM --local_derived.marc__t as sm
-    folio_source_record.marc__t AS sm
+    FROM local_derived.marc__t as sm
+    --folio_source_record.marc__t AS sm
     WHERE sm.field = '050' AND sm.sf = 'a'
 ),
 format_extract AS ( -- gets the format code from the marc leader and links to the local translation table
@@ -50,8 +50,8 @@ format_extract AS ( -- gets the format code from the marc leader and links to th
         substring(sm.content,7,2) AS bib_format_code,
         vs.folio_format_type as bib_format_display
     FROM
-        --local_derived.marc__t as sm --
-        folio_source_record.marc__t AS sm
+        local_derived.marc__t as sm 
+        --folio_source_record.marc__t AS sm
         LEFT JOIN local_static.vs_folio_physical_material_formats AS vs
         ON substring (sm.content,7,2) = vs.leader0607
     WHERE sm.field = '000'
