@@ -1,6 +1,6 @@
 --MCR134
---Approved Invoices with bib data 
---Lastupdated: 8-20-26
+--Approved Invoices with bib data
+--Lastupdated: 11-05-26
 --This query provides the list of approved invoices within a date range along with vendor name, finance group name,
 --vendor invoice number, fund details, purchase order details, language, instance subject, fund type, expense class
 --LC classification, LC class, LC class number, and bibliographic format.
@@ -12,6 +12,11 @@
 -- corrected WHERE section for parameters values: transaction ledger name, format name, expense class, LC class, language
 -- 8-20-26: updated WHERE section again to allow for null values
 -- 9-29-26: updated to include publisher (lines 131, 181, 217, 229)
+-- 10-22-26: sargability fixes: removed redundant ::uuid casts from the indexed side of joins
+--           (pol.id, pol.instance_id, po_lines_locations.pol_id) so Postgres can use their indexes;
+--           removed unnecessary ORDER BY inside fund_fiscal_year_group CTE. Results are unchanged.
+-- 11-5-26: AI suggested using a cross join to parameters values; re-wrote the WHERE clause;
+                -- ran in 59 seconds (with regular marc__t), 7 minutes 14 sec using derived marc__t
 
 WITH parameters AS (
     select
@@ -22,11 +27,11 @@ WITH parameters AS (
         ''::varchar AS order_type_filter, -- Ongoing or One-Time
         ''::VARCHAR AS fund_type, -- Ex: Endowment - Restricted, Appropriated - Unrestricted etc.
         ''::VARCHAR AS transaction_finance_group_name, -- Ex: Sciences, Central, Rare & Distinctive, Law, Cornell Medical, Course Reserves etc.
-        '%%'::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
-        ''::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023, FY2024, etc.
+        ''::VARCHAR AS transaction_ledger_name, -- Ex: CUL - Contract College, CUL - Endowed, CU Medical, Lab OF O
+        'FY2026'::VARCHAR AS fiscal_year_code,-- Ex: FY2022, FY2023, FY2024, etc.
         ''::VARCHAR AS po_number,
-        '%%'::VARCHAR AS format_name, -- Ex: Book, Serial, Textual Resource, etc.
-        '%%'::VARCHAR AS expense_class,-- Ex:Physical Res - one-time perpetual, One time Electronic Res - Perpetual etc.
+        ''::VARCHAR AS format_name, -- Ex: Book, Serial, Textual Resource, etc.
+        ''::VARCHAR AS expense_class,-- Ex:Physical Res - one-time perpetual, One time Electronic Res - Perpetual etc.
         ''::VARCHAR AS lc_class_filter -- Ex: NA, PE, QA, TX, S, KFN, etc.
 ),
 field050 AS (-- gets the LC classification
@@ -35,16 +40,18 @@ field050 AS (-- gets the LC classification
         sm.content AS lc_classification,
         substring (sm.content,'[A-Za-z]{1,3}') as lc_class,
         trim (trailing '.' from SUBSTRING (sm.content, '\d{1,}\.{0,}\d{0,}')) AS lc_class_number
-    FROM local_derived.marc__t as sm --folio_source_record.marc__t AS sm
+    FROM --local_derived.marc__t as sm
+    folio_source_record.marc__t AS sm
     WHERE sm.field = '050' AND sm.sf = 'a'
 ),
 format_extract AS ( -- gets the format code from the marc leader and links to the local translation table
     SELECT
-        sm.instance_id::uuid,
+        sm.instance_id,--::uuid,
         substring(sm.content,7,2) AS bib_format_code,
         vs.folio_format_type as bib_format_display
     FROM
-        local_derived.marc__t as sm --folio_source_record.marc__t AS sm
+        --local_derived.marc__t as sm --
+        folio_source_record.marc__t AS sm
         LEFT JOIN local_static.vs_folio_physical_material_formats AS vs
         ON substring (sm.content,7,2) = vs.leader0607
     WHERE sm.field = '000'
@@ -81,6 +88,7 @@ finance_transaction_invoices_ext AS ( -- gets details of the finance transaction
         LEFT JOIN folio_finance.ledger__t AS fl ON ff.ledger_id = fl.id
 ),
 fund_fiscal_year_group AS ( -- associates the fund with the finance group and fiscal year
+    -- 10-22-26: removed ORDER BY ff.code; sorting inside a CTE has no effect on final output and forces an unnecessary sort
     SELECT
         FGFFY.id AS group_fund_fiscal_year_id,
         FG.name AS finance_group_name,
@@ -93,7 +101,6 @@ fund_fiscal_year_group AS ( -- associates the fund with the finance group and fi
         LEFT JOIN folio_finance.group_fund_fiscal_year__t AS FGFFY ON fg.id = fgffy.group_id --OLD group_id
         LEFT JOIN folio_finance.fiscal_year__t AS ffy ON ffy. id = fgffy.fiscal_year_id
         LEFT JOIN folio_finance.fund__t AS FF ON FF.id = fgffy.fund_id
-    ORDER BY ff.code
 ),
 new_quantity AS ( -- converts invoice line quantities showing "0" to "1" for use in a price-per-unit calculation
     SELECT
@@ -171,7 +178,8 @@ FROM
     LEFT JOIN folio_invoice.invoice_lines__t AS invl ON invl.id = ftie.invoice_line_id
     LEFT JOIN new_quantity AS fq ON invl.id = fq.invoice_line_id
     LEFT JOIN folio_invoice.invoices__t AS inv ON ftie.invoice_id = inv.id
-    LEFT JOIN folio_orders.po_line__t AS pol ON ftie.po_line_id ::uuid= pol.id::uuid
+    -- 10-22-26: cast only the CTE side; pol.id is already uuid, and casting it blocked the index on po_line__t.id
+    LEFT JOIN folio_orders.po_line__t AS pol ON ftie.po_line_id::uuid = pol.id
     LEFT JOIN folio_orders.purchase_order__t AS PO ON po.id = pol.purchase_order_id
     LEFT JOIN folio_derived.instance_ext AS iext ON iext.instance_id = pol.instance_id
     LEFT JOIN field050 ON iext.instance_hrid = field050.instance_hrid
@@ -179,17 +187,25 @@ FROM
     LEFT JOIN folio_derived.instance_subjects as inssub on iext.instance_id = inssub.instance_id
     left join folio_derived.instance_publication as ip on iext.instance_id = ip.instance_id
     LEFT JOIN fund_fiscal_year_group AS ffyg ON ffyg.fund_id = ftie.effective_fund_id
-    LEFT JOIN format_extract AS formatt ON pol.instance_id::UUID = formatt.instance_id
-    LEFT JOIN folio_derived.po_lines_locations on ftie.po_line_id::UUID = po_lines_locations.pol_id::UUID
+    -- 10-22-26: pol.instance_id is already uuid; removed cast so the join column stays sargable
+    LEFT JOIN format_extract AS formatt ON pol.instance_id = formatt.instance_id
+    -- 10-22-26: cast only the CTE side; casting po_lines_locations.pol_id blocked the index on the derived table
+    LEFT JOIN folio_derived.po_lines_locations on ftie.po_line_id::uuid = po_lines_locations.pol_id
     LEFT JOIN folio_finance.expense_class__t AS fec ON fec.id = ftie.expense_class
+    cross join parameters as p
 WHERE
-    ((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
-    AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
+    --((SELECT payment_date_start_date FROM parameters) ='' OR (inv.payment_date >= (SELECT payment_date_start_date FROM parameters)::DATE))
+    --AND ((SELECT payment_date_end_date FROM parameters) ='' OR (inv.payment_date <= (SELECT payment_date_end_date FROM parameters)::DATE))
+    ((p.payment_date_start_date = '' or inv.payment_date::date >= p.payment_date_start_date::date)
+    and (p.payment_date_end_date = '' or inv.payment_date::date <= p.payment_date_end_date::date))
     AND inv.status in ('Paid','Approved')
     AND (inssub.subjects_ordinality = 1 or inssub.instance_id is null)
-    AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
-    AND ((ftie.fund_type_name = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
-    AND ((CASE -- selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
+    --AND ((ftie.effective_fund_code = (SELECT transaction_fund_code FROM parameters)) OR ((SELECT transaction_fund_code FROM parameters) = ''))
+    and (p.transaction_fund_code = '' or ftie.effective_fund_code = p.transaction_fund_code)
+    --AND ((ftie.fund_type_name = (SELECT fund_type FROM parameters)) OR ((SELECT fund_type FROM parameters) = ''))
+    and (p.fund_type = '' or ftie.fund_type_name = p.fund_type)
+    AND (p.transaction_finance_group_name = '' or
+    (CASE -- selects the correct finance group for funds merged into Area Studies from 2CUL in FY2024, and Course Reserves merged into Interdisciplinary in FY2025
         WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date >='2023-07-01' THEN 'Area Studies'
         WHEN ftie.effective_fund_code in ('2616','2310','2342','2352','2410','2411','2440','p2350','p2450','p2452','p2658') and inv.payment_date::date <'2023-07-01' then '2CUL'
         WHEN ftie.effective_fund_code in ('7311','7342','7370','p7358') AND inv.payment_date::date >='2024-07-01' THEN 'Interdisciplinary'
@@ -203,17 +219,24 @@ WHERE
         WHEN ftie.effective_fund_code = 'p7368' AND inv.payment_date::date >='2025-07-09' THEN 'Social Sciences'
         WHEN ftie.effective_fund_code = 'p7368' AND inv.payment_date::date <'2025-07-09' THEN 'Humanities'
         ELSE ffyg.finance_group_name
-    END) = (select transaction_finance_group_name from parameters)
-        OR (SELECT transaction_finance_group_name FROM parameters) = '')
-    AND ((ftie.finance_ledger_name ilike (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) = ''))
-    AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
-    AND (((po.order_type = (SELECT order_type_filter FROM parameters)) OR ((SELECT order_type_filter FROM parameters) = '')) or po.order_type is null)
-    AND (((po.po_number = (SELECT po_number FROM parameters)) OR ((SELECT po_number FROM parameters) = '')) or po.po_number is null)
-    AND (((fec.name ilike (SELECT expense_class FROM parameters) or (SELECT expense_class FROM parameters) = '')) or fec.name is null)
+                END) = p.transaction_finance_group_name)--(select transaction_finance_group_name from parameters)
+        --OR (SELECT transaction_finance_group_name FROM parameters) = '')
+    --AND ((ftie.finance_ledger_name ilike (SELECT transaction_ledger_name FROM parameters)) OR ((SELECT transaction_ledger_name FROM parameters) = ''))
+    and (p.transaction_ledger_name = '' or ftie.finance_ledger_name ilike p.transaction_ledger_name)
+    --AND ((ftie.fiscal_year_code = (SELECT fiscal_year_code FROM parameters)) OR ((SELECT fiscal_year_code FROM parameters) = ''))
+    and (p.fiscal_year_code = '' or ftie.fiscal_year_code = p.fiscal_year_code)
+    --AND (((po.order_type = (SELECT order_type_filter FROM parameters)) OR ((SELECT order_type_filter FROM parameters) = '')) or po.order_type is null)
+    and (p.order_type_filter = '' or po.order_type = p.order_type_filter or po.order_type is null)
+    --AND (((po.po_number = (SELECT po_number FROM parameters)) OR ((SELECT po_number FROM parameters) = '')) or po.po_number is null)
+    and (p.po_number = '' or po.po_number = p.po_number or po.po_number is null)
+    --AND (((fec.name ilike (SELECT expense_class FROM parameters) or (SELECT expense_class FROM parameters) = '')) or fec.name is null)
+    and (p.expense_class = '' or fec.name ilike p.expense_class or fec.name is null)
     AND (lang.language_ordinality = 1 OR lang.instance_id is null or language_ordinality ISNULL)
-    AND (((formatt.bib_format_display ilike (SELECT format_name FROM parameters) OR (SELECT format_name FROM parameters) = '')) or formatt.bib_format_display is null)
-    AND (((field050.lc_class = (SELECT lc_class_filter FROM parameters) OR (SELECT lc_class_filter FROM parameters) ='')) or field050.lc_class is null)
-	and (ip.publication_ordinality = 1 or ip.instance_id is null)
+    --AND (((formatt.bib_format_display ilike (SELECT format_name FROM parameters) OR (SELECT format_name FROM parameters) = '')) or formatt.bib_format_display is null)
+    and (p.format_name = '' or formatt.bib_format_display ilike p.format_name or formatt.bib_format_display is null)
+    --AND (((field050.lc_class = (SELECT lc_class_filter FROM parameters) OR (SELECT lc_class_filter FROM parameters) ='')) or field050.lc_class is null)
+                and (p.lc_class_filter = '' or field050.lc_class = p.lc_class_filter or field050.lc_class is null)
+    and (ip.publication_ordinality = 1 or ip.instance_id is null)
 GROUP BY
     ftie.transaction_id,
     coalesce (replace(replace (iext.index_title, chr(13), ''),chr(10),''), replace(replace (iext.title, chr(13), ''),chr(10),''),' - '),
@@ -252,6 +275,7 @@ ORDER BY index_title,
     fund_type_name,
     ftie.invoice_vendor_name,
     inv.vendor_invoice_no,
+    invl.invoice_line_number, -- added 11-11-26
     po.po_number,
     pol.po_line_number
 	;
