@@ -13,6 +13,7 @@
 --re-named "action_type" to transaction_type, "action_date" to transaction_date, "item_status" to 
 --"current_item_status" and "total_date_count" to "count_of_transactions_in_24_hours"
 --resequenced fields to display in an easier to understand order
+--11/13/26: added enumeration
 
 WITH
 checkout_actions AS (
@@ -26,6 +27,7 @@ checkout_actions AS (
         location__t.name AS item_effective_location_name_at_check_out,
         item.jsonb#>>'{status,name}' AS item_status,
         item__t.barcode AS barcode,
+        item__t.enumeration AS enumeration,
         COUNT (DISTINCT loan__t.id) AS ct
     FROM
         folio_circulation.loan__t
@@ -49,7 +51,8 @@ checkout_actions AS (
         material_type__t.name,
         location__t.name,
         item.jsonb#>>'{status,name}',
-        item__t.barcode
+        item__t.barcode,
+        item__t.enumeration
 ),
 simple_return_dates AS (
     SELECT
@@ -63,6 +66,7 @@ simple_return_dates AS (
         location__t.name AS item_effective_location_name_at_check_out,
         item.jsonb#>>'{status,name}' AS item_status,
         item__t.barcode AS barcode,
+        item__t.enumeration AS enumeration,
         loan__t.id AS loan_id
     FROM        
         folio_circulation.loan__t 
@@ -88,6 +92,7 @@ checkin_actions AS (
         simple_return_dates.item_effective_location_name_at_check_out,
         simple_return_dates.item_status,
         simple_return_dates.barcode,
+        simple_return_dates.enumeration,
         COUNT(DISTINCT simple_return_dates.loan_id) AS ct
     FROM simple_return_dates
     WHERE
@@ -101,7 +106,8 @@ checkin_actions AS (
         transaction_type,
         item_effective_location_name_at_check_out,
         item_status,
-        barcode
+        barcode,
+        enumeration
 ),
 combined AS (
     SELECT
@@ -114,6 +120,7 @@ combined AS (
         item_effective_location_name_at_check_out,
         item_status,
         barcode,
+        enumeration,
         ct
     FROM
         checkout_actions
@@ -128,6 +135,7 @@ combined AS (
         item_effective_location_name_at_check_out,
         item_status,
         barcode,
+        enumeration,
         ct
     FROM
         checkin_actions
@@ -142,6 +150,7 @@ SELECT
     item_effective_location_name_at_check_out,
     item_status as current_item_status,
     barcode,
+    enumeration,
     SUM(ct) AS count_of_transactions_in_24_hours
 FROM
     combined
@@ -157,7 +166,8 @@ GROUP BY
     day_of_week,
     item_effective_location_name_at_check_out,
     item_status,
-    barcode
+    barcode,
+    enumeration
 ORDER BY
     service_point_name,
     material_type_name,
@@ -166,14 +176,8 @@ ORDER BY
     day_of_week,
     item_effective_location_name_at_check_out,
     item_status,
-    barcode
+    barcode,
+    enumeration
 ;
-
-
-
-
-
-
-
 
 
