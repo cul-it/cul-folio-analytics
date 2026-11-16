@@ -30,9 +30,9 @@
 	-- added call number prefix and suffix; resequenced all call number components, enumeration, chronology and copy number to group together after item effective call number
 	-- rewrote jsonb_extract_path_text statements in format "table.jsonb#>> '{field components}'"
 
-DROP TABLE IF EXISTS local_derived.loans_items;
+DROP TABLE IF EXISTS loans_items;
 
-CREATE TABLE local_derived.loans_items AS
+CREATE TABLE loans_items AS
 SELECT
     loan__t.id AS loan_id,
     loan__t.item_id::uuid,
