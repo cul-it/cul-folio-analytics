@@ -36,7 +36,7 @@ SELECT
     request__t.requester_id,
     request__t.fulfillment_preference,
     users__t.patron_group AS patron_group_id,
-    groups__t.desc AS patron_group_name,
+    groups__t.group AS patron_group_name,
     ipl.name AS item_permanent_location_name,
     itl.name AS item_temporary_location_name,
     iel.name AS item_effective_location_name,
