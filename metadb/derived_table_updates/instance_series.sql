@@ -1,7 +1,6 @@
 --metadb:table instance_series
 
--- This derived table extracts series statements from the FOLIO
--- Instance record
+--This derived table extracts series statements from the FOLIO instance record
 
 DROP TABLE IF EXISTS instance_series;
 
