@@ -1,5 +1,11 @@
 --metadb:table po_lines_fund_distribution_transactions
 -- Create a derived table that contains information about the fund distribution in the po lines
+-- 11-15-26: fixed syntax error in transaction_amount line (duplicated alias);
+--     removed redundant ::numeric cast on transaction__t.amount (already native numeric);
+--     removed redundant join condition in finance CTE (budget/fund link already enforced);
+--     simplified transactions CTE to use native transaction__t columns (transaction_type,
+--     source, from_fund_id) instead of jsonb extracts where available;
+--     uncommented the COMMENT ON COLUMN block so column comments are applied
 
 DROP TABLE IF EXISTS po_lines_fund_distribution_transactions;
 CREATE TABLE po_lines_fund_distribution_transactions AS
@@ -29,56 +35,55 @@ SELECT DISTINCT
 FROM
     folio_orders.po_line AS po_line
     CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(jsonb, 'fundDistribution')) AS dist (data)
-    --LEFT JOIN LATERAL jsonb_array_elements(jsonb_extract_path(jsonb, 'fundDistribution')) AS dist (data) on true
 
 ),
 
-finance as
+finance AS (
 
-(SELECT
-    fund__t.id as fund_id,
-    fund__t.code as fund_code,
-    budget__t.id as budget_id,
-    budget__t.name as budget_name,
-    fiscal_year__t.id as fiscal_year_id,
-    fiscal_year__t.code as fiscal_year
+SELECT
+    fund__t.id AS fund_id,
+    fund__t.code AS fund_code,
+    budget__t.id AS budget_id,
+    budget__t.name AS budget_name,
+    fiscal_year__t.id AS fiscal_year_id,
+    fiscal_year__t.code AS fiscal_year
 
- 
 FROM folio_finance.ledger__t
 
-  LEFT JOIN folio_finance.fund__t
+    LEFT JOIN folio_finance.fund__t
         ON ledger__t.id = fund__t.ledger_id
 
-  LEFT JOIN folio_finance.budget__t
-      ON fund__t.id = budget__t.fund_id
+    LEFT JOIN folio_finance.budget__t
+        ON fund__t.id = budget__t.fund_id
 
-  LEFT JOIN folio_finance.fiscal_year__t
-      ON budget__t.fiscal_year_id = fiscal_year__t.id
-                and budget__t.fund_id = fund__t.id
+    LEFT JOIN folio_finance.fiscal_year__t
+        ON budget__t.fiscal_year_id = fiscal_year__t.id
 ),
 
 transactions AS (
 
+-- Uses native transaction__t columns (transaction_type, source, from_fund_id) where available;
+-- the raw transaction table is only needed for the encumbrance jsonb sub-fields
 SELECT
-    transaction__t.id as transaction_id,
-    transaction__t.currency as transaction_currency,
-    transaction__t.amount::numeric (19,4) as transaction_amount, AS transaction_amount,
+    transaction__t.id AS transaction_id,
+    transaction__t.currency AS transaction_currency,
+    transaction__t.amount AS transaction_amount,
     CAST(jsonb_extract_path_text(finance_transaction.jsonb, 'encumbrance', 'initialAmountEncumbered') AS numeric(19,4)) AS transaction_encumbrance_initial_amount,
     CAST(jsonb_extract_path_text(finance_transaction.jsonb, 'encumbrance', 'amountExpended') AS numeric(19,4)) AS transaction_encumbrance_amount_expended,
     jsonb_extract_path_text(finance_transaction.jsonb, 'encumbrance', 'orderType') AS transaction_encumbrance_order_type,
     CAST(jsonb_extract_path_text(finance_transaction.jsonb, 'encumbrance', 'subscription') AS boolean) AS transaction_encumbrance_subscription,
     CAST(jsonb_extract_path_text(finance_transaction.jsonb, 'encumbrance', 'sourcePoLineId') AS uuid) AS sourcepolineid,
     CAST(jsonb_extract_path_text(finance_transaction.jsonb, 'encumbrance', 'sourcePurchaseOrderId') AS uuid) AS sourcepurchaseorderid,
-    CAST(jsonb_extract_path_text(finance_transaction.jsonb, 'fromFundId') AS uuid) AS fromfundid
+    transaction__t.from_fund_id AS fromfundid
 
-  FROM
-    folio_finance.transaction AS finance_transaction
-    LEFT JOIN folio_finance.transaction__t
-      ON finance_transaction.id = transaction__t.id
+FROM
+    folio_finance.transaction__t
+    LEFT JOIN folio_finance.transaction AS finance_transaction
+        ON transaction__t.id = finance_transaction.id
 
 WHERE
-    jsonb_extract_path_text(finance_transaction.jsonb, 'transactionType') = 'Encumbrance'
-    AND jsonb_extract_path_text(finance_transaction.jsonb, 'source') = 'PoLine'
+    transaction__t.transaction_type = 'Encumbrance'
+    AND transaction__t.source = 'PoLine'
 )
 
 SELECT
@@ -120,45 +125,69 @@ FROM
     LEFT JOIN finance ON finance.fund_id = po_line.fund_distribution_id
     LEFT JOIN transactions ON transactions.sourcepolineid = po_line.po_line_id
         AND transactions.fromfundid = po_line.fund_distribution_id
-    
+
 ORDER BY
     po_number,
     poline_number;
 
-/*
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.po_id IS 'UUID identifying this entity';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.po_number IS 'A human readable ID assigned to this purchase order';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.po_workflowstatus IS 'the workflow status for this purchase order';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.po_line_id IS 'UUID identifying this purchase order line';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_number IS 'A human readable number assigned to this PO line';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_title_or_package IS 'title of the material';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_listunitprice IS 'The per-item list price for physical or resources of Other order format';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_quantityphysical IS 'Quantity of physical items or resources of Other order format in this purchase order line';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_listunitpriceelectronic IS 'The e-resource per-item list price';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_quantityelectronic IS 'Quantity of electronic items in this purchase order line';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_currency IS 'An ISO currency code';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_discount IS 'Percentage (0 to 100) or amount (positive number) that is subtracted from the list price time quantities calculation before additional cost';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_discounttype IS 'Percentage or amount discount type';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_additionalcost IS 'Lump sum that is added to the total estimated price - not affected by discount';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.poline_estimated_price IS 'The calculated total estimated price for this purchase order line: list price time quantities minus discount amount plus additional cost';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.po_line_fyroadjustmentamount IS 'Adjustment amount if rollover was happen';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.fund_distribution_value IS 'The value of the cost to be applied to this fund';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.fund_distribution_type IS 'Percentage or amount type of the value property';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.budget_id IS 'UUID of the budget record';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.budget_name IS 'The name of the budget';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.fund_id IS 'UUID of the fund associated with this fund distribution';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.fund_code IS 'the fund code';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.fiscal_year_id IS 'UUID of the fiscal year record';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.fiscal_year IS 'The fiscal year';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.transaction_id IS 'UUID of this transaction';
-COMMENT ON COLUMN po_lines_fund_distribution_transactions.transaction_currency IS 'Currency code for this transaction - from the system currency'; 
+
+COMMENT ON COLUMN po_lines_fund_distribution_transactions.transaction_currency IS 'Currency code for this transaction - from the system currency';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.transaction_amount IS 'The amount of this transaction. For encumbrances: This is initialAmountEncumbered - (amountAwaitingPayment + amountExpended)';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.transaction_encumbrance_initial_amount IS 'The initial amount of this encumbrance. Should not change once create';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.transaction_encumbrance_amount_expended IS 'The amount currently expended by this encumbrance';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.transaction_encumbrance_order_type IS 'Taken from the purchase order';
+
 COMMENT ON COLUMN po_lines_fund_distribution_transactions.transaction_encumbrance_subscription IS 'Taken from the purchase Order,for fiscal year rollover';
-*/
-
-
-
- 
