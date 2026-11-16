@@ -1,3 +1,8 @@
+--metadb:table requests_items
+--metadb:require folio_inventory.item__t.enumeration text
+
+-- Create a derived table that contains all items from requests and adds
+-- item and patron-related information
 -- 6-4-26: requests_items derived table re-write (based on re-write of 1-12-26) with updates
 -- used "item__t" table in place of many of the original item jsonb extracts
 -- used full table names when possible; used aliases when using multiple copies of the location and loan type tables needed for linking to different values in the item record
@@ -6,6 +11,9 @@
 -- added "effective_call_number_prefix", "effective call number" and "effective_call_number_suffix" from item table (item level call number is usually blank, and call number prefixes and suffixes are often important)
 -- moved "enumeration" to right before "chronology" field
 
+DROP TABLE IF EXISTS requests_items;
+
+CREATE TABLE requests_items AS
 SELECT
     request__t.id AS request_id,
     request__t.item_id,
