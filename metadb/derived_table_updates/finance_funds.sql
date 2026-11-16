@@ -5,9 +5,9 @@
 -- including associated data from budgets, ledgers and fiscal years.
 -- 5-18-26: removed fields fiscal_year_description and ledger_description because those fields are no longer in the source tables
 
---DROP TABLE IF EXISTS finance_funds;
+DROP TABLE IF EXISTS finance_funds;
 
---CREATE TABLE finance_funds AS
+CREATE TABLE finance_funds AS
 SELECT
     fiscal_year.id AS fiscal_year_id,
     jsonb_extract_path_text(fiscal_year.jsonb, 'code') AS fiscal_year_code,
