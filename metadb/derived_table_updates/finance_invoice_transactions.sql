@@ -1,5 +1,3 @@
--- 12-1-25: finance_invoice_transactions derived table re-write
-
 --metadb:table finance_invoice_transactions
 --metadb:require folio_finance.expense_class__t.id uuid
 --metadb:require folio_finance.expense_class__t.code text
@@ -16,9 +14,9 @@
 	-- added invoice_lines__t.description, purchase_order_id, po_line_id, po_line_number, transaction_type, and invoice_payment_date to main query
 -- 12-1-25: resequenced fields to group record ids together, then report elements that make sense to selectors
 
---DROP TABLE IF EXISTS finance_invoice_transactions;
+DROP TABLE IF EXISTS finance_invoice_transactions;
 
---CREATE TABLE finance_invoice_transactions AS
+CREATE TABLE finance_invoice_transactions AS
 WITH invoice_lines_fund_distribution AS (
     select
     	(invoice_lines.jsonb#>>'{invoiceId}')::UUID as invoice_id, -- added
