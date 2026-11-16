@@ -10,23 +10,27 @@
 
 -- 6-4-26: users_groups derived table re-write
 -- This is a re-write of the users_groups derived table, without using the users_departments_unpacked derived table
--- Replaced the code for users_departments_unpacked with simpler code 
-		
-WITH user_depts AS 
-	(SELECT
-		    uu.id AS user_id,
-		    departments.jsonb #>> '{}' AS department_id,
-		    departments.ordinality AS department_ordinality,
-		    ud.name AS department_name
-		 FROM
-		    folio_users.users AS uu
-		    CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(uu.jsonb, 'departments'))
-		        WITH ORDINALITY AS departments (jsonb)
-		        
-		    LEFT JOIN folio_users.departments__t AS ud 
-		    ON (departments.jsonb#>>'{}')::UUID = ud.id
-)
+-- Replaced the code for users_departments_unpacked with simpler code
+-- 11-15-26: added missing --metadb:table directive and DROP/CREATE statements (script was a bare SELECT);
+--     cast department_id as uuid in the CTE select list (was left as text; the join already cast it);
+--     dateOfBirth intentionally kept as ::date (pure calendar date; time/timezone not meaningful)
 
+DROP TABLE IF EXISTS users_groups;
+
+CREATE TABLE users_groups AS
+WITH user_depts AS (
+    SELECT
+        uu.id AS user_id,
+        (departments.jsonb #>> '{}')::uuid AS department_id,
+        departments.ordinality AS department_ordinality,
+        ud.name AS department_name
+    FROM
+        folio_users.users AS uu
+        CROSS JOIN LATERAL jsonb_array_elements(jsonb_extract_path(uu.jsonb, 'departments'))
+            WITH ORDINALITY AS departments (jsonb)
+        LEFT JOIN folio_users.departments__t AS ud
+            ON (departments.jsonb #>> '{}')::uuid = ud.id
+)
 SELECT
     users.id AS user_id,
     u.active,
@@ -54,8 +58,10 @@ SELECT
     u.username
 FROM
     folio_users.users
-    LEFT JOIN folio_users.users__t AS u ON users.id = u.id  
+    LEFT JOIN folio_users.users__t AS u ON users.id = u.id
     LEFT JOIN folio_users.groups__t AS g ON u.patron_group = g.id
     LEFT JOIN user_depts ON users.id = user_depts.user_id
- ;
+;
+
+
 
