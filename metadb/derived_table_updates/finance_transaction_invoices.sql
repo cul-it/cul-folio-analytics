@@ -1,13 +1,16 @@
---metadb:table finance_transaction_invoices
+-- metadb:table finance_transaction_invoices
 
---Create a derived table that joins invoice and invoice_lines fields
---to transactions for expenditure reports in system currency
-
---NOTE: effective_fund_id, effective_fund_name, effective_fund_code
---were derived from the set from_fund or to_fund as a convenient way
---to get the effective fund
-
+-- Create a derived table that joins invoice and invoice_lines fields
+-- to transactions for expenditure reports in system currency
+--
+-- NOTE: effective_fund_id, effective_fund_name, effective_fund_code
+-- were derived from the set from_fund or to_fund as a convenient way
+-- to get the effective fund
+--
 -- 5-26-26: Removed WHERE statements for folio_finance transaction type filters.
+-- 11-15-26: Cast po_line_id as uuid; cast transaction created/updated dates,
+-- invoice_date, and invoice_payment_date as timestamptz.
+
 
 DROP TABLE IF EXISTS finance_transaction_invoices;
 
@@ -17,14 +20,14 @@ SELECT
     jsonb_extract_path_text(ft.jsonb, 'amount')::numeric(19,4) AS transaction_amount,
     CASE WHEN jsonb_extract_path_text(ft.jsonb, 'transactionType') = 'Credit'
         THEN 
-            jsonb_extract_path_text(ft.jsonb, 'amount') :: NUMERIC(19,4) * -1
+            jsonb_extract_path_text(ft.jsonb, 'amount')::numeric(19,4) * -1
         ELSE 
-            jsonb_extract_path_text(ft.jsonb, 'amount') :: NUMERIC(19,4)
+            jsonb_extract_path_text(ft.jsonb, 'amount')::numeric(19,4)
     END AS effective_transaction_amount,
     jsonb_extract_path_text(ft.jsonb, 'currency') AS transaction_currency,
-    jsonb_extract_path_text(ft.jsonb, 'metadata', 'createdDate')::date AS transaction_created_date,
-    jsonb_extract_path_text(ft.jsonb, 'metadata', 'updatedDate')::date AS transaction_updated_date,
-	jsonb_extract_path_text(ft.jsonb, 'description') AS transaction_description,
+    jsonb_extract_path_text(ft.jsonb, 'metadata', 'createdDate')::timestamptz AS transaction_created_date,
+    jsonb_extract_path_text(ft.jsonb, 'metadata', 'updatedDate')::timestamptz AS transaction_updated_date,
+    jsonb_extract_path_text(ft.jsonb, 'description') AS transaction_description,
     ft.expenseclassid AS transaction_expense_class_id,
     ft.fiscalyearid AS transaction_fiscal_year_id,
     ft.fromfundid AS transaction_from_fund_id,
@@ -41,12 +44,12 @@ SELECT
     jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceId')::uuid AS invoice_id,
     jsonb_extract_path_text(ft.jsonb, 'sourceInvoiceLineId')::uuid AS invoice_line_id,
     jsonb_extract_path_text(ft.jsonb, 'transactionType') AS transaction_type,
-    jsonb_extract_path_text(ii.jsonb, 'invoiceDate') AS invoice_date,
-    jsonb_extract_path_text(ii.jsonb, 'paymentDate') AS invoice_payment_date,
+    jsonb_extract_path_text(ii.jsonb, 'invoiceDate')::timestamptz AS invoice_date,
+    jsonb_extract_path_text(ii.jsonb, 'paymentDate')::timestamptz AS invoice_payment_date,
     jsonb_extract_path_text(ii.jsonb, 'exchangeRate')::numeric(19,14) AS invoice_exchange_rate,
     jsonb_extract_path_text(il.jsonb, 'total')::numeric(19,4) AS invoice_line_total,
     jsonb_extract_path_text(ii.jsonb, 'currency') AS invoice_currency,
-    jsonb_extract_path_text(il.jsonb, 'poLineId') AS po_line_id,
+    jsonb_extract_path_text(il.jsonb, 'poLineId')::uuid AS po_line_id,
     jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid AS invoice_vendor_id,
     jsonb_extract_path_text(oo.jsonb, 'name') AS invoice_vendor_name   
 FROM
@@ -56,7 +59,7 @@ FROM
     LEFT JOIN folio_finance.fund AS ff ON ft.fromfundid = ff.id
     LEFT JOIN folio_finance.fund AS tf ON ft.tofundid = tf.id
     LEFT JOIN folio_finance.budget AS fb ON ft.fromfundid = fb.fundid AND ft.fiscalyearid = fb.fiscalyearid
-    LEFT JOIN folio_organizations. organizations AS oo ON jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid = oo.id
+    LEFT JOIN folio_organizations.organizations AS oo ON jsonb_extract_path_text(ii.jsonb, 'vendorId')::uuid = oo.id
 ;
 
 COMMENT ON COLUMN finance_transaction_invoices.transaction_id IS 'UUID of this transaction';
@@ -97,7 +100,7 @@ COMMENT ON COLUMN finance_transaction_invoices.effective_fund_code IS 'A unique 
 
 COMMENT ON COLUMN finance_transaction_invoices.transaction_from_budget_id IS 'UUID of the budget the transaction is coming from';
 
-COMMENT ON COLUMN finance_transaction_invoices.transaction_from_budget_name IS 'The name of the budget the transation is comign from';
+COMMENT ON COLUMN finance_transaction_invoices.transaction_from_budget_name IS 'The name of the budget the transaction is coming from';
 
 COMMENT ON COLUMN finance_transaction_invoices.invoice_id IS 'UUID of this invoice';
 
@@ -116,6 +119,10 @@ COMMENT ON COLUMN finance_transaction_invoices.invoice_line_total IS 'Total of e
 COMMENT ON COLUMN finance_transaction_invoices.invoice_currency IS 'Ideally this is the ISO code and not something the user defines';
 
 COMMENT ON COLUMN finance_transaction_invoices.po_line_id IS 'UUID of encumbrance record associated with this fund distribution';
+
+COMMENT ON COLUMN finance_transaction_invoices.invoice_vendor_id IS 'UUID for vendor';
+
+COMMENT ON COLUMN finance_transaction_invoices.invoice_vendor_name IS 'Name of vendor';
 
 COMMENT ON COLUMN finance_transaction_invoices.invoice_vendor_id IS 'UUID for vendor';
 
