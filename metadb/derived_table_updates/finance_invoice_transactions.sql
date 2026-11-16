@@ -150,7 +150,6 @@ FROM
     	on invoice_lines_fund_distribution.po_line_id = po_line__t.id -- added
 WHERE 
     invoice_lines_fund_distribution.invoice_line_distribution_expense_class_id IS null
-    and finance.fund_code = 'p6993'
     
 UNION
 
@@ -215,6 +214,5 @@ FROM
     	on invoice_lines_fund_distribution.po_line_id = po_line__t.id -- added
 WHERE 
     invoice_lines_fund_distribution.invoice_line_distribution_expense_class_id IS NOT null
-    and finance.fund_code = 'p6993'
 ;
 
