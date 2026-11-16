@@ -1,3 +1,13 @@
+--metadb:table users_groups
+--metadb:require folio_users.users__t.enrollment_date timestamptz
+--metadb:require folio_users.users__t.external_system_id text
+--metadb:require folio_users.users__t.type text
+
+-- Create a derived table that takes the users table and joins in the
+-- group information.  Does not include addresses - see additional
+-- derived tables for addresses in different arrangements.  Query also
+-- depends on separate derived table users_departments_unpacked.
+
 -- 6-4-26: users_groups derived table re-write
 -- This is a re-write of the users_groups derived table, without using the users_departments_unpacked derived table
 -- Replaced the code for users_departments_unpacked with simpler code 
