@@ -1,8 +1,8 @@
 --metadb:table item_ext
 --metadb:require folio_inventory.item__t.enumeration text
 
---DROP TABLE IF EXISTS item_ext;
---CREATE TABLE item_ext AS
+DROP TABLE IF EXISTS item_ext;
+CREATE TABLE item_ext AS
 
 WITH items AS (
     SELECT
