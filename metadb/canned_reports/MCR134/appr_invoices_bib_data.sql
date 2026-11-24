@@ -33,6 +33,8 @@
 -- in general, cross joins put all values in a single row that is referenced by the query in the Where clause
 -- Otherwise, the query has to go back and evaluate each parameter value against each row for a true/false result
 -- 11-24-26: cast invl.invoice_line_number to INT for sorting; removed "field050.lc_class is null or field050.instance_hrid is null" from the lc_class Where condition 
+
+
 WITH
   parameters AS (
     SELECT
