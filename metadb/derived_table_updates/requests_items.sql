@@ -16,11 +16,12 @@
 --     removed duplicate number_of_pieces line and stale commented-out code;
 --     removed redundant ::timestamptz cast on request_date (column is already
 --     timestamp with time zone in request__t)
+-- 11-20-26: added owning library
 
 DROP TABLE IF EXISTS requests_items;
 
 CREATE TABLE requests_items AS
-SELECT
+(SELECT
     request__t.id AS request_id,
     request__t.item_id,
     item__t.hrid AS item_hrid,
@@ -50,6 +51,7 @@ SELECT
     item__t.permanent_location_id AS item_permanent_location_id,
     item__t.temporary_location_id AS item_temporary_location_id,
     item__t.effective_location_id AS item_effective_location_id,
+    loclibrary__t.name as owning_library,
     item__t.item_level_call_number,
     item__t.holdings_record_id,
     item__t.item_identifier,
@@ -60,8 +62,10 @@ SELECT
     iplt.name AS item_permanent_loan_type_name,
     item__t.temporary_loan_type_id AS item_temporary_loan_type_id,
     itlt.name AS item_temporary_loan_type_name
+
 FROM
     folio_circulation.request__t
+
     LEFT JOIN folio_inventory.item__t ON request__t.item_id = item__t.id
     LEFT JOIN folio_inventory.item ON item__t.id = item.id
     LEFT JOIN folio_inventory.service_point__t ON item__t.in_transit_destination_service_point_id = service_point__t.id
@@ -69,10 +73,11 @@ FROM
     LEFT JOIN folio_users.users__t ON request__t.requester_id = users__t.id
     LEFT JOIN folio_users.groups__t ON users__t.patron_group = groups__t.id
     LEFT JOIN folio_inventory.location__t AS iel ON item__t.effective_location_id = iel.id
+    LEFT JOIN folio_inventory.loclibrary__t on iel.library_id = loclibrary__t.id
     LEFT JOIN folio_inventory.location__t AS ipl ON item__t.permanent_location_id = ipl.id
     LEFT JOIN folio_inventory.location__t AS itl ON item__t.temporary_location_id = itl.id
     LEFT JOIN folio_inventory.loan_type__t AS iplt ON item__t.permanent_loan_type_id = iplt.id
     LEFT JOIN folio_inventory.loan_type__t AS itlt ON item__t.temporary_loan_type_id = itlt.id
     LEFT JOIN folio_inventory.material_type__t AS imt ON item__t.material_type_id = imt.id
+)
 ;
-
